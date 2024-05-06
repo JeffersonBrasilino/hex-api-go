@@ -1,7 +1,5 @@
 package core
 
-import "fmt"
-
 type AggregateRoot struct {
 	Entity
 	domainEvents []domainEvent
@@ -23,7 +21,7 @@ func (aggregate *AggregateRoot) GetDomainEvents() []domainEvent {
 }
 
 func (aggregate *AggregateRoot) AddDomainEvent(event domainEvent) {
-	fmt.Println("event added", event.GetHeaders(), event.GetPayload())
+	//fmt.Println("event added", event.GetHeaders(), event.GetPayload())
 	//aggregate.domainEvents = append(aggregate.domainEvents, event)
 }
 

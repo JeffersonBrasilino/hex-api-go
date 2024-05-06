@@ -1,24 +1,22 @@
 package usecase
 
 import (
-	"fmt"
-
 	"github.com/hex-api-go/internal/user/domain"
-	"github.com/hex-api-go/internal/user/domain/contracts"
+	"github.com/hex-api-go/internal/user/domain/contract"
+	"github.com/hex-api-go/pkg/core"
 )
 
 type CreateUserUseCase struct {
-	repository contracts.UserRepository
+	repository contract.UserRepository
 }
 
-func NewCreateUserUseCase(repository contracts.UserRepository) *CreateUserUseCase {
+func NewCreateUserUseCase(repository contract.UserRepository) *CreateUserUseCase {
 	return &CreateUserUseCase{
 		repository: repository,
 	}
 }
-func (u *CreateUserUseCase) CreateUser(data interface{}) {
+
+func (u *CreateUserUseCase) CreateUser(data interface{}) *core.Result {
 	user := domain.NewUser("new user", "new Password")
-	//u.repository.Create(user)
-	fmt.Println("#### use case ######")
-	fmt.Println(user)
+	return core.ResultSuccess(user)
 }

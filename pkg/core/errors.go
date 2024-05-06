@@ -1,37 +1,41 @@
 package core
 
-type baseError struct {
-	message string
+type NotFoundError struct {
+	Message       string
 }
 
-type NotFound struct {
-	baseError
+type InternalError struct {
+	Message  string
 }
 
-type Internal struct {
-	baseError
+type ValidationError struct {
+	Message  string
 }
 
-type Validation struct {
-	baseError
+type AlreadyExistsError struct {
+	Message  string
 }
 
-type AlreadyExists struct {
-	baseError
+type DependencyError struct {
+	Message  string
 }
 
-func (e *NotFound) Error() string {
-	return e.baseError.message
+func (e *NotFoundError) Error() string {
+	return e.Message
 }
 
-func (e *Internal) Error() string {
-	return e.baseError.message
+func (e *InternalError) Error() string {
+	return e.Message
 }
 
-func (e *Validation) Error() string {
-	return e.baseError.message
+func (e *ValidationError) Error() string {
+	return e.Message
 }
 
-func (e *AlreadyExists) Error() string {
-	return e.baseError.message
+func (e *AlreadyExistsError) Error() string {
+	return e.Message
+}
+
+func (e *DependencyError) Error() string {
+	return e.Message
 }

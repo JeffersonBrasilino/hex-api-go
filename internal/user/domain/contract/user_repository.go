@@ -1,4 +1,4 @@
-package contracts
+package contract
 
 import "github.com/hex-api-go/internal/user/domain"
 

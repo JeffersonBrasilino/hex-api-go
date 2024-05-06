@@ -6,11 +6,11 @@ type Result struct {
 	value   any
 }
 
-func Success(val any) *Result {
+func ResultSuccess(val any) *Result {
 	return &Result{success: true, errors: nil, value: val}
 }
 
-func Failure(val any) *Result {
+func ResultFailure(val any) *Result {
 	return &Result{success: false, errors: val, value: nil}
 }
 
@@ -27,6 +27,6 @@ func (a *Result) GetValue() any {
 	return a.value
 }
 
-func (a *Result) GetErrors() any {
+func (a *Result) GetError() any {
 	return a.errors
 }

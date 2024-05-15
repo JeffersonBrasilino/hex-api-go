@@ -3,18 +3,18 @@ package domain
 import (
 	"github.com/hex-api-go/internal/user/domain/entity"
 	"github.com/hex-api-go/internal/user/domain/events"
-	"github.com/hex-api-go/pkg/core"
+	"github.com/hex-api-go/pkg/core/domain"
 )
 
 type User struct {
-	core.AggregateRoot
+	domain.AggregateRoot
 	username string
 	password string
 	person   *entity.Person
 }
 
 func NewUser(username string, password string) *User {
-	entity := &User{username: username, password: password, AggregateRoot: core.NewAggregateRoot("GENERATED UUID")}
+	entity := &User{username: username, password: password, AggregateRoot: domain.NewAggregateRoot("GENERATED UUID")}
 	entity.AggregateRoot.AddDomainEvent(events.NewUserCreated("EVETN ID"))
 	return entity
 }

@@ -1,9 +1,9 @@
 package entity
 
-import "github.com/hex-api-go/pkg/core"
+import "github.com/hex-api-go/pkg/core/domain"
 
 type Person struct {
-	core.Entity
+	domain.Entity
 	name       string
 	age        int
 	birthDate  string
@@ -18,7 +18,7 @@ func NewPerson(name string, age int, birthDate string, email string, dataSource 
 		birthDate:  birthDate,
 		email:      email,
 		dataSource: dataSource,
-		Entity:     core.NewEntity(""),
+		Entity:     domain.NewEntity(""),
 	}
 }
 

@@ -1,4 +1,4 @@
-package core
+package domain
 
 import (
 	uuidLib "github.com/google/uuid"
@@ -18,6 +18,6 @@ func NewEntity(uuid string) Entity {
 	return entity
 }
 
-func (entity *Entity) GetUuid() string {
+func (entity *Entity) Uuid() string {
 	return entity.uuid
 }

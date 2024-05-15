@@ -4,7 +4,7 @@ import (
 	domaincontract "github.com/hex-api-go/internal/user/domain/contract"
 	"github.com/hex-api-go/internal/user/domain/entity"
 	"github.com/hex-api-go/internal/user/infrastructure/acl/contract"
-	"github.com/hex-api-go/pkg/core"
+	"github.com/hex-api-go/pkg/core/domain"
 )
 
 type facadeGateways map[string]contract.PersonGateway
@@ -19,11 +19,11 @@ func NewUserFacade(gateways facadeGateways) *UserFacade {
 
 func (f *UserFacade) GetPerson() (*entity.Person, error) {
 	if f.gateways[f.activeGateway] == nil {
-		return nil, &core.DependencyError{Message: "Invalid active gateway"}
+		return nil, &domain.DependencyError{Message: "Invalid active gateway"}
 	}
 	result, err := f.gateways[f.activeGateway].GetPersonData()
 	if err != nil {
-		return nil, &core.DependencyError{Message: "Error getting person data"}
+		return nil, &domain.DependencyError{Message: "Error getting person data"}
 	}
 
 	person := entity.NewPerson(result.Name, result.Age, result.BirthDate, result.Email, f.activeGateway)

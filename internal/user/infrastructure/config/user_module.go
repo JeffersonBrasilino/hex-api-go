@@ -1,12 +1,18 @@
 package config
 
 import (
-	"github.com/hex-api-go/internal/user/application/usecase"
+	"fmt"
+
+	"github.com/gofiber/fiber/v2"
+	"github.com/hex-api-go/internal/user/application/command/createuser"
+	"github.com/hex-api-go/internal/user/application/query/getuser"
 	"github.com/hex-api-go/internal/user/domain/contract"
 	aclcontract "github.com/hex-api-go/internal/user/infrastructure/acl/contract"
 	"github.com/hex-api-go/internal/user/infrastructure/acl/facade"
 	"github.com/hex-api-go/internal/user/infrastructure/acl/gateway"
 	"github.com/hex-api-go/internal/user/infrastructure/database"
+	"github.com/hex-api-go/internal/user/infrastructure/http"
+	"github.com/hex-api-go/pkg/core/application/cqrs"
 )
 
 type dependencies struct {
@@ -14,17 +20,9 @@ type dependencies struct {
 	dataSource contract.UserDataSource
 }
 
-type UserModule struct {
-	CreateUserUseCase *usecase.CreateUserUseCase
-	GetUserUseCase    *usecase.GetUserUseCase
-}
-
-func Bootstrap() *UserModule {
+func Bootstrap() {
 	dependencies := makeDependencies()
-	return &UserModule{
-		CreateUserUseCase: usecase.NewCreateUserUseCase(dependencies.repository),
-		GetUserUseCase:    usecase.NewGetUserUseCase(dependencies.dataSource),
-	}
+	registerActions(dependencies)
 }
 
 func makeDependencies() *dependencies {
@@ -36,4 +34,14 @@ func makeDependencies() *dependencies {
 		repository: database.NewUserRepository(),
 		dataSource: facade.NewUserFacade(gatewaysAcl),
 	}
+}
+
+func registerActions(dependencies *dependencies) {
+	cqrs.RegisterActionHandler(createuser.NewComandHandler(dependencies.repository))
+	cqrs.RegisterActionHandler(getuser.NewQueryHandler(dependencies.dataSource))
+}
+
+func WithHttpHandlers(fiberApp *fiber.App) {
+	http.NewHttpHandlers(fiberApp)
+	fmt.Println("User module started with http.")
 }

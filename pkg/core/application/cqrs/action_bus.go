@@ -24,17 +24,13 @@ func Send[TAction any](action TAction) (any, error) {
 	if !exists {
 		return nil, fmt.Errorf("no handler for action %T", action)
 	}
-	
+
 	handlerAssign, ok := handler.(ActionHandler[TAction])
-	
+
 	if !ok {
 		return nil,
 			fmt.Errorf("handler for action %T not implemented for ActionHandler interface", action)
 	}
 
 	return handlerAssign.Handle(action)
-}
-
-func Register2(action any, handler any){
-	fmt.Println(action, handler)
 }

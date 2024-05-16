@@ -1,6 +1,8 @@
 package domain
 
 import (
+	"time"
+
 	"github.com/hex-api-go/internal/user/domain/entity"
 	"github.com/hex-api-go/internal/user/domain/events"
 	"github.com/hex-api-go/pkg/core/domain"
@@ -16,6 +18,7 @@ type User struct {
 func NewUser(username string, password string) *User {
 	entity := &User{username: username, password: password, AggregateRoot: domain.NewAggregateRoot("GENERATED UUID")}
 	entity.AggregateRoot.AddDomainEvent(events.NewUserCreated("EVETN ID"))
+	time.Sleep(time.Second * 5)
 	return entity
 }
 

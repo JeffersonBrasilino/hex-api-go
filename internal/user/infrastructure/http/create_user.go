@@ -2,26 +2,21 @@ package http
 
 import (
 	"context"
-	"fmt"
+	"encoding/json"
 
-	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
-	/* "github.com/hex-api-go/internal/user/application/command/createuser"
-	"github.com/hex-api-go/pkg/core/application/cqrs" */)
+	"github.com/hex-api-go/internal/user/application/command/createuser"
+	"github.com/hex-api-go/pkg/core/application/cqrs"
+	coreHttp "github.com/hex-api-go/pkg/core/infrastructure/http"
+)
 
 type Request struct {
-	Username string   `validate:"required"`
-	Password string   `validate:"required"`
-	Devices  []Device `validate:"required,dive,required"`
+	Username string `validate:"gte=4"`
+	Password string `validate:"required"`
+	Devices  Device `validate:"required"`
 }
 type Device struct {
 	Name string `validate:"required"`
-}
-
-func validate(req interface{}) {
-	var validate = validator.New()
-	errs := validate.Struct(req)
-	fmt.Println(errs)
 }
 
 func CreateUser(ctx context.Context, fiberApp fiber.Router) {
@@ -30,14 +25,18 @@ func CreateUser(ctx context.Context, fiberApp fiber.Router) {
 		if err := c.BodyParser(request); err != nil {
 			return c.SendStatus(400)
 		}
-		devics :=[]Device{{Name:"iii rapaz"},{}}
+		devics := Device{}
 		request.Devices = devics
-		validate(request)
-		/* comand := &createuser.Command{Username: "teste", Password: "123"}
-		res, _ := cqrs.Send(comand)
-		fmt.Println(res) */
-		aa := map[string]any{"teste": "1234"}
+		coreHttp.ValidateRequest(request)
 
-		return c.JSON(aa)
+		comand := &createuser.Command{Username: "teste", Password: "123"}
+		res, err := cqrs.Send(comand)
+		if err != nil {
+			var message any
+			json.Unmarshal([]byte(err.Error()), &message)
+			return c.Status(400).JSON(message)
+		}
+
+		return c.JSON(res)
 	})
 }

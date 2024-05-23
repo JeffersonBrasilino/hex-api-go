@@ -7,6 +7,14 @@ import (
 
 var actionsHandlers = map[reflect.Type]any{}
 
+/*
+container que registra as ações(comando e consultas) de forma global.
+
+Tem como objetvo deixar as ações a serem realizadas registradas e independentes
+de qual protocolo/abordagem elas vão ser chamadas.
+
+foi usado o mediator pattern para esta abordagem
+*/
 func RegisterActionHandler[TAction any](handler ActionHandler[TAction]) error {
 	var action TAction
 	actionType := reflect.TypeOf(action)
@@ -19,6 +27,7 @@ func RegisterActionHandler[TAction any](handler ActionHandler[TAction]) error {
 	return nil
 }
 
+//envia a ação para seu respectivo manipulador.
 func Send[TAction any](action TAction) (any, error) {
 	handler, exists := actionsHandlers[reflect.TypeOf(action)]
 	if !exists {

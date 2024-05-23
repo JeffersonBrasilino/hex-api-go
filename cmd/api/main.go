@@ -16,8 +16,6 @@ func main() {
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
-
-	userModule.StartModuleWithHttpServer(ctx, app)
 	userModule.StartModuleWithHttpServer(ctx, app)
 
 	go func() {

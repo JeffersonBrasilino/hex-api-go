@@ -1,25 +1,51 @@
 package domain
 
 import (
-	"time"
+	"encoding/json"
+	"errors"
 
 	"github.com/hex-api-go/internal/user/domain/entity"
 	"github.com/hex-api-go/internal/user/domain/events"
 	"github.com/hex-api-go/pkg/core/domain"
+	domainValidator "github.com/hex-api-go/pkg/core/domain/validator"
 )
 
 type User struct {
-	domain.AggregateRoot
+	*domain.AggregateRoot
 	username string
 	password string
 	person   *entity.Person
 }
 
-func NewUser(username string, password string) *User {
+type UserProps struct {
+	Username string `domainValidator:"required"`
+	Password string `domainValidator:"required,gte=40"`
+}
+
+func NewUser(username string, password string) (*User, error) {
+	props := &UserProps{Username: "", Password: "12456"}
+	validateResult := validate(props)
+	if validateResult != nil {
+		return nil, validateResult
+	}
+
 	entity := &User{username: username, password: password, AggregateRoot: domain.NewAggregateRoot("GENERATED UUID")}
 	entity.AggregateRoot.AddDomainEvent(events.NewUserCreated("EVETN ID"))
-	time.Sleep(time.Second * 5)
-	return entity
+	return entity, nil
+}
+
+func validate(props *UserProps) error {
+	validator := domainValidator.NewDomainValidator()
+	/* validator.AddCustomValidator("isInt", func(val reflect.Value, params any) string {
+		fmt.Println("CUSTOM VALIDATOR CALLED")
+		return "is not int"
+	}) */
+
+	if !validator.Validate(props) {
+		errString, _ := json.Marshal(validator.GetErrors())
+		return errors.New(string(errString))
+	}
+	return nil
 }
 
 func (u *User) GetPassword() string {

@@ -3,7 +3,7 @@ package entity
 import "github.com/hex-api-go/pkg/core/domain"
 
 type Person struct {
-	domain.Entity
+	*domain.Entity
 	name       string
 	age        int
 	birthDate  string

@@ -8,14 +8,18 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	userModule "github.com/hex-api-go/internal/user/infrastructure/config"
+	messagesystem "github.com/hex-api-go/pkg/core/infrastructure/message_system"
 )
 
 func main() {
+
+	messagesystem.Start()
 	log.Printf("starting api server...")
 	app := fiber.New()
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
+
 	userModule.StartModuleWithHttpServer(ctx, app)
 
 	go func() {
@@ -27,8 +31,9 @@ func main() {
 
 	<-ctx.Done()
 	log.Printf("shutdowning...")
-	if err:= app.Shutdown();err != nil {
+	if err := app.Shutdown(); err != nil {
 		log.Printf("shutting down server error: %v\n", err)
 	}
 	log.Printf("shutdown completed")
+
 }

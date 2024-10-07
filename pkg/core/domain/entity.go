@@ -25,7 +25,7 @@ type Entity struct {
 	uuid string
 }
 
-//cria a instancia de entidade de dominio
+// cria a instancia de entidade de dominio
 func NewEntity(uuid string) *Entity {
 	entity := Entity{}
 	if uuid == "" {

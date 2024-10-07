@@ -11,7 +11,7 @@ func NewUserCreated(userCreatedId string) *UserCreated {
 	return &UserCreated{UserCreatedId: "123456", DomainEvent: domain.NewDomainEvent()}
 }
 
-func (e *UserCreated) Payload() any{
+func (e *UserCreated) Payload() any {
 	return "UserCreated PAYLOAD"
 }
 

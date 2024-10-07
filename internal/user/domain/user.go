@@ -19,11 +19,11 @@ type User struct {
 
 type UserProps struct {
 	Username string `domainValidator:"required"`
-	Password string `domainValidator:"required,gte=40"`
+	Password string `domainValidator:"required"`
 }
 
 func NewUser(username string, password string) (*User, error) {
-	props := &UserProps{Username: "", Password: "12456"}
+	props := &UserProps{username, password}
 	validateResult := validate(props)
 	if validateResult != nil {
 		return nil, validateResult

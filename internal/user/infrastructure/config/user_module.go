@@ -12,7 +12,7 @@ import (
 	"github.com/hex-api-go/internal/user/infrastructure/acl/gateway"
 	"github.com/hex-api-go/internal/user/infrastructure/database"
 	"github.com/hex-api-go/internal/user/infrastructure/http"
-	"github.com/hex-api-go/pkg/core/application/cqrs"
+	"github.com/hex-api-go/pkg/core/infrastructure/message_system/bus"
 )
 
 type userModule struct {
@@ -23,7 +23,7 @@ type userModule struct {
 var userModuleInstance *userModule
 
 func bootstrap() {
-	
+
 	if userModuleInstance != nil {
 		return
 	}
@@ -50,6 +50,11 @@ func makeAclGateways() map[string]aclcontract.PersonGateway {
 }
 
 func registerActions() {
-	cqrs.RegisterActionHandler(createuser.NewComandHandler(userModuleInstance.repository))
+	//messagesystem.AddCommandHandler("CreateUser", createuser.NewComandHandler(userModuleInstance.repository))
+	//messageSystem.AddCommandHandler("GetUser", getuser.NewQueryHandler(nil))
+	//messageSystem.AddQueryHandler("GetUser", getuser.NewQueryHandler(nil))
+	//cqrs.RegisterActionHandler(createuser.NewComandHandler(userModuleInstance.repository))
 	//cqrs.RegisterActionHandler(getuser.NewQueryHandler(dependencies.dataSource))
+
+	bus.RegisterCommandHandler("CreateUser", createuser.NewComandHandler(userModuleInstance.repository))
 }

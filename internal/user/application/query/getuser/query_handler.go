@@ -1,7 +1,7 @@
 package getuser
 
 import (
-	"context"
+	"fmt"
 
 	"github.com/hex-api-go/internal/user/domain/contract"
 )
@@ -14,8 +14,9 @@ func NewQueryHandler(dataSource contract.UserDataSource) *QueryHandler {
 	return &QueryHandler{dataSource}
 }
 
-func (h *QueryHandler) Handle(ctx context.Context, data *Query) (any, error) {
-	res, err := h.dataSource.WithGateway(data.DataSource).GetPerson()
+func (h *QueryHandler) Handle(data any) (any, error) {
+	fmt.Println("get user > handle", data)
+	/* res, err := h.dataSource.WithGateway(data.DataSource).GetPerson()
 
 	if err != nil {
 		return nil, err
@@ -35,6 +36,6 @@ func (h *QueryHandler) Handle(ctx context.Context, data *Query) (any, error) {
 		res.GetBirthDate(),
 		res.GetEmail(),
 		res.GetDataSource(),
-	}
-	return response, nil
+	} */
+	return nil, nil
 }

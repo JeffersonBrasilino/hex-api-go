@@ -3,6 +3,8 @@ package cqrs
 import (
 	"fmt"
 	"reflect"
+
+	"github.com/hex-api-go/pkg/core/domain"
 )
 
 var actionsHandlers = map[reflect.Type]any{}
@@ -15,7 +17,7 @@ de qual protocolo/abordagem elas vão ser chamadas.
 
 foi usado o mediator pattern para esta abordagem
 */
-func RegisterActionHandler[TAction any](handler ActionHandler[TAction]) error {
+func RegisterActionHandler[TAction domain.Action[any]](handler ActionHandler[TAction]) error {
 	var action TAction
 	actionType := reflect.TypeOf(action)
 	_, exists := actionsHandlers[actionType]
@@ -27,8 +29,8 @@ func RegisterActionHandler[TAction any](handler ActionHandler[TAction]) error {
 	return nil
 }
 
-//envia a ação para seu respectivo manipulador.
-func Send[TAction any](action TAction) (any, error) {
+// envia a ação para seu respectivo manipulador.
+func Send[TAction domain.Action[any]](action TAction) (any, error) {
 	handler, exists := actionsHandlers[reflect.TypeOf(action)]
 	if !exists {
 		return nil, fmt.Errorf("no handler for action %T", action)

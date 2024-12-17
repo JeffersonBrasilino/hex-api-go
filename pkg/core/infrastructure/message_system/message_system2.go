@@ -2,71 +2,40 @@ package messagesystem
 
 import (
 	"fmt"
-	"time"
 
+	"github.com/hex-api-go/pkg/core/infrastructure/message_system/action"
 	"github.com/hex-api-go/pkg/core/infrastructure/message_system/bus"
-	"github.com/hex-api-go/pkg/core/infrastructure/message_system/channel"
-	"github.com/hex-api-go/pkg/core/infrastructure/message_system/channel/gochannel"
-	"github.com/hex-api-go/pkg/core/infrastructure/message_system/gateway"
-	"github.com/hex-api-go/pkg/core/infrastructure/message_system/message"
+	"github.com/hex-api-go/pkg/core/infrastructure/message_system/container"
 )
 
-const (
-	defaultCommandChannelName = "messagesystem.command"
+type (
+	BuildableModule = func(container container.Container[any, any])
 )
 
-var modules = map[string]func(){
-	"channel": channel.Build,
-	"gateway": gateway.Build,
-	"bus":     bus.Build,
-}
+var (
+	modules = []BuildableModule{
+		Build,
+		bus.Build,
+		action.Build,
+	}
+	messageSystemContainer = container.NewGenericContainer[any, any]()
+)
 
-func AddModule(name string, module func()) {
-	modules[name] = module
-}
-
-func buildMessageSystemModules() {
+func buildMessageSystemModules(container container.Container[any, any]) {
 	fmt.Println("load modules...")
 	for _, build := range modules {
-		build()
+		build(container)
 	}
 }
 
-func registerDefualtChannels() {
-	gochannel.RegisterChannel(
-		gochannel.NewPubSubChannelConfiguration(defaultCommandChannelName),
-	)
-}
-
 func Start() {
-	fmt.Println("starting message system...")
-	registerDefualtChannels()
-	buildMessageSystemModules()
-	startDefaultConsumers()
+	buildMessageSystemModules(messageSystemContainer)
 }
 
-func Shutdown() {
-	fmt.Println("shutting down...")
-}
-
-func GetCommandBus() bus.MessageSystemCommandBus {
-	cb := *bus.GetCommandBus()
-	cb.WithChannelGateway(defaultCommandChannelName)
-	return cb
-}
-
-func startDefaultConsumers() {
-	fmt.Println("starting default consumers...")
-	commandConsumer, _ := channel.GetInboundChannel(defaultCommandChannelName)
-	commandConsumer.Subscribe(func(msg any) {
-		time.Sleep(time.Second * 10)
-		aa := msg.(*message.GenericMessage)
-		if aa.GetHeaders().GetReplyChannel() != "" {
-			fmt.Println("reply channel", aa.GetHeaders().GetReplyChannel())
-			replyChannel, _ := channel.GetOutboundChannel(aa.GetHeaders().GetReplyChannel())
-			aa.GetHeaders().SetReplyChannel("")
-			replyChannel.Send(aa)
-		}
-		fmt.Println("------------------------------------------------------------------")
-	})
+func GetCommandBus() *bus.CommandBus {
+	found, ok := messageSystemContainer.Get(bus.CommandBusReferenceName(DefaultCommandChannelName))
+	if ok != nil {
+		panic(fmt.Sprintf("commandbus not found: %v", DefaultCommandChannelName))
+	}
+	return found.(*bus.CommandBus)
 }

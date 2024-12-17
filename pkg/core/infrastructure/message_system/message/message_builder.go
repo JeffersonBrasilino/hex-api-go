@@ -3,12 +3,10 @@ package message
 type MessageBuilder struct {
 	payload       []byte
 	route         string
-	messageType   string
+	messageType   MessageType
 	schema        string
 	contentType   string
-	replyChannel  string
-	errorChannel  string
-	version       string
+	replyChannel  PublisherChannel
 	customHeaders customHeaders
 	correlationId string
 	channelName   string
@@ -18,19 +16,17 @@ func NewMessageBuilder() *MessageBuilder {
 	return &MessageBuilder{}
 }
 
-func NewMessageBuilderFromMessage(msg Message) *MessageBuilder {
+func NewMessageBuilderFromMessage(msg *Message) *MessageBuilder {
 	return &MessageBuilder{
 		payload:       msg.GetPayload(),
-		route:         msg.GetHeaders().route,
-		messageType:   msg.GetHeaders().messageType,
-		schema:        msg.GetHeaders().schema,
-		contentType:   msg.GetHeaders().contentType,
-		replyChannel:  msg.GetHeaders().replyChannel,
-		errorChannel:  msg.GetHeaders().errorChannel,
-		version:       msg.GetHeaders().version,
-		customHeaders: msg.GetHeaders().customHeaders,
-		correlationId: msg.GetHeaders().correlationId,
-		channelName:   msg.GetHeaders().channelName,
+		route:         msg.GetHeaders().Route,
+		messageType:   msg.GetHeaders().MessageType,
+		schema:        msg.GetHeaders().Schema,
+		contentType:   msg.GetHeaders().ContentType,
+		replyChannel:  msg.GetHeaders().ReplyChannel,
+		customHeaders: msg.GetHeaders().CustomHeaders,
+		correlationId: msg.GetHeaders().CorrelationId,
+		channelName:   msg.GetHeaders().ChannelName,
 	}
 }
 
@@ -40,11 +36,12 @@ func (b *MessageBuilder) WithPayload(payload []byte) *MessageBuilder {
 }
 
 func (b *MessageBuilder) WithMessageType(typeMessage MessageType) *MessageBuilder {
-	b.messageType = typeMessage.String()
+	b.messageType = typeMessage
 	return b
 }
 
 func (b *MessageBuilder) WithRoute(route string) *MessageBuilder {
+	b.route = route
 	return b
 }
 
@@ -58,18 +55,8 @@ func (b *MessageBuilder) WithContentType(value string) *MessageBuilder {
 	return b
 }
 
-func (b *MessageBuilder) WithReplyChannel(value string) *MessageBuilder {
+func (b *MessageBuilder) WithReplyChannel(value PublisherChannel) *MessageBuilder {
 	b.replyChannel = value
-	return b
-}
-
-func (b *MessageBuilder) WithErrorChannel(value string) *MessageBuilder {
-	b.errorChannel = value
-	return b
-}
-
-func (b *MessageBuilder) WithVersion(value string) *MessageBuilder {
-	b.version = value
 	return b
 }
 
@@ -88,9 +75,9 @@ func (b *MessageBuilder) WithChannelName(value string) *MessageBuilder {
 	return b
 }
 
-func (b *MessageBuilder) Build() *GenericMessage {
+func (b *MessageBuilder) Build() *Message {
 	headers := b.buildHeaders()
-	return NewGenericMessage(b.payload, headers)
+	return NewMessage(b.payload, headers)
 }
 
 func (b *MessageBuilder) buildHeaders() *messageHeaders {
@@ -100,8 +87,6 @@ func (b *MessageBuilder) buildHeaders() *messageHeaders {
 		b.schema,
 		b.contentType,
 		b.replyChannel,
-		b.errorChannel,
-		b.version,
 		b.correlationId,
 		b.channelName,
 	)

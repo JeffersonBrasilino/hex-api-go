@@ -12,7 +12,7 @@ import (
 	"github.com/hex-api-go/internal/user/infrastructure/acl/gateway"
 	"github.com/hex-api-go/internal/user/infrastructure/database"
 	"github.com/hex-api-go/internal/user/infrastructure/http"
-	"github.com/hex-api-go/pkg/core/infrastructure/message_system/bus"
+	"github.com/hex-api-go/pkg/core/infrastructure/message_system/action"
 )
 
 type userModule struct {
@@ -55,6 +55,6 @@ func registerActions() {
 	//messageSystem.AddQueryHandler("GetUser", getuser.NewQueryHandler(nil))
 	//cqrs.RegisterActionHandler(createuser.NewComandHandler(userModuleInstance.repository))
 	//cqrs.RegisterActionHandler(getuser.NewQueryHandler(dependencies.dataSource))
-
-	bus.RegisterCommandHandler("CreateUser", createuser.NewComandHandler(userModuleInstance.repository))
+	
+	action.AddActionHandler(createuser.NewComandHandler(userModuleInstance.repository))
 }

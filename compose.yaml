@@ -11,3 +11,18 @@ services:
       - .env
     ports:
       - "${APP_PORT}:${APP_PORT}"
+
+  lazydocker:
+    build:
+      context: https://github.com/jesseduffield/lazydocker.git
+      args:
+        BASE_IMAGE_BUILDER: golang
+        GOARCH: arm64
+        GOARM: 
+    image: lazyteam/lazydocker
+    container_name: lazydocker
+    stdin_open: true
+    tty: true
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./config:/.config/jesseduffield/lazydocker

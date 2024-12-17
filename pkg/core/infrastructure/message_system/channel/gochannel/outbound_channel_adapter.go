@@ -12,7 +12,7 @@ func NewOutboundChannelAdapter(connection *GoChannel) *outboundChannelAdapter {
 	}
 }
 
-func (adapter *outboundChannelAdapter) Send(msg message.Message) error{
+func (adapter *outboundChannelAdapter) Send(msg *message.Message) error{
 	adapter.connection.Send(msg)
 	return nil
 }

@@ -6,7 +6,7 @@ import (
 
 type GoChannel struct {
 	name    string
-	channel chan message.Message
+	channel chan *message.Message
 }
 
 func NewGoChannel(
@@ -14,26 +14,26 @@ func NewGoChannel(
 ) *GoChannel {
 	return &GoChannel{
 		name:    name,
-		channel: make(chan message.Message),
+		channel: make(chan *message.Message),
 	}
 }
 
-func (c *GoChannel) Send(msg message.Message) error {
+func (c *GoChannel) Send(msg *message.Message) error {
 	c.channel <- msg
 	return nil
 }
 
 func (c *GoChannel) Subscribe(callable func(msg any)) {
-	go func(ch <-chan message.Message) {
+	go func(ch <-chan *message.Message) {
 		for m := range ch {
 			callable(m)
 		}
 	}(c.channel)
 }
 
-func (c *GoChannel) Receive() *message.GenericMessage {
+func (c *GoChannel) Receive() *message.Message {
 	result := <-c.channel
-	return result.(*message.GenericMessage)
+	return result
 }
 
 func (c *GoChannel) Shutdown() {

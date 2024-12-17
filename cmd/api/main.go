@@ -13,22 +13,21 @@ import (
 
 func main() {
 
-	messagesystem.Start()
 	log.Printf("starting api server...")
 	app := fiber.New()
-
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
-
+	
 	userModule.StartModuleWithHttpServer(ctx, app)
-
+	
+	messagesystem.Start()
 	go func() {
 		log.Printf("http server listening on port 3000")
 		if err := app.Listen(":3000"); err != nil {
 			panic(err)
 		}
-	}()
-
+		}()
+		
 	<-ctx.Done()
 	log.Printf("shutdowning...")
 	if err := app.Shutdown(); err != nil {

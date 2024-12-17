@@ -1,54 +1,71 @@
 package bus
 
 import (
+	"encoding/json"
 	"fmt"
 
-	"github.com/hex-api-go/pkg/core/infrastructure/message_system/gateway"
+	"github.com/hex-api-go/pkg/core/infrastructure/message_system/action"
+	"github.com/hex-api-go/pkg/core/infrastructure/message_system/container"
 	"github.com/hex-api-go/pkg/core/infrastructure/message_system/message"
+	"github.com/hex-api-go/pkg/core/infrastructure/message_system/message/endpoint"
+	"github.com/hex-api-go/pkg/core/infrastructure/message_system/message/router"
 )
 
-type MessageSystemCommandBus struct {
-	gateway *gateway.Gateway
+type CommandBusBuilder struct {
+	name string
 }
 
-func NewCommandBus() *MessageSystemCommandBus {
-	return &MessageSystemCommandBus{}
-}
-
-func (b *MessageSystemCommandBus) WithChannelGateway(channelName string) *MessageSystemCommandBus {
-	gatewayChannel, err := gateway.GetGateway(channelName)
-	if err != nil {
-		panic(
-			fmt.Sprintf(
-				"channel %s for command bus was not registered",
-				channelName,
-			),
-		)
+func NewCommandBusBuilder(name string) *CommandBusBuilder {
+	return &CommandBusBuilder{
+		name: name,
 	}
-	b.gateway = gatewayChannel
-	return b
 }
 
-func (c *MessageSystemCommandBus) Send(
-	route string,
-	payload []byte,
-	properties map[string]string,
-) error {
-	msg := c.buildMessage(route, payload, properties)
-	c.gateway.Execute(msg)
-	return nil
+func (b *CommandBusBuilder) GetName() string {
+	return b.name
 }
 
-func (c *MessageSystemCommandBus) buildMessage(
-	route string,
-	payload []byte,
-	properties map[string]string,
-) *message.GenericMessage {
-	msg := message.NewMessageBuilder()
-	msg.WithPayload(payload)
-	msg.WithRoute(route)
-	msg.WithCustomHeader(properties)
-	msg.WithMessageType(message.Command)
-	msg.WithChannelName(c.gateway.Name())
+func (b *CommandBusBuilder) Build(container container.Container[any, any]) *CommandBus {
+
+	processor := router.NewMessageRouterBuilder(container).
+		WithRecipientListRouter().
+		Build()
+
+	gateway := endpoint.NewGatewayBuilder(b.name).
+		WithMessageProcessor(processor).
+		Build(container)
+
+	return NewCommandBus(gateway)
+}
+
+type CommandBus struct {
+	gateway *endpoint.Gateway
+}
+
+func NewCommandBus(gateway *endpoint.Gateway) *CommandBus {
+	return &CommandBus{
+		gateway: gateway,
+	}
+}
+
+func (c *CommandBus) Send(action action.Action) (any, error) {
+	msg := c.buildMessage(action)
+	result := c.gateway.Execute(msg)
+	return result, nil
+}
+
+func (c *CommandBus) buildMessage(
+	act action.Action,
+) *message.Message {
+	payload, _ := json.Marshal(act)
+	msg := message.NewMessageBuilder().
+		WithPayload(payload).
+		WithMessageType(message.Command).
+		WithRoute(action.ActionReferenceName(act.Name()))
+
 	return msg.Build()
+}
+
+func CommandBusReferenceName(name string) string {
+	return fmt.Sprintf("command-bus:%s", name)
 }

@@ -2,7 +2,7 @@ package http
 
 import (
 	"context"
-	"encoding/json"
+	"fmt"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/hex-api-go/internal/user/application/command/createuser"
@@ -22,20 +22,12 @@ func CreateUser(ctx context.Context, fiberApp fiber.Router) {
 			return c.SendStatus(400)
 		}
 
-		command, _ := json.Marshal(createuser.CreateCommand("teste", "123"))
-		commandBus := messagesystem.GetCommandBus()
-		commandBus.Send("CreateUser", command, nil)
-
 		coreHttp.ValidateRequest(request)
+		bus := messagesystem.GetCommandBus()
+		res, _ := bus.Send(createuser.CreateCommand("teste", "123"))
+		a, ok := res.(*createuser.ResultCm)
+		fmt.Println("controller", a, ok, res)
 
-		/* comand := createuser.CreateCommand("teste", "123")
-		res, err := cqrs.Send(comand)
-		if err != nil {
-			var message any
-			json.Unmarshal([]byte(err.Error()), &message)
-			return c.Status(400).JSON(message)
-		} */
-
-		return c.JSON("okokokokko")
+		return c.JSON(res)
 	})
 }

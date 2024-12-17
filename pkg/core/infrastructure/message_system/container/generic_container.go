@@ -2,9 +2,19 @@ package container
 
 import "fmt"
 
-type genericContainer[K comparable, T any] struct {
-	container map[K]T
-}
+type (
+	genericContainer[K comparable, T any] struct {
+		container map[K]T
+	}
+	Container[K comparable, T any] interface {
+		Set(key K, item T) error
+		Has(key K) bool
+		Replace(key K, item T) error
+		Get(key K) (T, error)
+		GetAll() map[K]T
+		Remove(key K) error
+	}
+)
 
 func NewGenericContainer[K comparable, T any]() *genericContainer[K, T] {
 	return &genericContainer[K, T]{container: make(map[K]T)}

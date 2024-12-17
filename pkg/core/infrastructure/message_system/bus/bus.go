@@ -1,20 +1,49 @@
 package bus
 
+import (
+	"fmt"
+
+	"github.com/hex-api-go/pkg/core/infrastructure/message_system/container"
+)
+
 type (
-	CommandBus interface {
-		WithChannelGateway(channelName string) CommandBus
-		Send(route string, message []byte, properties map[string]string) error
+	BuildableBus interface {
+		//GetChannelName() string provavelmente não vai usar
+		GetName() string
+	}
+	BuildableCommandBus interface {
+		BuildableBus
+		// GetResponseChannelName() string não sei pq coloquei isso, tentar lembrar depois
+		Build(container container.Container[any, any]) *CommandBus
 	}
 )
 
 var (
-	commandBus *MessageSystemCommandBus
+	commandBusBuilders = container.NewGenericContainer[string, BuildableCommandBus]()
 )
 
-func Build(){
-	commandBus = NewCommandBus()
+func RegisterCommandBus(busBuilder BuildableCommandBus) {
+	if commandBusBuilders.Has(
+		CommandBusReferenceName(busBuilder.GetName()),
+	) {
+		panic(
+			fmt.Sprintf(
+				"bus for channel %s already exists",
+				CommandBusReferenceName(busBuilder.GetName()),
+			),
+		)
+	}
+	commandBusBuilders.Set(
+		CommandBusReferenceName(
+			busBuilder.GetName(),
+		),
+		busBuilder,
+	)
 }
 
-func GetCommandBus() *MessageSystemCommandBus{
-	return commandBus
+func Build(container container.Container[any, any]) {
+	for name, builder := range commandBusBuilders.GetAll() {
+		bus := builder.Build(container)
+		container.Set(name, bus)
+	}
 }

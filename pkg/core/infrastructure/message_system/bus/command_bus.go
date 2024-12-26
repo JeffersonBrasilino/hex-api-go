@@ -50,8 +50,12 @@ func NewCommandBus(gateway *endpoint.Gateway) *CommandBus {
 
 func (c *CommandBus) Send(action action.Action) (any, error) {
 	msg := c.buildMessage(action)
-	result := c.gateway.Execute(msg)
-	return result, nil
+	result, ok := c.gateway.Execute(msg).([]any)
+	if !ok{
+		panic("[command bus] Failed to send message")
+	}
+
+	return result[0], result[1].(error)
 }
 
 func (c *CommandBus) buildMessage(

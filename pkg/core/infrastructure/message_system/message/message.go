@@ -9,6 +9,7 @@ const (
 	Command MessageType = iota
 	Query
 	Event
+	Document
 )
 
 type (
@@ -43,6 +44,8 @@ func (m MessageType) String() string {
 		return "Query"
 	case Event:
 		return "Event"
+	case Document:
+		return "Document"
 	}
 	return "Message"
 }

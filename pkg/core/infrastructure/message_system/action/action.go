@@ -5,8 +5,6 @@ import (
 
 	"github.com/hex-api-go/pkg/core/infrastructure/message_system/container"
 	"github.com/hex-api-go/pkg/core/infrastructure/message_system/message"
-
-	//"github.com/hex-api-go/pkg/core/infrastructure/message_system/message/channel"
 	"github.com/hex-api-go/pkg/core/infrastructure/message_system/message/channel"
 	"github.com/hex-api-go/pkg/core/infrastructure/message_system/message/endpoint"
 )

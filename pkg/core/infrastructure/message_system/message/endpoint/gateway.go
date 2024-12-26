@@ -32,15 +32,11 @@ func (b *GatewayBuilder) GetReferenceName() string {
 }
 
 func (b *GatewayBuilder) Build(container container.Container[any, any]) *Gateway {
-	fmt.Println(fmt.Printf("building gateway for %s", b.referenceName))
-
 	if b.messageProcessor == nil {
 		panic(fmt.Sprintf("no message processor for %s", b.referenceName))
 	}
 
 	buildedGateway := NewGateway(b.messageProcessor)
-
-	fmt.Println(fmt.Printf("build gateway for %s OK!", b.referenceName))
 	return buildedGateway
 }
 
@@ -59,7 +55,7 @@ func NewGateway(
 func (g *Gateway) Execute(
 	msg *message.Message,
 ) any {
-	
+
 	previousReplyChannel := msg.GetHeaders().ReplyChannel
 	messageToProcess := message.NewMessageBuilderFromMessage(msg)
 

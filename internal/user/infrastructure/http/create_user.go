@@ -24,9 +24,9 @@ func CreateUser(ctx context.Context, fiberApp fiber.Router) {
 
 		coreHttp.ValidateRequest(request)
 		bus := messagesystem.GetCommandBus()
-		res, _ := bus.Send(createuser.CreateCommand("teste", "123"))
+		res, err := bus.Send(createuser.CreateCommand("teste", "123"))
 		a, ok := res.(*createuser.ResultCm)
-		fmt.Println("controller", a, ok, res)
+		fmt.Println("controller", a, ok, res, err)
 
 		return c.JSON(res)
 	})

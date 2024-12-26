@@ -1,7 +1,6 @@
 package action
 
 import (
-	"encoding/json"
 	"fmt"
 
 	msgHandler "github.com/hex-api-go/pkg/core/infrastructure/message_system/message"
@@ -43,32 +42,12 @@ func NewActionActivator[
 }
 
 func (c *ActionActivator[THandler, TInput, TOutput]) Handle(
-	message *msgHandler.Message,
-) (*msgHandler.Message, error) {
-
-	var action TInput
-	if err := json.Unmarshal(message.GetPayload(), &action); err != nil {
-		return nil, err
-	}
+	args TInput,
+) (TOutput, error) {
 
 	var result TOutput
-	result, err := c.handler.Handle(action)
-	if err != nil {
-		return nil, fmt.Errorf("cannot handle action %v: %v", action, err.Error())
-	}
-
-	payload, err := json.Marshal(result)
-	if err != nil {
-		return nil, fmt.Errorf("cannot marshal response: %s", err.Error())
-	}
-
-	resultMessage := msgHandler.NewMessageBuilderFromMessage(message).
-		WithPayload(payload).
-		Build()
-
-	resultMessage.SetInternalPayload(result)
-
-	return resultMessage, nil
+	result, err := c.handler.Handle(args)
+	return result, err
 }
 
 func ActionReferenceName(name string) string {

@@ -59,17 +59,19 @@ services:
       #KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_AUTO_CREATE_TOPICS_ENABLED: "true"
       KAFKA_CREATE_TOPICS: "message_system.test:1:1"
-
-  kafdrop:
-    image: obsidiandynamics/kafdrop:latest
-    networks:
-      - api
+      
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
     depends_on:
       - kafka
     ports:
-      - 19000:9000
+      - "8080:8080"
     environment:
-      KAFKA_BROKERCONNECT: kafka:29092
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
+      KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
+    networks:
+      - api
 
 networks:
   api:

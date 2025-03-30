@@ -1,6 +1,7 @@
 package kafka
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/IBM/sarama"
@@ -83,9 +84,21 @@ func NewOutboundChannelAdapter(
 }
 
 func (a *outboundChannelAdapter) Handle(msg *message.Message) (*message.Message, error) {
+	h, _ := json.Marshal(msg.GetHeaders())
+	var headerMap map[string]string
+	json.Unmarshal(h, &headerMap)
+	saramaHeaders := []sarama.RecordHeader{}
+	for k, v := range headerMap {
+		saramaHeaders = append(saramaHeaders, sarama.RecordHeader{
+			Key:   []byte(k),
+			Value: []byte(v),
+		})
+	}
+
 	_, _, err := a.producer.SendMessage(&sarama.ProducerMessage{
-		Topic: a.topicName,
-		Value: sarama.StringEncoder(msg.GetPayload()),
+		Topic:   a.topicName,
+		Value:   sarama.StringEncoder(msg.GetPayload()),
+		Headers: saramaHeaders,
 	})
 	return msg, err
 }

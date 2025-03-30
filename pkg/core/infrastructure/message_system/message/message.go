@@ -97,17 +97,21 @@ func (m *messageHeaders) SetCustomHeaders(data customHeaders) {
 }
 
 func (m *messageHeaders) MarshalJSON() ([]byte, error) {
+	chs, err := json.Marshal(m.CustomHeaders)
+	if err != nil {
+		panic("[custom-header] cannot marshal.")
+	}
 	return json.Marshal(struct {
-		Route         string        `json:"route"`
-		Type          string        `json:"type"`
-		Schema        string        `json:"schema"`
-		ContentType   string        `json:"contentType"`
-		Timestamp     time.Time     `json:"timestamp"`
-		ReplyChannel  string        `json:"replyChannel"`
-		CustomHeaders customHeaders `json:"customHeaders"`
-		CorrelationId string        `json:"correlationId"`
-		ChannelName   string        `json:"channelName"`
-		MessageId     string        `json:"messageId"`
+		Route         string    `json:"route"`
+		Type          string    `json:"type"`
+		Schema        string    `json:"schema"`
+		ContentType   string    `json:"contentType"`
+		Timestamp     time.Time `json:"timestamp"`
+		ReplyChannel  string    `json:"replyChannel"`
+		CustomHeaders string    `json:"customHeaders"`
+		CorrelationId string    `json:"correlationId"`
+		ChannelName   string    `json:"channelName"`
+		MessageId     string    `json:"messageId"`
 	}{
 		m.Route,
 		m.MessageType.String(),
@@ -115,7 +119,7 @@ func (m *messageHeaders) MarshalJSON() ([]byte, error) {
 		m.ContentType,
 		m.Timestamp,
 		m.ReplyChannel.Name(),
-		m.CustomHeaders,
+		string(chs),
 		m.CorrelationId,
 		m.ChannelName,
 		m.MessageId,

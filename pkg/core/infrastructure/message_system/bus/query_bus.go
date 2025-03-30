@@ -10,17 +10,17 @@ import (
 	"github.com/hex-api-go/pkg/core/infrastructure/message_system/message/endpoint"
 )
 
-type CommandBus struct {
+type QueryBus struct {
 	gateway *endpoint.Gateway
 }
 
-func NewCommandBus(gateway *endpoint.Gateway) *CommandBus {
-	return &CommandBus{
+func NewQueryBus(gateway *endpoint.Gateway) *QueryBus {
+	return &QueryBus{
 		gateway: gateway,
 	}
 }
 
-func (c *CommandBus) Send(action action.Action) (any, error) {
+func (c *QueryBus) Send(action action.Action) (any, error) {
 	msg, err := c.buildMessage(action)
 	if err != nil {
 		return nil, err
@@ -33,13 +33,13 @@ func (c *CommandBus) Send(action action.Action) (any, error) {
 
 	resultExecution, ok := result.([]any)
 	if !ok {
-		panic("[command bus] got unexpected result type for command result")
+		panic("[query bus] got unexpected result type for query result")
 	}
 
 	if resultExecution[1] != nil {
 		err, ok := resultExecution[1].(error)
 		if !ok {
-			panic("[command bus] unexpected result type for command")
+			panic("[query bus] unexpected result type for query")
 		}
 		return nil, err
 	}
@@ -47,22 +47,18 @@ func (c *CommandBus) Send(action action.Action) (any, error) {
 	return resultExecution[0], err
 }
 
-func (c *CommandBus) buildMessage(
+func (c *QueryBus) buildMessage(
 	act action.Action,
 ) (*message.Message, error) {
-	if act.Type() != message.Command {
-		return nil, fmt.Errorf("[command bus] Action %v not supported to CommandBus", act.Name())
+	if act.Type() != message.Query {
+		return nil, fmt.Errorf("[query bus] Action %v not supported to QueryBus", act.Name())
 	}
 	payload, _ := json.Marshal(act)
 	msg := message.NewMessageBuilder().
 		WithPayload(payload).
-		WithMessageType(message.Command).
+		WithMessageType(message.Query).
 		WithCorrelationId(uuid.New().String()).
 		WithRoute(action.ActionReferenceName(act.Name()))
 
 	return msg.Build(), nil
-}
-
-func CommandBusReferenceName(name string) string {
-	return fmt.Sprintf("command-bus:%s", name)
 }

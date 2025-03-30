@@ -24,11 +24,13 @@ func (r *recipientListRouter) Handle(
 	if route == "" {
 		return nil, fmt.Errorf("unprocessable message, missing route param from header message")
 	}
-
+	
 	actionChannel, err := r.messageSystemContainer.Get(route)
+
 	if err != nil {
 		return nil, fmt.Errorf("unprocessable message, channel handler for action for route %v not exists", route)
 	}
+
 
 	actionChannel.(message.PublisherChannel).Send(msg)
 

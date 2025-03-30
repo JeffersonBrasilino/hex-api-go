@@ -1,36 +1,35 @@
 package messagesystem
 
 import (
-	"fmt"
-
-	"github.com/hex-api-go/pkg/core/infrastructure/message_system/bus"
 	"github.com/hex-api-go/pkg/core/infrastructure/message_system/container"
-	"github.com/hex-api-go/pkg/core/infrastructure/message_system/message/channel"
+	"github.com/hex-api-go/pkg/core/infrastructure/message_system/message/endpoint"
+	"github.com/hex-api-go/pkg/core/infrastructure/message_system/message/router"
 )
 
 var (
-	DefaultCommandChannelName = "message_system.default.command"
+	defaultCommandChannelName = "message_system.default.command"
+	defaultQueryChannelName   = "message_system.default.query"
 )
 
-func registerDefaultChannels(container container.Container[any, any]) {
-	chn := channel.NewDirectChannelBuilder(DefaultCommandChannelName).
-		Build(container)
-
-	container.Set(
-		channel.DirectChannelReferenceName(DefaultCommandChannelName),
-		chn,
+func registerDefaultCommandBus() {
+	endpoint.AddGatewayBuilder(defaultCommandChannelName,
+		endpoint.NewGatewayBuilder(defaultCommandChannelName,
+			router.NewMessageRouterBuilder().
+				WithRecipientListRouter(),
+		),
 	)
 }
 
-func registerDefaultBus() {
-	commandBus := bus.NewCommandBusBuilder(
-		DefaultCommandChannelName,
+func registerDefaultQueryBus() {
+	endpoint.AddGatewayBuilder(defaultQueryChannelName,
+		endpoint.NewGatewayBuilder(defaultQueryChannelName,
+			router.NewMessageRouterBuilder().
+				WithRecipientListRouter(),
+		),
 	)
-	bus.RegisterCommandBus(commandBus)
 }
 
 func Build(container container.Container[any, any]) {
-	fmt.Println("building default configuration...")
-	registerDefaultChannels(container)
-	registerDefaultBus()
+	registerDefaultCommandBus()
+	registerDefaultQueryBus()
 }

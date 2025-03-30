@@ -3,6 +3,8 @@ package message
 import (
 	"encoding/json"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 const (
@@ -62,6 +64,7 @@ type (
 		CustomHeaders customHeaders
 		CorrelationId string
 		ChannelName   string
+		MessageId     string
 	}
 )
 
@@ -74,16 +77,18 @@ func NewMessageHeaders(
 	correlationId string,
 	channelName string,
 ) *messageHeaders {
+	messageId := uuid.New().String()
 	return &messageHeaders{
-		route,
-		messageType,
-		schema,
-		contentType,
-		time.Now(),
-		replyChannel,
-		make(customHeaders),
-		correlationId,
-		channelName,
+		Route:         route,
+		MessageType:   messageType,
+		Schema:        schema,
+		ContentType:   contentType,
+		Timestamp:     time.Now(),
+		ReplyChannel:  replyChannel,
+		CustomHeaders: make(customHeaders),
+		CorrelationId: correlationId,
+		ChannelName:   channelName,
+		MessageId:     messageId,
 	}
 }
 
@@ -102,6 +107,7 @@ func (m *messageHeaders) MarshalJSON() ([]byte, error) {
 		CustomHeaders customHeaders `json:"customHeaders"`
 		CorrelationId string        `json:"correlationId"`
 		ChannelName   string        `json:"channelName"`
+		MessageId     string        `json:"messageId"`
 	}{
 		m.Route,
 		m.MessageType.String(),
@@ -112,6 +118,7 @@ func (m *messageHeaders) MarshalJSON() ([]byte, error) {
 		m.CustomHeaders,
 		m.CorrelationId,
 		m.ChannelName,
+		m.MessageId,
 	})
 }
 

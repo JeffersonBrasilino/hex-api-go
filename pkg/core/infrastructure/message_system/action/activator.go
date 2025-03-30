@@ -3,7 +3,7 @@ package action
 import (
 	"fmt"
 
-	msgHandler "github.com/hex-api-go/pkg/core/infrastructure/message_system/message"
+	"github.com/hex-api-go/pkg/core/infrastructure/message_system/message"
 )
 
 type (
@@ -12,7 +12,7 @@ type (
 	}
 
 	Action interface {
-		Type() msgHandler.MessageType
+		Type() message.MessageType
 		Name() string
 	}
 

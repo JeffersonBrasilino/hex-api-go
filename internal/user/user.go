@@ -1,4 +1,4 @@
-package config
+package user
 
 import (
 	"context"
@@ -6,6 +6,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/hex-api-go/internal/user/application/command/createuser"
+	"github.com/hex-api-go/internal/user/application/query/getuser"
 	"github.com/hex-api-go/internal/user/domain/contract"
 	aclcontract "github.com/hex-api-go/internal/user/infrastructure/acl/contract"
 	"github.com/hex-api-go/internal/user/infrastructure/acl/facade"
@@ -13,33 +14,30 @@ import (
 	"github.com/hex-api-go/internal/user/infrastructure/database"
 	"github.com/hex-api-go/internal/user/infrastructure/http"
 	"github.com/hex-api-go/pkg/core/infrastructure/message_system/action"
+	"github.com/hex-api-go/pkg/core/infrastructure/message_system/channel"
+	"github.com/hex-api-go/pkg/core/infrastructure/message_system/channel/kafka"
 )
+
+var userModuleInstance *userModule
 
 type userModule struct {
 	repository contract.UserRepository
 	dataSource contract.UserDataSource
 }
 
-var userModuleInstance *userModule
-
-func bootstrap() {
+func Bootstrap() *userModule {
 
 	if userModuleInstance != nil {
-		return
+		return userModuleInstance
 	}
 
 	userModuleInstance = &userModule{
 		repository: database.NewUserRepository(),
 		dataSource: facade.NewUserFacade(makeAclGateways()),
 	}
-	defer registerActions()
-}
+	registerActions()
 
-func StartModuleWithHttpServer(ctx context.Context, fiberApp *fiber.App) {
-	bootstrap()
-	router := fiberApp.Group("/users")
-	http.CreateUser(ctx, router)
-	fmt.Println("User module started with http. Prefix: /users")
+	return userModuleInstance
 }
 
 func makeAclGateways() map[string]aclcontract.PersonGateway {
@@ -49,12 +47,27 @@ func makeAclGateways() map[string]aclcontract.PersonGateway {
 	}
 }
 
+func (u *userModule) WithHttpProtocol(ctx context.Context, httpLib *fiber.App) *userModule {
+
+	registerPublisher()
+
+	router := httpLib.Group("/users")
+	http.CreateUser(ctx, router)
+	fmt.Println("User module started with http. Prefix: /users")
+	return u
+}
+
 func registerActions() {
-	//messagesystem.AddCommandHandler("CreateUser", createuser.NewComandHandler(userModuleInstance.repository))
-	//messageSystem.AddCommandHandler("GetUser", getuser.NewQueryHandler(nil))
-	//messageSystem.AddQueryHandler("GetUser", getuser.NewQueryHandler(nil))
-	//cqrs.RegisterActionHandler(createuser.NewComandHandler(userModuleInstance.repository))
-	//cqrs.RegisterActionHandler(getuser.NewQueryHandler(dependencies.dataSource))
-	
 	action.AddActionHandler(createuser.NewComandHandler(userModuleInstance.repository))
+	action.AddActionHandler(getuser.NewQueryHandler(nil))
+}
+
+func registerPublisher() {
+	channel.AddChannelConnection(
+		kafka.NewConnection("defaultConKafka", []string{"kafka:9092"}),
+	)
+	channel.AddPublisherChannel(kafka.NewPublisherChannelAdapterBuilder(
+		"defaultConKafka",
+		"message_system.topic",
+	))
 }

@@ -4,31 +4,20 @@ import (
 	"fmt"
 
 	"github.com/hex-api-go/pkg/core/infrastructure/message_system/container"
-	"github.com/hex-api-go/pkg/core/infrastructure/message_system/message"
 )
 
-type (
-	PollConsumer interface {
-		ReceiveWithTimeout() *message.Message
-	}
+type BuildableEndpoint interface {
+	GetName() string
+	Build(container container.Container[any, any]) error
+}
 
-	ConsumerSystem interface {
-		Run()
-		Stop()
-	}
+var gatewayBuilders = container.NewGenericContainer[string, BuildableEndpoint]()
 
-	Endpoint interface {
-		Execute(message *message.Message)
-	}
-)
-
-var gatewayBuilders = container.NewGenericContainer[string, *GatewayBuilder]()
-
-func AddGatewayBuilder(channelName string, builder *GatewayBuilder) {
+func AddGatewayBuilder(channelName string, builder BuildableEndpoint) {
 	if gatewayBuilders.Has(channelName) {
 		panic(
 			fmt.Sprintf(
-				"gateway for channel %s already exists",
+				"[endpoint] gateway for channel %s already exists",
 				channelName,
 			),
 		)
@@ -37,12 +26,16 @@ func AddGatewayBuilder(channelName string, builder *GatewayBuilder) {
 }
 
 func Build(container container.Container[any, any]) {
-	for name, builder := range gatewayBuilders.GetAll() {
-		gateway := builder.Build(container)
-		container.Set(GatewayReferenceName(name), gateway)
+	fmt.Println("build endpoints...")
+	for _, builder := range gatewayBuilders.GetAll() {
+		err := builder.Build(container)
+		if err != nil {
+			panic(
+				fmt.Sprintf(
+					"[endpoint] %s",
+					err,
+				),
+			)
+		}
 	}
-}
-
-func GatewayReferenceName(referenceName string) string {
-	return fmt.Sprintf("gateway:%s", referenceName)
 }

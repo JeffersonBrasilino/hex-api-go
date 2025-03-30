@@ -7,37 +7,34 @@ import (
 	"github.com/hex-api-go/pkg/core/infrastructure/message_system/container"
 	"github.com/hex-api-go/pkg/core/infrastructure/message_system/message"
 	"github.com/hex-api-go/pkg/core/infrastructure/message_system/message/channel"
+	"github.com/hex-api-go/pkg/core/infrastructure/message_system/message/router"
 )
 
+func GatewayReferenceName(referenceName string) string {
+	return fmt.Sprintf("gateway:%s", referenceName)
+}
+
 type GatewayBuilder struct {
-	referenceName    string
-	messageProcessor message.MessageHandler
+	referenceName           string
+	messageProcessorBuilder *router.MessageRouterBuilder
 }
 
-func NewGatewayBuilder(referenceName string) *GatewayBuilder {
+func NewGatewayBuilder(referenceName string, messageProcessorBuilder *router.MessageRouterBuilder) *GatewayBuilder {
 	return &GatewayBuilder{
-		referenceName: referenceName,
+		referenceName:           referenceName,
+		messageProcessorBuilder: messageProcessorBuilder,
 	}
 }
 
-func (b *GatewayBuilder) WithMessageProcessor(
-	processor message.MessageHandler,
-) *GatewayBuilder {
-	b.messageProcessor = processor
-	return b
+func (b *GatewayBuilder) GetName() string {
+	return GatewayReferenceName(b.referenceName)
 }
 
-func (b *GatewayBuilder) GetReferenceName() string {
-	return b.referenceName
-}
-
-func (b *GatewayBuilder) Build(container container.Container[any, any]) *Gateway {
-	if b.messageProcessor == nil {
-		panic(fmt.Sprintf("no message processor for %s", b.referenceName))
-	}
-
-	buildedGateway := NewGateway(b.messageProcessor)
-	return buildedGateway
+func (b *GatewayBuilder) Build(container container.Container[any, any]) error {
+	routerBuilder := b.messageProcessorBuilder.Build(container)
+	buildedGateway := NewGateway(routerBuilder)
+	container.Set(b.GetName(), buildedGateway)
+	return nil
 }
 
 type Gateway struct {
@@ -54,7 +51,7 @@ func NewGateway(
 
 func (g *Gateway) Execute(
 	msg *message.Message,
-) any {
+) (any, error) {
 
 	previousReplyChannel := msg.GetHeaders().ReplyChannel
 	messageToProcess := message.NewMessageBuilderFromMessage(msg)
@@ -63,18 +60,22 @@ func (g *Gateway) Execute(
 	if msg.ReplyRequired() && previousReplyChannel == nil {
 		internalReplyChannel = g.makeInternalChannel()
 	}
-	messageToProcess.WithReplyChannel(internalReplyChannel)
-	g.messageProcessor.Handle(messageToProcess.Build())
 
-	var resultMessage *message.Message
+	messageToProcess.WithReplyChannel(internalReplyChannel)
+	resultMessage, err := g.messageProcessor.Handle(messageToProcess.Build())
+	if err != nil {
+		internalReplyChannel.Close()
+		return nil, err
+	}
+
 	if internalReplyChannel != nil {
 		resultMessage = g.receive(internalReplyChannel)
 	}
 
 	if previousReplyChannel != nil {
 		previousReplyChannel.Send(resultMessage)
-	}
-	return resultMessage.GetInternalPayload()
+	}	
+	return resultMessage.GetInternalPayload(), nil
 }
 
 func (g *Gateway) makeInternalChannel() *channel.PointToPointChannel {

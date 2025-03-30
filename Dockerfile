@@ -1,15 +1,37 @@
-FROM golang:latest AS dev
+FROM golang:1.23.4-alpine3.21 AS dev
 
-RUN go install github.com/air-verse/air@latest
+
+RUN apk update && apk upgrade && apk add pkgconf \
+git \
+bash \
+build-base \
+sudo 
 
 WORKDIR /app
 
-COPY go.* .
-
-RUN go mod download
-
 COPY . .
+
+RUN go install github.com/air-verse/air@latest
+
+RUN go mod download && go mod verify
+
+CMD $(go env GOPATH)/bin/air
 
 EXPOSE ${APP_PORT}
 
-CMD $(go env GOPATH)/bin/air
+
+# FROM builder AS dev
+
+# RUN go install github.com/air-verse/air@latest
+
+# CMD $(go env GOPATH)/bin/air
+
+# EXPOSE ${APP_PORT}
+
+# FROM golang:1.23.4-alpine3.21 AS dev
+
+# WORKDIR /app
+
+# COPY . .
+
+# CMD $(go env GOPATH)/bin/air

@@ -40,8 +40,6 @@ func NewServiceActivator(targetService any, methodName string) *serviceActivator
 		outputs = append(outputs, p)
 	}
 
-	fmt.Println("OUTPUT PARAM", methodToCall.Type().NumOut())
-
 	return &serviceActivator{
 		methodToCall: methodToCall,
 		paramInputs:  inputs,

@@ -5,44 +5,46 @@ import (
 	"github.com/hex-api-go/pkg/core/infrastructure/message_system/message"
 )
 
-type messageRouterBuilder struct {
-	filters                []message.MessageHandler
-	routerComponents       []message.MessageHandler
-	messageSystemContainer container.Container[any, any]
+type MessageRouterBuilder struct {
+	filters          []message.MessageHandler
+	routerComponents []message.MessageHandler
+	hasRecipientList bool
 }
 
-func NewMessageRouterBuilder(
-	container container.Container[any, any],
-) *messageRouterBuilder {
-	return &messageRouterBuilder{
-		filters:                []message.MessageHandler{},
-		routerComponents:       []message.MessageHandler{},
-		messageSystemContainer: container,
+func NewMessageRouterBuilder() *MessageRouterBuilder {
+	return &MessageRouterBuilder{
+		filters:          []message.MessageHandler{},
+		routerComponents: []message.MessageHandler{},
 	}
 }
 
-func (b *messageRouterBuilder) WithFilter(
+func (b *MessageRouterBuilder) WithFilter(
 	filter FilterFunc,
-) *messageRouterBuilder {
+) *MessageRouterBuilder {
 	b.filters = append(b.filters, NewMessageFilter(filter))
 	return b
 }
 
-func (b *messageRouterBuilder) WithRouterComponent(
+func (b *MessageRouterBuilder) WithRouterComponent(
 	component message.MessageHandler,
-) *messageRouterBuilder {
+) *MessageRouterBuilder {
 	b.routerComponents = append(b.routerComponents, component)
 	return b
 }
 
-func (b *messageRouterBuilder) WithRecipientListRouter() *messageRouterBuilder {
-	recipientListRouter := NewRecipientListRouter(b.messageSystemContainer)
-	b.routerComponents = append(b.routerComponents, recipientListRouter)
+func (b *MessageRouterBuilder) WithRecipientListRouter() *MessageRouterBuilder {
+	b.hasRecipientList = true
 	return b
 }
 
-func (b *messageRouterBuilder) Build() *messageRouter {
+func (b *MessageRouterBuilder) Build(container container.Container[any, any]) *messageRouter {
+	if b.hasRecipientList {
+		recipientListRouter := NewRecipientListRouter(container)
+		b.routerComponents = append(b.routerComponents, recipientListRouter)
+	}
+
 	router := NewMessageRouter()
+
 	for _, filter := range b.filters {
 		router.Add(filter)
 	}

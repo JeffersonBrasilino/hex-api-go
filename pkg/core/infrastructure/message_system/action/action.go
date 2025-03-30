@@ -36,7 +36,9 @@ func AddActionHandler[
 	))
 }
 
+// TODO: refatorar e adicionar a função de build no action activator.
 func Build(container container.Container[any, any]) {
+	fmt.Println("build actions...")
 	for action, activator := range actionHandlersToBuild.GetAll() {
 		channel := channel.NewPointToPointChannel(action)
 		channel.Subscribe(func(msg any) {

@@ -11,18 +11,66 @@ services:
       - .env
     ports:
       - "${APP_PORT}:${APP_PORT}"
+      - "6060:6060"
+    mem_limit: 300m
+    networks:
+      - api
 
-  lazydocker:
-    build:
-      context: https://github.com/jesseduffield/lazydocker.git
-      args:
-        BASE_IMAGE_BUILDER: golang
-        GOARCH: arm64
-        GOARM: 
-    image: lazyteam/lazydocker
-    container_name: lazydocker
-    stdin_open: true
-    tty: true
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - ./config:/.config/jesseduffield/lazydocker
+  # lazydocker:
+  #   build:
+  #     context: https://github.com/jesseduffield/lazydocker.git
+  #     args:
+  #       BASE_IMAGE_BUILDER: golang
+  #       GOARCH: arm64
+  #       GOARM:
+  #   image: lazyteam/lazydocker
+  #   container_name: lazydocker
+  #   stdin_open: true
+  #   tty: true
+  #   volumes:
+  #     - /var/run/docker.sock:/var/run/docker.sock
+  #     - ./config:/.config/jesseduffield/lazydocker
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    networks:
+      - api
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+
+  kafka:
+    container_name: kafka
+    hostname: kafka
+    image: confluentinc/cp-kafka:latest
+    networks:
+      - api
+    depends_on:
+      - zookeeper
+    ports:
+      - 9092:9092
+      - 29092:29092
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_INTERNAL:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_INTERNAL://kafka:29092
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      #KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLED: "true"
+      KAFKA_CREATE_TOPICS: "message_system.test:1:1"
+
+  kafdrop:
+    image: obsidiandynamics/kafdrop:latest
+    networks:
+      - api
+    depends_on:
+      - kafka
+    ports:
+      - 19000:9000
+    environment:
+      KAFKA_BROKERCONNECT: kafka:29092
+
+networks:
+  api:
+    driver: bridge

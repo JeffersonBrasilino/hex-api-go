@@ -49,6 +49,7 @@ func (c *PointToPointChannel) Receive() (any, error) {
 	if !hasOpen {
 		return nil, errors.New("channel has not been closed")
 	}
+	close(c.channel)
 	return result, nil
 }
 
@@ -58,5 +59,5 @@ func (c *PointToPointChannel) Close() error {
 }
 
 func (c *PointToPointChannel) Name() string {
-	return fmt.Sprintf("%s", c.name)
+	return c.name
 }

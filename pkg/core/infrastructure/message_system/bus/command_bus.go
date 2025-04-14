@@ -1,7 +1,6 @@
 package bus
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"github.com/google/uuid"
@@ -53,16 +52,11 @@ func (c *CommandBus) buildMessage(
 	if act.Type() != message.Command {
 		return nil, fmt.Errorf("[command bus] Action %v not supported to CommandBus", act.Name())
 	}
-	payload, _ := json.Marshal(act)
+
 	msg := message.NewMessageBuilder().
-		WithPayload(payload).
+		WithPayload(act).
 		WithMessageType(message.Command).
 		WithCorrelationId(uuid.New().String()).
 		WithRoute(action.ActionReferenceName(act.Name()))
-
 	return msg.Build(), nil
-}
-
-func CommandBusReferenceName(name string) string {
-	return fmt.Sprintf("command-bus:%s", name)
 }

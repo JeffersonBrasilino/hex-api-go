@@ -32,7 +32,7 @@ func (c *PointToPointChannel) Send(msg *message.Message) error {
 	return nil
 }
 
-func (c *PointToPointChannel) Subscribe(callable func(m any)) {
+func (c *PointToPointChannel) Subscribe(callable func(m *message.Message)) {
 	go func(ch <-chan *message.Message) {
 		for {
 			m, hasOpen := <-ch

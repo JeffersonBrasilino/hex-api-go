@@ -1,7 +1,6 @@
 package bus
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"github.com/google/uuid"
@@ -53,9 +52,8 @@ func (c *QueryBus) buildMessage(
 	if act.Type() != message.Query {
 		return nil, fmt.Errorf("[query bus] Action %v not supported to QueryBus", act.Name())
 	}
-	payload, _ := json.Marshal(act)
 	msg := message.NewMessageBuilder().
-		WithPayload(payload).
+		WithPayload(act).
 		WithMessageType(message.Query).
 		WithCorrelationId(uuid.New().String()).
 		WithRoute(action.ActionReferenceName(act.Name()))

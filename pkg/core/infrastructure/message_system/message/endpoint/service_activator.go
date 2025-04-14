@@ -65,18 +65,12 @@ func (s *serviceActivator) Handle(msg *message.Message) (*message.Message, error
 		result = append(result, v.Interface())
 	}
 
-	resultMarshal, errMsrl := json.Marshal(result)
-	if errMsrl != nil {
-		return nil, fmt.Errorf("[service-activator] cannot marshal response: %s", errMsrl)
-	}
-
 	resultMessage := message.NewMessageBuilder().
 		WithChannelName(msg.GetHeaders().ReplyChannel.Name()).
 		WithMessageType(message.Document).
-		WithPayload(resultMarshal).
+		WithPayload(result).
 		Build()
 
-	resultMessage.SetInternalPayload(result)
 	if msg.GetHeaders().ReplyChannel != nil {
 		msg.GetHeaders().ReplyChannel.Send(resultMessage)
 	}
@@ -84,9 +78,14 @@ func (s *serviceActivator) Handle(msg *message.Message) (*message.Message, error
 	return resultMessage, err
 }
 
-func (s *serviceActivator) makeInputs(data []byte) ([]reflect.Value, error) {
+func (s *serviceActivator) makeInputs(dataInput any) ([]reflect.Value, error) {
 
 	var err error
+
+	data, errMsrl := json.Marshal(dataInput)
+	if errMsrl != nil {
+		return nil, fmt.Errorf("[service-activator] cannot marshal request: %s", errMsrl)
+	}
 
 	var dataParsed = map[string]any{}
 	if len(s.paramInputs) > 1 {

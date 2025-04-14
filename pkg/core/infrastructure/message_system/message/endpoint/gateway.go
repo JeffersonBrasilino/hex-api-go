@@ -75,7 +75,7 @@ func (g *Gateway) Execute(
 	if previousReplyChannel != nil {
 		previousReplyChannel.Send(resultMessage)
 	}	
-	return resultMessage.GetInternalPayload(), nil
+	return resultMessage.GetPayload(), nil
 }
 
 func (g *Gateway) makeInternalChannel() *channel.PointToPointChannel {

@@ -4,6 +4,9 @@ import (
 	"fmt"
 
 	"github.com/hex-api-go/pkg/core/infrastructure/message_system/container"
+	"github.com/hex-api-go/pkg/core/infrastructure/message_system/message"
+	"github.com/hex-api-go/pkg/core/infrastructure/message_system/message/endpoint"
+	"github.com/hex-api-go/pkg/core/infrastructure/message_system/message/router"
 )
 
 type (
@@ -11,13 +14,18 @@ type (
 		ReferenceName() string
 		Connect() error
 		GetProducer() any
+		GetConsumer() any
 	}
 
 	BuildableChannelAdapter interface {
-		Build(container.Container[any, any]) error
+		Build(container.Container[any, any]) (message.MessageHandler, error)
 		GetName() string
 	}
 )
+
+func ConnectionReferenceName(name string) string {
+	return fmt.Sprintf("channel-connection:%s", name)
+}
 
 var (
 	connectionsBuilders = container.NewGenericContainer[string, Connection]()
@@ -48,7 +56,7 @@ func buildChannelConnections(container container.Container[any, any]) {
 				),
 			)
 		}
-		container.Set(v.ReferenceName(), v)
+		container.Set(ConnectionReferenceName(v.ReferenceName()), v)
 	}
 }
 
@@ -65,9 +73,10 @@ func AddPublisherChannel(publisher BuildableChannelAdapter) {
 	publisherBuilders.Set(publisher.GetName(), publisher)
 }
 
+//TODO: ao criar o headerEnricher, o builder dele deve ser chamado aqui dentro, a fim de deixar o channel adapter limpo.
 func buildPublisherChannels(container container.Container[any, any]) {
 	for _, v := range publisherBuilders.GetAll() {
-		err := v.Build(container)
+		adapter, err := v.Build(container)
 		if err != nil {
 			panic(
 				fmt.Sprintf(
@@ -76,6 +85,13 @@ func buildPublisherChannels(container container.Container[any, any]) {
 				),
 			)
 		}
+		endpoint.AddGatewayBuilder(
+			v.GetName(),
+			endpoint.NewGatewayBuilder(v.GetName(),
+				router.NewMessageRouterBuilder().
+					WithRouterComponent(adapter),
+			),
+		)
 	}
 }
 

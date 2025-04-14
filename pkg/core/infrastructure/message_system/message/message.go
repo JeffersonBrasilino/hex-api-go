@@ -28,7 +28,7 @@ type (
 	}
 	ConsumerChannel interface {
 		Channel
-		Receive() (any, error)
+		Receive() (*Message, error)
 		Close() error
 	}
 	SubscriberChannel interface {
@@ -127,13 +127,12 @@ func (m *messageHeaders) MarshalJSON() ([]byte, error) {
 }
 
 type Message struct {
-	payload         []byte
+	payload         any
 	headers         *messageHeaders
-	internalPayload any
 }
 
 func NewMessage(
-	payload []byte,
+	payload any,
 	headers *messageHeaders,
 ) *Message {
 	return &Message{
@@ -142,20 +141,12 @@ func NewMessage(
 	}
 }
 
-func (m *Message) GetPayload() []byte {
+func (m *Message) GetPayload() any {
 	return m.payload
 }
 
 func (m *Message) GetHeaders() *messageHeaders {
 	return m.headers
-}
-
-func (m *Message) SetInternalPayload(instance any) {
-	m.internalPayload = instance
-}
-
-func (m *Message) GetInternalPayload() any {
-	return m.internalPayload
 }
 
 func (m *Message) ReplyRequired() bool {
@@ -164,7 +155,7 @@ func (m *Message) ReplyRequired() bool {
 
 func (m *Message) MarshalJSON() ([]byte, error) {
 	return json.Marshal(struct {
-		Payload []byte          `json:"payload"`
+		Payload any          `json:"payload"`
 		Headers *messageHeaders `json:"headers"`
 	}{
 		m.payload,

@@ -16,6 +16,10 @@ var (
 	]()
 )
 
+func ActionReferenceName(name string) string {
+	return fmt.Sprintf("action:%s", name)
+}
+
 func AddActionHandler[
 	T Action,
 	U actionHandlerReturn,
@@ -41,8 +45,8 @@ func Build(container container.Container[any, any]) {
 	fmt.Println("build actions...")
 	for action, activator := range actionHandlersToBuild.GetAll() {
 		channel := channel.NewPointToPointChannel(action)
-		channel.Subscribe(func(msg any) {
-			activator.Handle(msg.(*message.Message))
+		channel.Subscribe(func(msg *message.Message) {
+			activator.Handle(msg)
 		})
 		container.Set(ActionReferenceName(action), channel)
 	}

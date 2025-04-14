@@ -24,8 +24,8 @@ func CreateUser(ctx context.Context, fiberApp fiber.Router) {
 		}
 
 		coreHttp.ValidateRequest(request)
-		bus := messagesystem.GetCommandBus()
-		//bus:= messagesystem.GetCommandBusByChannel("message_system.topic")
+		//bus := messagesystem.GetCommandBus()
+		bus:= messagesystem.GetCommandBusByChannel("message_system.topic")
 		res, err := bus.Send(createuser.CreateCommand("teste", "123"))
 		//a, ok := res.(*createuser.ResultCm)
 		fmt.Println("controller", res, err)

@@ -1,7 +1,7 @@
 package message
 
 type MessageBuilder struct {
-	payload       []byte
+	payload       any
 	route         string
 	messageType   MessageType
 	schema        string
@@ -30,7 +30,7 @@ func NewMessageBuilderFromMessage(msg *Message) *MessageBuilder {
 	}
 }
 
-func (b *MessageBuilder) WithPayload(payload []byte) *MessageBuilder {
+func (b *MessageBuilder) WithPayload(payload any) *MessageBuilder {
 	b.payload = payload
 	return b
 }

@@ -1,8 +1,6 @@
 package action
 
 import (
-	"fmt"
-
 	"github.com/hex-api-go/pkg/core/infrastructure/message_system/message"
 )
 
@@ -48,8 +46,4 @@ func (c *ActionActivator[THandler, TInput, TOutput]) Handle(
 	var result TOutput
 	result, err := c.handler.Handle(args)
 	return result, err
-}
-
-func ActionReferenceName(name string) string {
-	return fmt.Sprintf("action:%s", name)
 }

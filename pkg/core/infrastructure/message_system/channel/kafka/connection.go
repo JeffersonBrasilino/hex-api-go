@@ -10,13 +10,10 @@ type connection struct {
 	name      string
 	host      []string
 	publisher sarama.SyncProducer
+	consumer  sarama.Consumer
 }
 
 var conInstance *connection
-
-func ConnectionReferenceName(name string) string {
-	return fmt.Sprintf("kafka:%s", name)
-}
 
 func NewConnection(name string, host []string) *connection {
 	if conInstance != nil {
@@ -42,8 +39,14 @@ func (c *connection) createPublisher() error {
 	if err != nil {
 		return fmt.Errorf("[kafka-connection] Error creating publisher %s", err)
 	}
-
 	c.publisher = producer
+
+	consumer, err := sarama.NewConsumer(c.host, config)
+	if err != nil {
+		return fmt.Errorf("[kafka-connection] Error creating consumer %s", err)
+	}
+	c.consumer = consumer
+
 	return nil
 }
 
@@ -51,11 +54,14 @@ func (c *connection) GetProducer() any {
 	return c.publisher
 }
 
+func (c *connection) GetConsumer() any {
+	return c.consumer
+}
+
 func (c *connection) Disconnect() error {
 	return nil
 }
 
 func (c *connection) ReferenceName() string {
-
-	return ConnectionReferenceName(c.name)
+	return c.name
 }

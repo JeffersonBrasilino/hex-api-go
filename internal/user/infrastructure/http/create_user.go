@@ -24,13 +24,28 @@ func CreateUser(ctx context.Context, fiberApp fiber.Router) {
 		}
 
 		coreHttp.ValidateRequest(request)
-		//bus := messagesystem.GetCommandBus()
-		bus:= messagesystem.GetCommandBusByChannel("message_system.topic")
-		res, err := bus.Send(createuser.CreateCommand("teste", "123"))
-		//a, ok := res.(*createuser.ResultCm)
-		fmt.Println("controller", res, err)
 
-		return c.JSON(res)
+		//COMMAND SYNC
+		bus := messagesystem.CommandBus()
+		res, err := bus.Send(createuser.CreateCommand("teste", "123"))
+		fmt.Println("[controller] result command ", res, err)
+		
+		//COMMAND ASYNC
+		/* bus := messagesystem.CommandBusByChannel("message_system.topic")
+		err := bus.SendAsync(createuser.CreateCommand("teste", "123"))
+		fmt.Println("[controller] ASYNC COMMAND SEND ERROR ", err) */
+
+		//RAW COMMAND ASYNC
+		/* createuser.CreateCommand("teste", "123")
+		bus := messagesystem.CommandBusByChannel("message_system.topic")
+		err := bus.SendRawAsync("raw_message_route","huehuebrbr", nil)
+		fmt.Println("[controller] ASYNC COMMAND SEND ERROR ", err) */
+		
+		/* evBus := messagesystem.EventBusByChannel("message_system.topic")
+		erra := evBus.Publish(createuser.NewCreatedCommand("teste", "123"))
+		fmt.Println("[event-bus] publish error ", erra) */
+		
+		return c.JSON("okokokokokokokok")
 	})
 
 	fiberApp.Get("", func(c *fiber.Ctx) error {
@@ -40,7 +55,7 @@ func CreateUser(ctx context.Context, fiberApp fiber.Router) {
 		} */
 
 		//coreHttp.ValidateRequest(request)
-		bus := messagesystem.GetQueryBus()
+		bus := messagesystem.QueryBus()
 		res, err := bus.Send(getuser.NewQuery())
 		//a, ok := res.(*createuser.ResultCm)
 		fmt.Println("controller", res, err)

@@ -7,7 +7,17 @@ import (
 	"github.com/hex-api-go/pkg/core/infrastructure/message_system/message"
 )
 
-func FromMessage(msg *message.Message) *sarama.ProducerMessage {
+func ToMessage(data any) *message.Message {
+	return &message.Message{}
+}
+
+type MessageTranslator struct{}
+
+func NewMessageTranslator() *MessageTranslator {
+	return &MessageTranslator{}
+}
+
+func (m *MessageTranslator) FromMessage(msg *message.Message) *sarama.ProducerMessage {
 	h, _ := json.Marshal(msg.GetHeaders())
 	var headerMap map[string]string
 	json.Unmarshal(h, &headerMap)
@@ -29,8 +39,4 @@ func FromMessage(msg *message.Message) *sarama.ProducerMessage {
 		Value:   sarama.StringEncoder(payload),
 		Headers: saramaHeaders,
 	}
-}
-
-func ToMessage(data any) *message.Message {
-	return &message.Message{}
 }

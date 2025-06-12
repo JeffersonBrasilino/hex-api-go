@@ -4,63 +4,75 @@ import (
 	"fmt"
 
 	"github.com/IBM/sarama"
-	"github.com/hex-api-go/pkg/core/infrastructure/message_system/channel"
 	"github.com/hex-api-go/pkg/core/infrastructure/message_system/container"
 	"github.com/hex-api-go/pkg/core/infrastructure/message_system/message"
+	"github.com/hex-api-go/pkg/core/infrastructure/message_system/message/channel/adapter"
 )
 
 type publisherChannelAdapterBuilder struct {
+	*adapter.OutboundChannelAdapterBuilder[*sarama.ProducerMessage]
 	connectionReferenceName string
-	topicName               string
 }
 
 func NewPublisherChannelAdapterBuilder(
 	connectionReferenceName string,
 	topicName string,
 ) *publisherChannelAdapterBuilder {
-	return &publisherChannelAdapterBuilder{
-		connectionReferenceName: connectionReferenceName,
-		topicName:               topicName,
+	builder := &publisherChannelAdapterBuilder{
+		&adapter.OutboundChannelAdapterBuilder[*sarama.ProducerMessage]{},
+		connectionReferenceName,
 	}
-}
-
-func (b *publisherChannelAdapterBuilder) GetName() string {
-	return b.topicName
+	builder.WithChannelName(topicName).
+		WithReferenceName(topicName).
+		WithMessageTranslator(NewMessageTranslator())
+	return builder
 }
 
 func (b *publisherChannelAdapterBuilder) Build(
 	container container.Container[any, any],
-) (message.MessageHandler, error) {
-	connection, err := container.Get(channel.ConnectionReferenceName(b.connectionReferenceName))
+) (message.PublisherChannel, error) {
+	con, err := container.Get(b.connectionReferenceName)
+
 	if err != nil {
 		return nil, fmt.Errorf(
-			"[kafka-outbound-channel] connection does not exist",
+			"[kafka-outbound-channel] connection %s does not exist",
+			b.connectionReferenceName,
 		)
 	}
 
-	producer := connection.(channel.Connection).GetProducer().(sarama.SyncProducer)
-	adapter := NewOutboundChannelAdapter(producer, b.topicName)
-	return adapter, nil
+	producer := con.(*connection).GetProducer().(sarama.SyncProducer)
+	adapter := NewOutboundChannelAdapter(producer, b.ChannelName(), b.MessageTranslator())
+
+	return b.OutboundChannelAdapterBuilder.BuildMessageHandler(adapter)
 }
 
 type outboundChannelAdapter struct {
-	producer  sarama.SyncProducer
-	topicName string
+	producer          sarama.SyncProducer
+	topicName         string
+	messageTranslator adapter.OutboundChannelMessageTranslator[*sarama.ProducerMessage]
 }
 
 func NewOutboundChannelAdapter(
 	producer sarama.SyncProducer,
 	topicName string,
+	messageTranslator adapter.OutboundChannelMessageTranslator[*sarama.ProducerMessage],
 ) *outboundChannelAdapter {
 	return &outboundChannelAdapter{
-		producer:  producer,
-		topicName: topicName,
+		producer:          producer,
+		topicName:         topicName,
+		messageTranslator: messageTranslator,
 	}
 }
 
-func (a *outboundChannelAdapter) Handle(msg *message.Message) (*message.Message, error) {
+func (a *outboundChannelAdapter) Name() string {
+	return a.topicName
+}
+
+func (a *outboundChannelAdapter) Send(msg *message.Message) error {
+	fmt.Println(a.topicName, " ->> send message")
 	msg.GetHeaders().ChannelName = a.topicName
-	msgTosend := FromMessage(msg)
+	msgTosend := a.messageTranslator.FromMessage(msg)
 	_, _, err := a.producer.SendMessage(msgTosend)
-	return msg, err
+	fmt.Println("DEU ERRO", err)
+	return err
 }

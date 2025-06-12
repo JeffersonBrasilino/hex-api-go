@@ -13,8 +13,7 @@ import (
 	"github.com/hex-api-go/internal/user/infrastructure/acl/gateway"
 	"github.com/hex-api-go/internal/user/infrastructure/database"
 	"github.com/hex-api-go/internal/user/infrastructure/http"
-	"github.com/hex-api-go/pkg/core/infrastructure/message_system/action"
-	"github.com/hex-api-go/pkg/core/infrastructure/message_system/channel"
+	messagesystem "github.com/hex-api-go/pkg/core/infrastructure/message_system"
 	"github.com/hex-api-go/pkg/core/infrastructure/message_system/channel/kafka"
 )
 
@@ -58,16 +57,20 @@ func (u *userModule) WithHttpProtocol(ctx context.Context, httpLib *fiber.App) *
 }
 
 func registerActions() {
-	action.AddActionHandler(createuser.NewComandHandler(userModuleInstance.repository))
-	action.AddActionHandler(getuser.NewQueryHandler(nil))
+	messagesystem.AddActionHandler(createuser.NewComandHandler(userModuleInstance.repository))
+	messagesystem.AddActionHandler(getuser.NewQueryHandler(nil))
 }
 
 func registerPublisher() {
-	channel.AddChannelConnection(
+	messagesystem.AddChannelConnection(
 		kafka.NewConnection("defaultConKafka", []string{"kafka:9092"}),
 	)
-	channel.AddPublisherChannel(kafka.NewPublisherChannelAdapterBuilder(
+
+	a := kafka.NewPublisherChannelAdapterBuilder(
 		"defaultConKafka",
 		"message_system.topic",
-	))
+	)
+	a.WithReplyChannelName("test_response_channel")
+	
+	messagesystem.AddPublisherChannel(a)
 }

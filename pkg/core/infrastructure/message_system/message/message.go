@@ -19,22 +19,23 @@ type (
 	MessageHandler interface {
 		Handle(message *Message) (*Message, error)
 	}
-	Channel interface {
-		Name() string
-	}
 	PublisherChannel interface {
-		Channel
+		Name() string
 		Send(message *Message) error
 	}
 	ConsumerChannel interface {
-		Channel
+		Name() string
 		Receive() (*Message, error)
 		Close() error
 	}
 	SubscriberChannel interface {
-		Channel
+		Name() string
 		Subscribe(callable ...func(m *Message))
 		Unsubscribe() error
+	}
+	Gateway interface {
+		Execute(msg *Message) (any, error)
+		IsSync() bool
 	}
 )
 
@@ -55,40 +56,37 @@ func (m MessageType) String() string {
 type (
 	customHeaders  map[string]string
 	messageHeaders struct {
-		Route         string
-		MessageType   MessageType
-		Schema        string
-		ContentType   string
-		Timestamp     time.Time
-		ReplyChannel  PublisherChannel
-		CustomHeaders customHeaders
-		CorrelationId string
-		ChannelName   string
-		MessageId     string
+		Route            string
+		MessageType      MessageType
+		Timestamp        time.Time
+		ReplyChannel     PublisherChannel
+		CustomHeaders    customHeaders
+		CorrelationId    string
+		ChannelName      string
+		MessageId        string
+		ReplyChannelName string
 	}
 )
 
 func NewMessageHeaders(
 	route string,
 	messageType MessageType,
-	schema string,
-	contentType string,
 	replyChannel PublisherChannel,
 	correlationId string,
 	channelName string,
+	replyChannelName string,
 ) *messageHeaders {
 	messageId := uuid.New().String()
 	return &messageHeaders{
-		Route:         route,
-		MessageType:   messageType,
-		Schema:        schema,
-		ContentType:   contentType,
-		Timestamp:     time.Now(),
-		ReplyChannel:  replyChannel,
-		CustomHeaders: make(customHeaders),
-		CorrelationId: correlationId,
-		ChannelName:   channelName,
-		MessageId:     messageId,
+		Route:            route,
+		MessageType:      messageType,
+		Timestamp:        time.Now(),
+		ReplyChannel:     replyChannel,
+		CustomHeaders:    make(customHeaders),
+		CorrelationId:    correlationId,
+		ChannelName:      channelName,
+		MessageId:        messageId,
+		ReplyChannelName: replyChannelName,
 	}
 }
 
@@ -97,15 +95,26 @@ func (m *messageHeaders) SetCustomHeaders(data customHeaders) {
 }
 
 func (m *messageHeaders) MarshalJSON() ([]byte, error) {
+
 	chs, err := json.Marshal(m.CustomHeaders)
 	if err != nil {
 		panic("[custom-header] cannot marshal.")
 	}
+
+	var customHeaders string
+
+	if len(chs) > 2 {
+		customHeaders = string(chs)
+	}
+
+	var replyChannelName = m.ReplyChannelName
+	if m.ReplyChannel != nil {
+		replyChannelName = m.ReplyChannel.Name()
+	}
+
 	return json.Marshal(struct {
 		Route         string    `json:"route"`
 		Type          string    `json:"type"`
-		Schema        string    `json:"schema"`
-		ContentType   string    `json:"contentType"`
 		Timestamp     time.Time `json:"timestamp"`
 		ReplyChannel  string    `json:"replyChannel"`
 		CustomHeaders string    `json:"customHeaders"`
@@ -115,11 +124,9 @@ func (m *messageHeaders) MarshalJSON() ([]byte, error) {
 	}{
 		m.Route,
 		m.MessageType.String(),
-		m.Schema,
-		m.ContentType,
 		m.Timestamp,
-		m.ReplyChannel.Name(),
-		string(chs),
+		replyChannelName,
+		customHeaders,
 		m.CorrelationId,
 		m.ChannelName,
 		m.MessageId,
@@ -127,8 +134,8 @@ func (m *messageHeaders) MarshalJSON() ([]byte, error) {
 }
 
 type Message struct {
-	payload         any
-	headers         *messageHeaders
+	payload any
+	headers *messageHeaders
 }
 
 func NewMessage(
@@ -155,7 +162,7 @@ func (m *Message) ReplyRequired() bool {
 
 func (m *Message) MarshalJSON() ([]byte, error) {
 	return json.Marshal(struct {
-		Payload any          `json:"payload"`
+		Payload any             `json:"payload"`
 		Headers *messageHeaders `json:"headers"`
 	}{
 		m.payload,

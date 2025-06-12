@@ -15,26 +15,41 @@ func GatewayReferenceName(referenceName string) string {
 }
 
 type GatewayBuilder struct {
-	referenceName           string
-	messageProcessorBuilder *router.MessageRouterBuilder
+	referenceName      string
+	requestChannelName string
 }
 
-func NewGatewayBuilder(referenceName string, messageProcessorBuilder *router.MessageRouterBuilder) *GatewayBuilder {
+func NewGatewayBuilder(
+	referenceName string,
+	requestChannelName string,
+) *GatewayBuilder {
 	return &GatewayBuilder{
-		referenceName:           referenceName,
-		messageProcessorBuilder: messageProcessorBuilder,
+		referenceName:      referenceName,
+		requestChannelName: requestChannelName,
 	}
 }
 
-func (b *GatewayBuilder) GetName() string {
+func (b *GatewayBuilder) ReferenceName() string {
 	return GatewayReferenceName(b.referenceName)
 }
 
-func (b *GatewayBuilder) Build(container container.Container[any, any]) error {
-	routerBuilder := b.messageProcessorBuilder.Build(container)
-	buildedGateway := NewGateway(routerBuilder)
-	container.Set(b.GetName(), buildedGateway)
-	return nil
+func (b *GatewayBuilder) Build(
+	container container.Container[any, any],
+) (message.Gateway, error) {
+	requestChannel, err := container.Get(b.requestChannelName)
+
+	if err != nil {
+		panic(fmt.Sprintf("[gateway-builder] %s", err))
+	}
+
+	messageRouterProcessor := router.NewMessageRouterBuilder()
+	messageRouterProcessor.WithRouterComponent(
+		router.NewSendToChannel(
+			requestChannel.(message.PublisherChannel),
+		),
+	)
+	messageProcessor := messageRouterProcessor.Build(container)
+	return NewGateway(messageProcessor), nil
 }
 
 type Gateway struct {
@@ -52,29 +67,23 @@ func NewGateway(
 func (g *Gateway) Execute(
 	msg *message.Message,
 ) (any, error) {
-
 	previousReplyChannel := msg.GetHeaders().ReplyChannel
 	messageToProcess := message.NewMessageBuilderFromMessage(msg)
 
-	var internalReplyChannel *channel.PointToPointChannel
-	if msg.ReplyRequired() && previousReplyChannel == nil {
-		internalReplyChannel = g.makeInternalChannel()
-	}
-
+	internalReplyChannel := g.makeInternalChannel()
 	messageToProcess.WithReplyChannel(internalReplyChannel)
-	resultMessage, err := g.messageProcessor.Handle(messageToProcess.Build())
+
+	_, err := g.messageProcessor.Handle(messageToProcess.Build())
 	if err != nil {
 		internalReplyChannel.Close()
 		return nil, err
 	}
 
-	if internalReplyChannel != nil {
-		resultMessage = g.receive(internalReplyChannel)
-	}
-
+	resultMessage := g.receive(internalReplyChannel)
 	if previousReplyChannel != nil {
 		previousReplyChannel.Send(resultMessage)
-	}	
+	}
+
 	return resultMessage.GetPayload(), nil
 }
 
@@ -87,4 +96,8 @@ func (g *Gateway) makeInternalChannel() *channel.PointToPointChannel {
 func (g *Gateway) receive(channel *channel.PointToPointChannel) *message.Message {
 	msg, _ := channel.Receive()
 	return msg.(*message.Message)
+}
+
+func (g *Gateway) IsSync() bool {
+	return true
 }

@@ -11,6 +11,7 @@ type MessageRouterBuilder struct {
 	hasRecipientList bool
 }
 
+// TODO: transformar em um composite e refatorar o gateway =)
 func NewMessageRouterBuilder() *MessageRouterBuilder {
 	return &MessageRouterBuilder{
 		filters:          []message.MessageHandler{},
@@ -76,7 +77,7 @@ func (r *messageRouter) Handle(msg *message.Message) (*message.Message, error) {
 	var resulError error
 	for _, r := range r.routers {
 		resultMessage, resulError = r.Handle(msg)
-		if resulError != nil || resultMessage == nil {
+		if resulError != nil {
 			break
 		}
 	}

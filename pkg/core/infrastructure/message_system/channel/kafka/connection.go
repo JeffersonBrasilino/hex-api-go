@@ -27,11 +27,6 @@ func NewConnection(name string, host []string) *connection {
 }
 
 func (c *connection) Connect() error {
-	c.createPublisher()
-	return nil
-}
-
-func (c *connection) createPublisher() error {
 	config := sarama.NewConfig()
 	config.Producer.Retry.Max = 3
 	config.Producer.Return.Successes = true
@@ -46,7 +41,6 @@ func (c *connection) createPublisher() error {
 		return fmt.Errorf("[kafka-connection] Error creating consumer %s", err)
 	}
 	c.consumer = consumer
-
 	return nil
 }
 

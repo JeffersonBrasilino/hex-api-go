@@ -1,62 +1,72 @@
 package bus
 
 import (
-	"fmt"
-
 	"github.com/google/uuid"
-	"github.com/hex-api-go/pkg/core/infrastructure/message_system/action"
+	"github.com/hex-api-go/pkg/core/infrastructure/message_system/container"
 	"github.com/hex-api-go/pkg/core/infrastructure/message_system/message"
 	"github.com/hex-api-go/pkg/core/infrastructure/message_system/message/endpoint"
 )
 
+var createdBus = container.NewGenericContainer[string, *CommandBus]()
+
 type CommandBus struct {
-	gateway *endpoint.Gateway
+	*messageBus
 }
 
-func NewCommandBus(gateway *endpoint.Gateway) *CommandBus {
-	return &CommandBus{
-		gateway: gateway,
+func NewCommandBus(gateway message.Gateway, channelName string) *CommandBus {
+
+	if createdBus.Has(channelName) {
+		bus, _ := createdBus.Get(channelName)
+		return bus
 	}
+
+	commandBus := &CommandBus{
+		messageBus: &messageBus{
+			gateway,
+		},
+	}
+	createdBus.Set(channelName, commandBus)
+	return commandBus
 }
 
-func (c *CommandBus) Send(action action.Action) (any, error) {
-	msg, err := c.buildMessage(action)
-	if err != nil {
-		return nil, err
-	}
+func (c *CommandBus) Send(action endpoint.Action) (any, error) {
+	builder := c.buildMessage()
+	msg := builder.WithPayload(action).
+		WithRoute(action.Name()).
+		Build()
 
-	result, err := c.gateway.Execute(msg)
-	if err != nil {
-		panic(err)
-	}
-
-	resultExecution, ok := result.([]any)
-	if !ok {
-		panic("[command bus] got unexpected result type for command result")
-	}
-
-	if resultExecution[1] != nil {
-		err, ok := resultExecution[1].(error)
-		if !ok {
-			panic("[command bus] unexpected result type for command")
-		}
-		return nil, err
-	}
-
-	return resultExecution[0], err
+	return c.sendMessage(msg)
 }
 
-func (c *CommandBus) buildMessage(
-	act action.Action,
-) (*message.Message, error) {
-	if act.Type() != message.Command {
-		return nil, fmt.Errorf("[command bus] Action %v not supported to CommandBus", act.Name())
-	}
+func (c *CommandBus) SendRaw(route string, payload []byte, headers map[string]string) (any, error) {
+	builder := c.buildMessage()
+	msg := builder.WithPayload(payload).
+		WithRoute(route).
+		WithCustomHeader(headers).
+		Build()
+	return c.sendMessage(msg)
+}
 
-	msg := message.NewMessageBuilder().
-		WithPayload(act).
+func (c *CommandBus) SendAsync(action endpoint.Action) error {
+	builder := c.buildMessage()
+	msg := builder.WithPayload(action).
+		WithRoute(action.Name()).
+		Build()
+	return c.publishMessage(msg)
+}
+
+func (c *CommandBus) SendRawAsync(route string, payload any, headers map[string]string) error {
+	builder := c.buildMessage()
+	msg := builder.WithPayload(payload).
+		WithRoute(route).
+		WithCustomHeader(headers).
+		Build()
+	return c.publishMessage(msg)
+}
+
+func (c *CommandBus) buildMessage() *message.MessageBuilder {
+	builder := message.NewMessageBuilder().
 		WithMessageType(message.Command).
-		WithCorrelationId(uuid.New().String()).
-		WithRoute(action.ActionReferenceName(act.Name()))
-	return msg.Build(), nil
+		WithCorrelationId(uuid.New().String())
+	return builder
 }

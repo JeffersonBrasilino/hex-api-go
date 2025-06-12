@@ -1,4 +1,4 @@
-FROM golang:1.23.4-alpine3.21 AS dev
+FROM golang:1.24-alpine3.22 AS dev
 
 
 RUN apk update && apk upgrade && apk add pkgconf \

@@ -1,7 +1,5 @@
 package createuser
 
-import "github.com/hex-api-go/pkg/core/infrastructure/message_system/message"
-
 type Command struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
@@ -13,10 +11,6 @@ func CreateCommand(Username, Password string) *Command {
 		Username,
 		Password,
 	}
-}
-
-func (c *Command) Type() message.MessageType {
-	return message.Command
 }
 
 func (c *Command) Name() string {
@@ -34,10 +28,6 @@ func NewCreatedCommand(Username, Password string) *CreatedCommand {
 		Username,
 		Password,
 	}
-}
-
-func (c *CreatedCommand) Type() message.MessageType {
-	return message.Event
 }
 
 func (c *CreatedCommand) Name() string {

@@ -131,6 +131,6 @@ func (c *consumerGateway) Execute() error {
 		return nil
 	}
 
-	c.gateway.Execute(msg)
+	//c.gateway.Execute(msg)
 	return nil
 }

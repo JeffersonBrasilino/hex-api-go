@@ -1,10 +1,8 @@
 package bus
 
 import (
-	"github.com/google/uuid"
 	"github.com/hex-api-go/pkg/core/infrastructure/message_system/container"
 	"github.com/hex-api-go/pkg/core/infrastructure/message_system/message"
-	"github.com/hex-api-go/pkg/core/infrastructure/message_system/message/endpoint"
 )
 
 var createdEventBus = container.NewGenericContainer[string, *EventBus]()
@@ -13,7 +11,7 @@ type EventBus struct {
 	*messageBus
 }
 
-func NewEventBus(gateway *endpoint.Gateway, channelName string) *EventBus {
+func NewEventBus(gateway message.Gateway, channelName string) *EventBus {
 
 	if createdBus.Has(channelName) {
 		bus, _ := createdEventBus.Get(channelName)
@@ -29,7 +27,7 @@ func NewEventBus(gateway *endpoint.Gateway, channelName string) *EventBus {
 	return bus
 }
 
-func (c *EventBus) Publish(action endpoint.Action) error {
+/* func (c *EventBus) Publish(action endpoint.Action) error {
 	builder := c.buildMessage()
 	msg := builder.WithPayload(action).
 		WithRoute(action.Name()).
@@ -51,4 +49,4 @@ func (c *EventBus) buildMessage() *message.MessageBuilder {
 		WithMessageType(message.Event).
 		WithCorrelationId(uuid.New().String())
 	return builder
-}
+} */

@@ -1,6 +1,7 @@
-package endpoint
+package handler
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/hex-api-go/pkg/core/infrastructure/message_system/container"
@@ -9,9 +10,7 @@ import (
 )
 
 type (
-	
 	Action interface {
-		Type() message.MessageType
 		Name() string
 	}
 
@@ -49,7 +48,7 @@ func (b *ActionHandleActivatorBuilder[TInput, TOutput]) Build(container containe
 	handlerActivator := NewActionHandlerActivator(b.handler)
 	chn := channel.NewPointToPointChannel(b.referenceName)
 	chn.Subscribe(func(msg *message.Message) {
-		handlerActivator.Handle(msg)
+		handlerActivator.Handle(msg.GetContext(), msg)
 	})
 	return chn, nil
 }
@@ -75,9 +74,9 @@ func NewActionHandlerActivator[
 }
 
 func (c *ActionHandleActivator[THandler, TInput, TOutput]) Handle(
+	ctx context.Context,
 	msg *message.Message,
 ) (*message.Message, error) {
-
 	action, ok := msg.GetPayload().(TInput)
 	if !ok {
 		return nil, fmt.Errorf("[action-handler] cannot process action: handler for action does not exists")
@@ -85,14 +84,19 @@ func (c *ActionHandleActivator[THandler, TInput, TOutput]) Handle(
 
 	output, err := c.executeAction(action)
 
-	resultMessage := message.NewMessageBuilder().
+	resultMessageBuilder := message.NewMessageBuilder().
 		WithChannelName(msg.GetHeaders().ReplyChannel.Name()).
-		WithMessageType(message.Document).
-		WithPayload([]any{output, err}).
-		Build()
+		WithMessageType(message.Document)
 
+	if err != nil {
+		resultMessageBuilder.WithPayload(err)
+	} else {
+		resultMessageBuilder.WithPayload(output)
+	}
+
+	resultMessage := resultMessageBuilder.Build()
 	if msg.GetHeaders().ReplyChannel != nil {
-		msg.GetHeaders().ReplyChannel.Send(resultMessage)
+		msg.GetHeaders().ReplyChannel.Send(ctx, resultMessage)
 	}
 
 	return resultMessage, err

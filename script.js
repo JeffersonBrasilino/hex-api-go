@@ -3,11 +3,26 @@ import { sleep } from "k6";
 import { check } from "k6";
 
 export const options = {
-  // A number specifying the number of VUs to run concurrently.
-  vus: 500,
-  //iterations: 300,
-  // A string specifying the total duration of the test run.
-  duration: "30s",
+  scenarios: {
+    constant_request_rate: {
+      executor: "constant-vus",
+      vus: 300,
+      duration: "1m",
+      //gracefulStop: "5s",
+    },
+
+    /* one_parallel_request: {
+      executor: "per-vu-iterations",
+      vus: 3,
+      iterations: 1,
+      gracefulStop: "5s",
+    }, */
+  },
+  thresholds: {
+    //http_req_duration: ["p(95)<500"], // 95% das requisições devem ser menores que 500ms
+    http_req_failed: ["rate<0.01"], // Menos de 1% das requisições devem falhar
+    //http_reqs: ["count>1000"], // Mais de 1000 requisições totais
+  },
 };
 
 // The function that defines VU logic.
@@ -27,5 +42,5 @@ export default function () {
   check(res, {
     "is status 200": (r) => r.status === 200,
   });
-  //sleep(1);
+  sleep(1);
 }

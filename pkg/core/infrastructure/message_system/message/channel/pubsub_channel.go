@@ -17,10 +17,7 @@ func NewPubSubChannel(name string) *PubSubChannel {
 }
 
 func (p *PubSubChannel) Send(msg *message.Message) error {
-	go func(ch chan<- *message.Message) {
-		p.channel <- msg
-	}(p.channel)
-
+	p.channel <- msg
 	return nil
 }
 

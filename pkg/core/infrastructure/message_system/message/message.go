@@ -1,6 +1,7 @@
 package message
 
 import (
+	"context"
 	"encoding/json"
 	"time"
 
@@ -17,11 +18,11 @@ const (
 type (
 	MessageType    int8
 	MessageHandler interface {
-		Handle(message *Message) (*Message, error)
+		Handle(ctx context.Context, message *Message) (*Message, error)
 	}
 	PublisherChannel interface {
 		Name() string
-		Send(message *Message) error
+		Send(ctx context.Context, message *Message) error
 	}
 	ConsumerChannel interface {
 		Name() string
@@ -34,8 +35,7 @@ type (
 		Unsubscribe() error
 	}
 	Gateway interface {
-		Execute(msg *Message) (any, error)
-		IsSync() bool
+		Execute(parentContext context.Context, msg *Message) (any, error)
 	}
 )
 
@@ -136,15 +136,18 @@ func (m *messageHeaders) MarshalJSON() ([]byte, error) {
 type Message struct {
 	payload any
 	headers *messageHeaders
+	context context.Context
 }
 
 func NewMessage(
 	payload any,
 	headers *messageHeaders,
+	context context.Context,
 ) *Message {
 	return &Message{
 		payload: payload,
 		headers: headers,
+		context: context,
 	}
 }
 
@@ -154,6 +157,14 @@ func (m *Message) GetPayload() any {
 
 func (m *Message) GetHeaders() *messageHeaders {
 	return m.headers
+}
+
+func (m *Message) SetContext(ctx context.Context) {
+	m.context = ctx
+}
+
+func (m *Message) GetContext() context.Context {
+	return m.context
 }
 
 func (m *Message) ReplyRequired() bool {

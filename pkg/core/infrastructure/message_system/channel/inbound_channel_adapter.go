@@ -1,8 +1,6 @@
 package channel
 
 import (
-	"fmt"
-
 	"github.com/hex-api-go/pkg/core/infrastructure/message_system/message"
 	"github.com/hex-api-go/pkg/core/infrastructure/message_system/message/router"
 )
@@ -17,14 +15,13 @@ type InboundChannelAdapterBuilder struct {
 func (i *InboundChannelAdapterBuilder) WithMessageFilter(
 	filter router.FilterFunc,
 ) *InboundChannelAdapterBuilder {
-	i.filters = append(i.filters, router.NewMessageFilter(filter))
+	//i.filters = append(i.filters, router.NewMessageFilter(filter))
 	return i
 }
 
 func (i *InboundChannelAdapterBuilder) WithDeadLetterChannelName(
 	channelName string,
 ) *InboundChannelAdapterBuilder {
-	fmt.Println("WithDlqChannelName --->", channelName)
 	i.dlqChannelName = channelName
 	return i
 }

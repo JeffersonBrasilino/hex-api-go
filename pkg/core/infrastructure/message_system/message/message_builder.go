@@ -1,5 +1,9 @@
 package message
 
+import (
+	"context"
+)
+
 type MessageBuilder struct {
 	payload          any
 	route            string
@@ -9,6 +13,7 @@ type MessageBuilder struct {
 	correlationId    string
 	channelName      string
 	replyChannelName string
+	context          context.Context
 }
 
 func NewMessageBuilder() *MessageBuilder {
@@ -24,6 +29,7 @@ func NewMessageBuilderFromMessage(msg *Message) *MessageBuilder {
 		customHeaders: msg.GetHeaders().CustomHeaders,
 		correlationId: msg.GetHeaders().CorrelationId,
 		channelName:   msg.GetHeaders().ChannelName,
+		context:       msg.GetContext(),
 	}
 }
 
@@ -67,9 +73,15 @@ func (b *MessageBuilder) WithReplyChannelName(value string) *MessageBuilder {
 	return b
 }
 
+func (b *MessageBuilder) WithContext(value context.Context) *MessageBuilder {
+	b.context = value
+	return b
+}
+
 func (b *MessageBuilder) Build() *Message {
 	headers := b.buildHeaders()
-	return NewMessage(b.payload, headers)
+	msg := NewMessage(b.payload, headers, b.context)
+	return msg
 }
 
 func (b *MessageBuilder) buildHeaders() *messageHeaders {

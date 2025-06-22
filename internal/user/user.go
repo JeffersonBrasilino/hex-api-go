@@ -15,6 +15,7 @@ import (
 	"github.com/hex-api-go/internal/user/infrastructure/http"
 	messagesystem "github.com/hex-api-go/pkg/core/infrastructure/message_system"
 	"github.com/hex-api-go/pkg/core/infrastructure/message_system/channel/kafka"
+	"github.com/hex-api-go/pkg/core/infrastructure/message_system/message"
 )
 
 var userModuleInstance *userModule
@@ -71,6 +72,27 @@ func registerPublisher() {
 		"message_system.topic",
 	)
 	a.WithReplyChannelName("test_response_channel")
-	
+	a.WithBeforeInterceptors(
+		&aProcessor{},
+		//&bProcessor{},
+	)
+	a.WithAfterInterceptors(
+		//&aProcessor{},
+		&bProcessor{},
+	)
 	messagesystem.AddPublisherChannel(a)
+}
+
+type aProcessor struct{}
+
+func (a *aProcessor) Handle(ctx context.Context, msg *message.Message) (*message.Message, error) {
+	fmt.Println("PRIMEIRO PROCESSOR", msg.GetPayload())
+	return msg, nil
+}
+
+type bProcessor struct{}
+
+func (b *bProcessor) Handle(ctx context.Context, msg *message.Message) (*message.Message, error) {
+	fmt.Println("SEGUNDO PROCESSOR", msg.GetPayload())
+	return msg, nil
 }

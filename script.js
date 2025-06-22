@@ -6,9 +6,8 @@ export const options = {
   scenarios: {
     constant_request_rate: {
       executor: "constant-vus",
-      vus: 300,
+      vus: 500,
       duration: "1m",
-      //gracefulStop: "5s",
     },
 
     /* one_parallel_request: {

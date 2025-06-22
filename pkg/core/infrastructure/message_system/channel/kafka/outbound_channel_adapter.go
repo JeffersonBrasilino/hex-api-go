@@ -70,14 +70,12 @@ func (a *outboundChannelAdapter) Name() string {
 }
 
 func (a *outboundChannelAdapter) Send(ctx context.Context, msg *message.Message) error {
-	//fmt.Println(a.topicName, " ->> send message")
-	//msg.GetHeaders().ChannelName = a.topicName
-	//msgTosend := a.messageTranslator.FromMessage(msg)
-	//_, _, err := a.producer.SendMessage(msgTosend)
+	msgTosend := a.messageTranslator.FromMessage(msg)
+	_, _, err := a.producer.SendMessage(msgTosend)
 	select {
 	case <-ctx.Done():
 		return fmt.Errorf("[KAFKA OUTBOUND CHANNEL] Context cancelled after processing, before sending result. ")
 	default:
 	}
-	return nil
+	return err
 }

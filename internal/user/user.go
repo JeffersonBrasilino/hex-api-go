@@ -72,14 +72,6 @@ func registerPublisher() {
 		"message_system.topic",
 	)
 	a.WithReplyChannelName("test_response_channel")
-	a.WithBeforeInterceptors(
-		&aProcessor{},
-		//&bProcessor{},
-	)
-	a.WithAfterInterceptors(
-		//&aProcessor{},
-		&bProcessor{},
-	)
 	messagesystem.AddPublisherChannel(a)
 }
 

@@ -1,11 +1,15 @@
 package bus
 
 import (
-	"github.com/hex-api-go/pkg/core/infrastructure/message_system/container"
+	"context"
+	"sync"
+
+	"github.com/google/uuid"
 	"github.com/hex-api-go/pkg/core/infrastructure/message_system/message"
+	"github.com/hex-api-go/pkg/core/infrastructure/message_system/message/handler"
 )
 
-var createdEventBus = container.NewGenericContainer[string, *EventBus]()
+var createdEventBus sync.Map
 
 type EventBus struct {
 	*messageBus
@@ -13,35 +17,35 @@ type EventBus struct {
 
 func NewEventBus(gateway message.Gateway, channelName string) *EventBus {
 
-	if createdBus.Has(channelName) {
-		bus, _ := createdEventBus.Get(channelName)
-		return bus
+	bus, ok := createdEventBus.Load(channelName)
+	if ok {
+		return bus.(*EventBus)
 	}
 
-	bus := &EventBus{
+	eventBus := &EventBus{
 		messageBus: &messageBus{
 			gateway,
 		},
 	}
-	createdEventBus.Set(channelName, bus)
-	return bus
+	createdEventBus.Store(channelName, bus)
+	return eventBus
 }
 
-/* func (c *EventBus) Publish(action endpoint.Action) error {
+func (c *EventBus) Publish(ctx context.Context, action handler.Action) error {
 	builder := c.buildMessage()
 	msg := builder.WithPayload(action).
 		WithRoute(action.Name()).
 		Build()
-	return c.publishMessage(msg)
+	return c.publishMessage(ctx, msg)
 }
 
-func (c *EventBus) PublishRaw(route string, payload any, headers map[string]string) error {
+func (c *EventBus) PublishRaw(ctx context.Context, route string, payload any, headers map[string]string) error {
 	builder := c.buildMessage()
 	msg := builder.WithPayload(payload).
 		WithRoute(route).
 		WithCustomHeader(headers).
 		Build()
-	return c.publishMessage(msg)
+	return c.publishMessage(ctx, msg)
 }
 
 func (c *EventBus) buildMessage() *message.MessageBuilder {
@@ -49,4 +53,4 @@ func (c *EventBus) buildMessage() *message.MessageBuilder {
 		WithMessageType(message.Event).
 		WithCorrelationId(uuid.New().String())
 	return builder
-} */
+}

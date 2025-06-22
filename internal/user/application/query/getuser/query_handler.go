@@ -1,6 +1,7 @@
 package getuser
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -15,7 +16,7 @@ func NewQueryHandler(dataSource contract.UserDataSource) *QueryHandler {
 	return &QueryHandler{dataSource}
 }
 
-func (h *QueryHandler) Handle(data *Query) (any, error) {
+func (h *QueryHandler) Handle(ctx context.Context, data *Query) (any, error) {
 	time.Sleep(time.Second * 1)
 	fmt.Println("get user > handle", data)
 	/* res, err := h.dataSource.WithGateway(data.DataSource).GetPerson()

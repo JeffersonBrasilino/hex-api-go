@@ -1,11 +1,15 @@
 package bus
 
 import (
-	"github.com/hex-api-go/pkg/core/infrastructure/message_system/container"
+	"context"
+	"sync"
+
+	"github.com/google/uuid"
 	"github.com/hex-api-go/pkg/core/infrastructure/message_system/message"
+	"github.com/hex-api-go/pkg/core/infrastructure/message_system/message/handler"
 )
 
-var createdQueryBus = container.NewGenericContainer[string, *QueryBus]()
+var createdQueryBus sync.Map
 
 type QueryBus struct {
 	*messageBus
@@ -13,53 +17,53 @@ type QueryBus struct {
 
 func NewQueryBus(gateway message.Gateway, channelName string) *QueryBus {
 
-	if createdQueryBus.Has(channelName) {
-		bus, _ := createdQueryBus.Get(channelName)
-		return bus
+	bus, ok := createdEventBus.Load(channelName)
+	if ok {
+		return bus.(*QueryBus)
 	}
-	bus := &QueryBus{
+	queryBus := &QueryBus{
 		messageBus: &messageBus{
 			gateway,
 		},
 	}
 
-	createdQueryBus.Set(channelName, bus)
-	return bus
+	createdQueryBus.Store(channelName, bus)
+	return queryBus
 }
 
-/* func (c *QueryBus) Send(action endpoint.Action) (any, error) {
+func (c *QueryBus) Send(ctx context.Context, action handler.Action) (any, error) {
 	builder := c.buildMessage()
 	msg := builder.WithPayload(action).
 		WithRoute(action.Name()).
 		Build()
 
-	return c.sendMessage(msg)
+	return c.sendMessage(ctx, msg)
 }
 
-func (c *QueryBus) SendRaw(route string, payload []byte, headers map[string]string) (any, error) {
+func (c *QueryBus) SendRaw(ctx context.Context, route string, payload []byte, headers map[string]string) (any, error) {
 	builder := c.buildMessage()
 	msg := builder.WithPayload(payload).
 		WithRoute(route).
 		WithCustomHeader(headers).
 		Build()
-	return c.sendMessage(msg)
-} */
+	return c.sendMessage(ctx, msg)
+}
 
-/* func (c *QueryBus) SendAsync(action endpoint.Action) error {
+func (c *QueryBus) SendAsync(ctx context.Context, action handler.Action) error {
 	builder := c.buildMessage()
 	msg := builder.WithPayload(action).
 		WithRoute(action.Name()).
 		Build()
-	return c.publishMessage(msg)
+	return c.publishMessage(ctx, msg)
 }
 
-func (c *QueryBus) SendRawAsync(route string, payload any, headers map[string]string) error {
+func (c *QueryBus) SendRawAsync(ctx context.Context, route string, payload any, headers map[string]string) error {
 	builder := c.buildMessage()
 	msg := builder.WithPayload(payload).
 		WithRoute(route).
 		WithCustomHeader(headers).
 		Build()
-	return c.publishMessage(msg)
+	return c.publishMessage(ctx, msg)
 }
 
 func (c *QueryBus) buildMessage() *message.MessageBuilder {
@@ -68,4 +72,3 @@ func (c *QueryBus) buildMessage() *message.MessageBuilder {
 		WithCorrelationId(uuid.New().String())
 	return builder
 }
- */

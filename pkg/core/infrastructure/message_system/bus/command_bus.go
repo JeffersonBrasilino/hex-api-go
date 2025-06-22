@@ -2,14 +2,14 @@ package bus
 
 import (
 	"context"
+	"sync"
 
 	"github.com/google/uuid"
-	"github.com/hex-api-go/pkg/core/infrastructure/message_system/container"
 	"github.com/hex-api-go/pkg/core/infrastructure/message_system/message"
 	"github.com/hex-api-go/pkg/core/infrastructure/message_system/message/handler"
 )
 
-var createdBus = container.NewGenericContainer[string, *CommandBus]()
+var createdBus sync.Map
 
 type CommandBus struct {
 	*messageBus
@@ -17,17 +17,17 @@ type CommandBus struct {
 
 func NewCommandBus(gateway message.Gateway, channelName string) *CommandBus {
 
-	if createdBus.Has(channelName) {
-		bus, _ := createdBus.Get(channelName)
-		return bus
+	bus, ok := createdBus.Load(channelName)
+	if ok {
+		return bus.(*CommandBus)
 	}
-
+	
 	commandBus := &CommandBus{
 		messageBus: &messageBus{
 			gateway,
 		},
 	}
-	createdBus.Set(channelName, commandBus)
+	createdBus.Store(channelName, commandBus)
 	return commandBus
 }
 

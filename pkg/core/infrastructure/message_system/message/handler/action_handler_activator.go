@@ -15,7 +15,7 @@ type (
 	}
 
 	ActionHandler[T Action, U any] interface {
-		Handle(action T) (U, error)
+		Handle(ctx context.Context, action T) (U, error)
 	}
 )
 
@@ -82,7 +82,7 @@ func (c *ActionHandleActivator[THandler, TInput, TOutput]) Handle(
 		return nil, fmt.Errorf("[action-handler] cannot process action: handler for action does not exists")
 	}
 
-	output, err := c.executeAction(action)
+	output, err := c.executeAction(ctx, action)
 
 	resultMessageBuilder := message.NewMessageBuilder().
 		WithChannelName(msg.GetHeaders().ReplyChannel.Name()).
@@ -103,8 +103,9 @@ func (c *ActionHandleActivator[THandler, TInput, TOutput]) Handle(
 }
 
 func (c *ActionHandleActivator[THandler, TInput, TOutput]) executeAction(
+	ctx context.Context,
 	args TInput,
 ) (TOutput, error) {
-	result, err := c.handler.Handle(args)
+	result, err := c.handler.Handle(ctx, args)
 	return result, err
 }

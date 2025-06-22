@@ -107,11 +107,6 @@ func (m *messageHeaders) MarshalJSON() ([]byte, error) {
 		customHeaders = string(chs)
 	}
 
-	var replyChannelName = m.ReplyChannelName
-	if m.ReplyChannel != nil {
-		replyChannelName = m.ReplyChannel.Name()
-	}
-
 	return json.Marshal(struct {
 		Route         string    `json:"route"`
 		Type          string    `json:"type"`
@@ -125,7 +120,7 @@ func (m *messageHeaders) MarshalJSON() ([]byte, error) {
 		m.Route,
 		m.MessageType.String(),
 		m.Timestamp,
-		replyChannelName,
+		m.ReplyChannelName,
 		customHeaders,
 		m.CorrelationId,
 		m.ChannelName,

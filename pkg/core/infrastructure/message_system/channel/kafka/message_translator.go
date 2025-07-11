@@ -2,14 +2,11 @@ package kafka
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/IBM/sarama"
 	"github.com/hex-api-go/pkg/core/infrastructure/message_system/message"
 )
-
-func ToMessage(data any) *message.Message {
-	return &message.Message{}
-}
 
 type MessageTranslator struct{}
 
@@ -39,4 +36,9 @@ func (m *MessageTranslator) FromMessage(msg *message.Message) *sarama.ProducerMe
 		Value:   sarama.StringEncoder(payload),
 		Headers: saramaHeaders,
 	}
+}
+
+func (m *MessageTranslator) ToMessage(data *sarama.ConsumerMessage) *message.Message {
+	fmt.Println("toMessage called on kafka message translator")
+	return &message.Message{}
 }

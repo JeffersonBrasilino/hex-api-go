@@ -2,6 +2,7 @@ package messagesystem
 
 import (
 	"fmt"
+	"log/slog"
 
 	"github.com/hex-api-go/pkg/core/infrastructure/message_system/bus"
 	"github.com/hex-api-go/pkg/core/infrastructure/message_system/container"
@@ -15,6 +16,7 @@ var (
 	defaultQueryChannelName   = "default.channel.query"
 	gatewayBuilders           = container.NewGenericContainer[string, BuildableComponent[message.Gateway]]()
 	outboundChannelBuilders   = container.NewGenericContainer[string, BuildableComponent[message.PublisherChannel]]()
+	pollingConsumerBuilders   = container.NewGenericContainer[string, BuildableComponent[message.InboundChannelAdapter]]()
 	channelConnections        = container.NewGenericContainer[string, ChannelConnection]()
 	messageSystemContainer    = container.NewGenericContainer[any, any]()
 )
@@ -70,7 +72,6 @@ func AddPublisherChannel(publisher BuildableComponent[message.PublisherChannel])
 			),
 		)
 	}
-
 	outboundChannelBuilders.Set(publisher.ReferenceName(), publisher)
 }
 
@@ -85,9 +86,7 @@ func buildOutboundChannels(container container.Container[any, any]) {
 				),
 			)
 		}
-
 		container.Set(v.ReferenceName(), outboundChannel)
-
 	}
 }
 
@@ -115,7 +114,6 @@ func AddChannelConnection(con ChannelConnection) {
 			),
 		)
 	}
-
 	channelConnections.Set(con.ReferenceName(), con)
 }
 
@@ -131,6 +129,28 @@ func buildChannelConnections(container container.Container[any, any]) {
 			)
 		}
 		container.Set(v.ReferenceName(), v)
+	}
+}
+
+func AddConsumerChannel(inboundChannel BuildableComponent[message.InboundChannelAdapter]) {
+	if pollingConsumerBuilders.Has(inboundChannel.ReferenceName()) {
+		panic(
+			fmt.Sprintf(
+				"[consumer-channel] channel %s already exists",
+				inboundChannel.ReferenceName(),
+			),
+		)
+	}
+	pollingConsumerBuilders.Set(inboundChannel.ReferenceName(), inboundChannel)
+}
+
+func buildInboundChannels(container container.Container[any, any]) {
+	for _, v := range pollingConsumerBuilders.GetAll() {
+		inboundChannel, err := v.Build(container)
+		if err != nil {
+			panic(fmt.Sprintf("[consumer-channel] %s", err))
+		}
+		container.Set(v.ReferenceName(), inboundChannel)
 	}
 }
 
@@ -162,7 +182,12 @@ func Start() {
 	registerDefaultQueryBus()
 	buildChannelConnections(messageSystemContainer)
 	buildOutboundChannels(messageSystemContainer)
+	buildInboundChannels(messageSystemContainer)
 	buildGateways(messageSystemContainer)
+
+	fmt.Println("================CONTAINER=================")
+	fmt.Println(messageSystemContainer.GetAll())
+	fmt.Println("================CONTAINER=================")
 }
 
 func CommandBus() *bus.CommandBus {
@@ -190,20 +215,43 @@ func getGatewayByReference(referenceName string) message.Gateway {
 	if ok != nil {
 		panic(fmt.Sprintf("bus for channel %s not found.", referenceName))
 	}
-	gtw, _ := found.(message.Gateway)
+
+	gtw, instance := found.(message.Gateway)
+	if !instance {
+		panic(fmt.Sprintf("bus for channel %s is not a gateway.", referenceName))
+	}
 	return gtw
 }
 
+func PollingConsumer(consumerName string) *endpoint.EventDrivenConsumer {
+	pollingConsumer, err := endpoint.
+		NewEventDrivenConsumerBuilder(consumerName).
+		Build(messageSystemContainer)
+
+	if err != nil {
+		panic(err)
+	}
+
+	return pollingConsumer
+}
+
 func Shutdown() {
+	slog.Info("[message-system] shutdowning...")
 	for _, v := range messageSystemContainer.GetAll() {
-		consumerChannel, ok := v.(message.ConsumerChannel)
+		if inboundChannel, ok := v.(*endpoint.EventDrivenConsumer); ok {
+			inboundChannel.Stop()
+		}
+		/* consumerChannel, ok := v.(message.ConsumerChannel)
 		if ok {
 			consumerChannel.Close()
+			return
 		}
 
 		subscriberChannel, ok := v.(message.SubscriberChannel)
 		if ok {
 			subscriberChannel.Unsubscribe()
-		}
+			return
+		} */
 	}
+	slog.Info("[message-system] shutdown completed")
 }

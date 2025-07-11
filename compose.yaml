@@ -15,6 +15,18 @@ services:
     mem_limit: 300m
     networks:
       - api
+  consumer:
+    container_name: ${APP_NAME}-consumer
+    image: golang:1.24-alpine3.22
+    working_dir: /app
+    volumes:
+      - ./:/app
+    env_file:
+      - .env
+    command: go run cmd/consumer/main.go
+    mem_limit: 300m
+    networks:
+      - api
 
   lazydocker:
     build:

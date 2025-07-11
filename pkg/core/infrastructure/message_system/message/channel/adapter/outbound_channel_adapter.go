@@ -79,7 +79,7 @@ func (
 	return b.messageTranslator
 }
 
-func (b *OutboundChannelAdapterBuilder[TMessageType]) BuildMessageHandler(
+func (b *OutboundChannelAdapterBuilder[TMessageType]) BuildOutboundAdapter(
 	outboundAdapter message.PublisherChannel,
 ) (*channel.PointToPointChannel, error) {
 
@@ -91,7 +91,7 @@ func (b *OutboundChannelAdapterBuilder[TMessageType]) BuildMessageHandler(
 	})
 
 	gatewayBuilder := endpoint.NewGatewayBuilder(
-		b.ReferenceName(),
+		b.referenceName,
 		b.channelName,
 	).
 		WithReplyChannel(b.replyChannelName)

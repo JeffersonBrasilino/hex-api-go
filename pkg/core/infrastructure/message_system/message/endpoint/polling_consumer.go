@@ -1,136 +1,176 @@
 package endpoint
 
 import (
+	"context"
 	"fmt"
+	"log/slog"
+	"sync"
 	"time"
 
+	"github.com/hex-api-go/pkg/core/infrastructure/message_system/container"
 	"github.com/hex-api-go/pkg/core/infrastructure/message_system/message"
 )
 
-type pollingConsumerBuilder struct {
-	channel                 message.ConsumerChannel
-	gateway                 *Gateway
-	fixedRateInMilliseconds int
-	rateDelayInMilliseconds int
-	stopOnError             bool
-	finishWhenNoMessages    bool
+var startedConsumers sync.Map
+
+type PollingConsumerBuilder struct {
+	referenceName string
 }
 
 func NewPolllingConsumerBuilder(
-	channel message.ConsumerChannel,
-	gateway *Gateway,
-) *pollingConsumerBuilder {
-	return &pollingConsumerBuilder{
-		channel:                 channel,
-		gateway:                 gateway,
-		fixedRateInMilliseconds: 1000,
-		rateDelayInMilliseconds: 0,
-		stopOnError:             true,
-		finishWhenNoMessages:    false,
+	referenceName string,
+) *PollingConsumerBuilder {
+	return &PollingConsumerBuilder{
+		referenceName: referenceName,
 	}
 }
 
-func (b *pollingConsumerBuilder) WithFixedRateInMilliseconds(
+func (b *PollingConsumerBuilder) Build(container container.Container[any, any]) (*PollingConsumer, error) {
+
+	_, hasExists := startedConsumers.Load(b.referenceName)
+	if hasExists {
+		return nil, fmt.Errorf("consumer %s already started", b.referenceName)
+	}
+
+	channel, ok := container.Get(b.referenceName)
+	if ok != nil {
+		panic(fmt.Sprintf("consumer channel %s not found.", b.referenceName))
+	}
+
+	inboundChannel, instance := channel.(message.InboundChannelAdapter)
+	if !instance {
+		panic(fmt.Sprintf("consumer channel %s is not a consumer channel.", b.referenceName))
+	}
+
+	gateway, err := container.Get(GatewayReferenceName(b.referenceName))
+	if err != nil {
+		return nil, fmt.Errorf(
+			"[polling-consumer] gateway %s does not exist",
+			b.referenceName,
+		)
+	}
+
+	startedConsumers.Store(b.referenceName, true)
+
+	return NewPollingConsumer(
+		gateway.(*Gateway),
+		inboundChannel,
+		b.referenceName,
+	), nil
+}
+
+type PollingConsumer struct {
+	referenceName                 string
+	pollIntervalMilliseconds      int
+	processingDelayMilliseconds   int
+	processingTimeoutMilliseconds int
+	stopOnError                   bool
+	hasRunning                    bool
+	gateway                       *Gateway
+	inboundChannelAdapter         message.InboundChannelAdapter
+}
+
+func NewPollingConsumer(
+	gateway *Gateway,
+	inboundChannelAdapter message.InboundChannelAdapter,
+	referenceName string,
+) *PollingConsumer {
+	return &PollingConsumer{
+		pollIntervalMilliseconds:      1000,
+		processingDelayMilliseconds:   0,
+		processingTimeoutMilliseconds: 100000,
+		stopOnError:                   true,
+		gateway:                       gateway,
+		inboundChannelAdapter:         inboundChannelAdapter,
+		referenceName:                 referenceName,
+	}
+}
+
+func (b *PollingConsumer) WithPollIntervalMilliseconds(
 	value int,
-) *pollingConsumerBuilder {
-	b.fixedRateInMilliseconds = value
+) *PollingConsumer {
+	b.pollIntervalMilliseconds = value
 	return b
 }
 
-func (b *pollingConsumerBuilder) WithRateDelayInMilliseconds(
+func (b *PollingConsumer) WithProcessingDelayMilliseconds(
 	value int,
-) *pollingConsumerBuilder {
-	b.rateDelayInMilliseconds = value
+) *PollingConsumer {
+	b.processingDelayMilliseconds = value
 	return b
 }
 
-func (b *pollingConsumerBuilder) WithStopOnError(
+func (b *PollingConsumer) WithStopOnError(
 	value bool,
-) *pollingConsumerBuilder {
+) *PollingConsumer {
 	b.stopOnError = value
 	return b
 }
 
-func (b *pollingConsumerBuilder) WithFinishWhenNoMessages(
-	value bool,
-) *pollingConsumerBuilder {
-	b.finishWhenNoMessages = value
+func (b *PollingConsumer) WithProcessingTimeoutMilliseconds(
+	value int,
+) *PollingConsumer {
+	b.processingTimeoutMilliseconds = value
 	return b
 }
 
-func (b *pollingConsumerBuilder) Build() *pollingConsumer {
-	return NewPollingConsumer(
-		b.fixedRateInMilliseconds,
-		b.rateDelayInMilliseconds,
-		b.stopOnError,
-		b.finishWhenNoMessages,
-	)
-}
-
-type pollingConsumer struct {
-	fixedRateInMilliseconds int
-	rateDelayInMilliseconds int
-	stopOnError             bool
-	finishWhenNoMessages    bool
-	hasRunning              bool
-}
-
-func NewPollingConsumer(
-	fixedRateInMilliseconds int,
-	rateDelayInMilliseconds int,
-	stopOnError bool,
-	finishWhenNoMessages bool,
-) *pollingConsumer {
-	return &pollingConsumer{
-		fixedRateInMilliseconds: fixedRateInMilliseconds,
-		rateDelayInMilliseconds: rateDelayInMilliseconds,
-		stopOnError:             stopOnError,
-		finishWhenNoMessages:    finishWhenNoMessages,
-	}
-}
-
-func (c *pollingConsumer) Run() error {
+func (c *PollingConsumer) Run(ctx context.Context) error {
+	slog.Info("Starting polling consumer", "consumerName", c.referenceName)
 	c.hasRunning = true
-	if c.rateDelayInMilliseconds > 0 {
-		time.Sleep(time.Millisecond * time.Duration(c.fixedRateInMilliseconds))
-	}
+
+	ticker := time.NewTicker(time.Millisecond * time.Duration(c.pollIntervalMilliseconds))
+	defer ticker.Stop()
 
 	for c.hasRunning {
-		fmt.Println("run consumer ok")
-		fmt.Println("hasRunnnig", c.hasRunning)
-		time.Sleep(time.Millisecond * time.Duration(c.fixedRateInMilliseconds))
+		select {
+		case <-ctx.Done():
+			c.Stop()
+			return ctx.Err()
+		case <-ticker.C:
+			msg, err := c.inboundChannelAdapter.ReceiveMessage(ctx)
+			if err != nil {
+				slog.Error("Error receiving message", "error", err, "name", c.referenceName)
+				if c.stopOnError {
+					c.Stop()
+					return err
+				}
+				continue
+			}
+			if msg == nil {
+				slog.Info("no message received", "consumerName", c.referenceName)
+				continue
+			}
+
+			if c.processingDelayMilliseconds > 0 {
+				time.Sleep(time.Millisecond * time.Duration(c.processingDelayMilliseconds))
+			}
+
+			go c.sendToGateway(ctx, msg)
+		}
 	}
+
 	return nil
 }
 
-func (c *pollingConsumer) Stop() {
-	c.hasRunning = false
-}
-
-type consumerGateway struct {
-	gateway *Gateway
-	channel message.ConsumerChannel
-}
-
-func NewConsumer(channel message.ConsumerChannel, gateway *Gateway) *consumerGateway {
-	return &consumerGateway{
-		gateway: gateway,
-		channel: channel,
-	}
-}
-
-func (c *consumerGateway) Execute() error {
-	msg, err := c.channel.Receive()
-	fmt.Println("received message", msg, err)
-
+func (c *PollingConsumer) sendToGateway(ctx context.Context, msg *message.Message) {
+	fmt.Println("sendToGateway", msg)
+	opCtx, cancel := context.WithTimeout(ctx,
+		time.Duration(c.processingTimeoutMilliseconds)*time.Millisecond,
+	)
+	defer cancel()
+	_, err := c.gateway.Execute(opCtx, msg)
 	if err != nil {
-		return err
+		slog.Error("failed to process message",
+			"error", err,
+			"name", c.referenceName,
+			"messageId", msg.GetHeaders().MessageId,
+		)
+		return
 	}
+	slog.Debug("message processed", "name", c.referenceName)
+}
 
-	if msg == nil {
-		return nil
-	}
-
-	//c.gateway.Execute(msg)
-	return nil
+func (c *PollingConsumer) Stop() {
+	c.hasRunning = false
+	startedConsumers.Delete(c.referenceName)
 }

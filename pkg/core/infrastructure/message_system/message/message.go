@@ -37,6 +37,10 @@ type (
 	Gateway interface {
 		Execute(parentContext context.Context, msg *Message) (any, error)
 	}
+	InboundChannelAdapter interface {
+		ReceiveMessage(ctx context.Context) (*Message, error)
+		Close() error
+	}
 )
 
 func (m MessageType) String() string {

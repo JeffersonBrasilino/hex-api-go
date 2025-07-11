@@ -11,7 +11,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/hex-api-go/internal/user"
 	messagesystem "github.com/hex-api-go/pkg/core/infrastructure/message_system"
-	"github.com/iyashjayesh/monigo"
+	"github.com/hex-api-go/pkg/core/infrastructure/message_system/channel/kafka"
 )
 
 func main() {
@@ -24,6 +24,13 @@ func main() {
 	user.Bootstrap().
 		WithHttpProtocol(ctx, app)
 
+	topicConsumerChannel := kafka.NewConsumerChannelAdapterBuilder(
+		"defaultConKafka",
+		"message_system.topic",
+		"test_consumer",
+	)
+	messagesystem.AddConsumerChannel(topicConsumerChannel)
+
 	messagesystem.Start()
 
 	go func() {
@@ -33,7 +40,17 @@ func main() {
 		}
 	}()
 
-	monigoInstance := &monigo.Monigo{
+	log.Printf("START CONSUMER......")
+	a := messagesystem.PollingConsumer("test_consumer").
+	WithAmountOfProcessors(1)
+	go a.Run(ctx)
+
+	/* go func ()  {
+		time.Sleep(time.Second * 10)
+		messagesystem.Shutdown()
+	}() */
+
+	/* monigoInstance := &monigo.Monigo{
 		ServiceName:             "hex-api-go", // Mandatory field
 		DashboardPort:           6060,         // Default is 8080
 		DataPointsSyncFrequency: "10s",        // Default is 5 Minutes
@@ -44,13 +61,12 @@ func main() {
 		MaxGoRoutines: 100000, // Default is 100
 	}
 
-	monigoInstance.Start()
+	monigoInstance.Start() */
 
+	
 	<-ctx.Done()
 	log.Printf("shutdowning...")
-	
 	messagesystem.Shutdown()
-
 	if err := app.Shutdown(); err != nil {
 		log.Printf("shutting down server error: %v\n", err)
 	}

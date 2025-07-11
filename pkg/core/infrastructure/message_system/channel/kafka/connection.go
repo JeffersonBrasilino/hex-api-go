@@ -44,11 +44,11 @@ func (c *connection) Connect() error {
 	return nil
 }
 
-func (c *connection) GetProducer() any {
+func (c *connection) GetProducer() sarama.SyncProducer {
 	return c.publisher
 }
 
-func (c *connection) GetConsumer() any {
+func (c *connection) GetConsumer() sarama.Consumer {
 	return c.consumer
 }
 

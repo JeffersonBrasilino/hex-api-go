@@ -64,7 +64,7 @@ func registerActions() {
 
 func registerPublisher() {
 	messagesystem.AddChannelConnection(
-		kafka.NewConnection("defaultConKafka", []string{"kafka:9092"}),
+		kafka.NewConnection("defaultConKafka", []string{"localhost:9092"}),
 	)
 
 	a := kafka.NewPublisherChannelAdapterBuilder(

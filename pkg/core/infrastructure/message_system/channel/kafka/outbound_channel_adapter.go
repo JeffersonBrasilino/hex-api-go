@@ -41,10 +41,10 @@ func (b *publisherChannelAdapterBuilder) Build(
 		)
 	}
 
-	producer := con.(*connection).GetProducer().(sarama.SyncProducer)
+	producer := con.(*connection).GetProducer()
 	adapter := NewOutboundChannelAdapter(producer, b.ChannelName(), b.MessageTranslator())
 
-	return b.OutboundChannelAdapterBuilder.BuildMessageHandler(adapter)
+	return b.OutboundChannelAdapterBuilder.BuildOutboundAdapter(adapter)
 }
 
 type outboundChannelAdapter struct {

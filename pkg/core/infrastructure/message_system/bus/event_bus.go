@@ -1,21 +1,12 @@
 package bus
 
-import (
-	"context"
-	"sync"
-
-	"github.com/google/uuid"
-	"github.com/hex-api-go/pkg/core/infrastructure/message_system/message"
-	"github.com/hex-api-go/pkg/core/infrastructure/message_system/message/handler"
-)
-
-var createdEventBus sync.Map
+/* var createdEventBus sync.Map
 
 type EventBus struct {
 	*messageBus
 }
 
-func NewEventBus(gateway message.Gateway, channelName string) *EventBus {
+func NewEventBus(gateway *endpoint.Gateway, channelName string) *EventBus {
 
 	bus, ok := createdEventBus.Load(channelName)
 	if ok {
@@ -54,3 +45,4 @@ func (c *EventBus) buildMessage() *message.MessageBuilder {
 		WithCorrelationId(uuid.New().String())
 	return builder
 }
+*/

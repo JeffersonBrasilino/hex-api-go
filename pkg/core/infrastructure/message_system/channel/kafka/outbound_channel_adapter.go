@@ -20,12 +20,13 @@ func NewPublisherChannelAdapterBuilder(
 	topicName string,
 ) *publisherChannelAdapterBuilder {
 	builder := &publisherChannelAdapterBuilder{
-		&adapter.OutboundChannelAdapterBuilder[*sarama.ProducerMessage]{},
+		adapter.NewOutboundChannelAdapterBuilder(
+			topicName,
+			topicName,
+			NewMessageTranslator(),
+		),
 		connectionReferenceName,
 	}
-	builder.WithChannelName(topicName)
-	builder.WithReferenceName(topicName)
-	builder.WithMessageTranslator(NewMessageTranslator())
 	return builder
 }
 

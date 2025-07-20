@@ -69,7 +69,7 @@ func (b *gatewayBuilder) WithReplyChannel(
 
 func (b *gatewayBuilder) Build(
 	container container.Container[any, any],
-) (message.Gateway, error) {
+) (*Gateway, error) {
 
 	rt := router.NewRouter()
 	if b.beforeInterceptors != nil {
@@ -97,7 +97,7 @@ func (b *gatewayBuilder) Build(
 	if b.deadLetterChannel != "" {
 		deadLetterChannel, err := container.Get(b.deadLetterChannel)
 		if err != nil {
-			panic(fmt.Sprintf("[async-gateway-builder] [dead-letter] %s", err))
+			panic(fmt.Sprintf("[gateway-builder] [dead-letter] %s", err))
 		}
 		messageProcessor = handler.NewDeadLetter(
 			deadLetterChannel.(message.PublisherChannel),
@@ -176,7 +176,7 @@ func (g *Gateway) executeAsync(ctx context.Context, responseChannel chan<- any, 
 
 	select {
 	case <-ctx.Done():
-		responseChannel <- fmt.Errorf("[AsyncGateway]: Context cancelled after processing, before sending result")
+		responseChannel <- fmt.Errorf("[gateway]: Context cancelled after processing, before sending result")
 		return
 	default:
 	}

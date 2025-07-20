@@ -5,7 +5,7 @@ import (
 
 	"github.com/IBM/sarama"
 )
-
+//TODO: REFATORAR ISTO - PRIORIDADE
 type connection struct {
 	name      string
 	host      []string

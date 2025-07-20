@@ -58,16 +58,8 @@ func (b *EventDrivenConsumerBuilder) Build(
 	container container.Container[any, any],
 ) (*EventDrivenConsumer, error) {
 
-	gateway, err := container.Get(GatewayReferenceName(b.referenceName))
+	anyChannel, err := container.Get(b.referenceName)
 	if err != nil {
-		return nil, fmt.Errorf(
-			"[event-driven-consumer] gateway %s does not exist",
-			b.referenceName,
-		)
-	}
-
-	channel, ok := container.Get(b.referenceName)
-	if ok != nil {
 		panic(
 			fmt.Sprintf(
 				"[event-driven-consumer] consumer channel %s not found.",
@@ -76,8 +68,8 @@ func (b *EventDrivenConsumerBuilder) Build(
 		)
 	}
 
-	inboundChannel, instance := channel.(message.InboundChannelAdapter)
-	if !instance {
+	inboundChannel, ok := anyChannel.(message.InboundChannelAdapter)
+	if !ok {
 		panic(
 			fmt.Sprintf(
 				"[event-driven-consumer] consumer channel %s is not a consumer channel.",
@@ -86,9 +78,23 @@ func (b *EventDrivenConsumerBuilder) Build(
 		)
 	}
 
+	gatewayBuilder := NewGatewayBuilder(inboundChannel.ReferenceName(), "")
+	if inboundChannel.DeadLetterChannelName() != "" {
+		gatewayBuilder.WithDeadLetterChannel(inboundChannel.DeadLetterChannelName())
+	}
+
+	if len(inboundChannel.BeforeProcessors()) > 0 {
+		gatewayBuilder.WithBeforeInterceptors(inboundChannel.BeforeProcessors()...)
+	}
+
+	if len(inboundChannel.AfterProcessors()) > 0 {
+		gatewayBuilder.WithAfterInterceptors(inboundChannel.AfterProcessors()...)
+	}
+
+	gateway, _ := gatewayBuilder.Build(container)
 	consumer := NewEventDrivenConsumer(
 		b.referenceName,
-		gateway.(*Gateway),
+		gateway,
 		inboundChannel,
 	)
 	return consumer, nil

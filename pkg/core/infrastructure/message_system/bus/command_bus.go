@@ -2,68 +2,73 @@ package bus
 
 import (
 	"context"
-	"sync"
 
 	"github.com/google/uuid"
 	"github.com/hex-api-go/pkg/core/infrastructure/message_system/message"
+	"github.com/hex-api-go/pkg/core/infrastructure/message_system/message/endpoint"
 	"github.com/hex-api-go/pkg/core/infrastructure/message_system/message/handler"
 )
 
-var createdBus sync.Map
-
 type CommandBus struct {
-	*messageBus
+	dispatcher *endpoint.MessageDispatcher
 }
 
-func NewCommandBus(gateway message.Gateway, channelName string) *CommandBus {
-
-	bus, ok := createdBus.Load(channelName)
-	if ok {
-		return bus.(*CommandBus)
-	}
-	
+func NewCommandBus(dispatcher *endpoint.MessageDispatcher) *CommandBus {
 	commandBus := &CommandBus{
-		messageBus: &messageBus{
-			gateway,
-		},
+		dispatcher: dispatcher,
 	}
-	createdBus.Store(channelName, commandBus)
 	return commandBus
 }
 
-func (c *CommandBus) Send(ctx context.Context, action handler.Action) (any, error) {
+func (c *CommandBus) Send(
+	ctx context.Context,
+	action handler.Action,
+) (any, error) {
 
 	builder := c.buildMessage()
 	msg := builder.WithPayload(action).
 		WithRoute(action.Name()).
 		Build()
-	return c.sendMessage(ctx, msg)
+	return c.dispatcher.SendMessage(ctx, msg)
 }
 
-func (c *CommandBus) SendRaw(ctx context.Context, route string, payload []byte, headers map[string]string) (any, error) {
+func (c *CommandBus) SendRaw(
+	ctx context.Context,
+	route string,
+	payload []byte,
+	headers map[string]string,
+) (any, error) {
 	builder := c.buildMessage()
 	msg := builder.WithPayload(payload).
 		WithRoute(route).
 		WithCustomHeader(headers).
 		Build()
-	return c.sendMessage(ctx, msg)
+	return c.dispatcher.SendMessage(ctx, msg)
 }
 
-func (c *CommandBus) SendAsync(ctx context.Context, action handler.Action) error {
+func (c *CommandBus) SendAsync(
+	ctx context.Context,
+	action handler.Action,
+) error {
 	builder := c.buildMessage()
 	msg := builder.WithPayload(action).
 		WithRoute(action.Name()).
 		Build()
-	return c.publishMessage(ctx, msg)
+	return c.dispatcher.PublishMessage(ctx, msg)
 }
 
-func (c *CommandBus) SendRawAsync(ctx context.Context, route string, payload any, headers map[string]string) error {
+func (c *CommandBus) SendRawAsync(
+	ctx context.Context,
+	route string,
+	payload any,
+	headers map[string]string,
+) error {
 	builder := c.buildMessage()
 	msg := builder.WithPayload(payload).
 		WithRoute(route).
 		WithCustomHeader(headers).
 		Build()
-	return c.publishMessage(ctx, msg)
+	return c.dispatcher.PublishMessage(ctx, msg)
 }
 
 func (c *CommandBus) buildMessage() *message.MessageBuilder {

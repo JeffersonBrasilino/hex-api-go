@@ -14,11 +14,11 @@ import (
 var (
 	defaultCommandChannelName = "default.channel.command"
 	defaultQueryChannelName   = "default.channel.query"
-	gatewayBuilders           = container.NewGenericContainer[string, BuildableComponent[message.Gateway]]()
 	outboundChannelBuilders   = container.NewGenericContainer[string, BuildableComponent[message.PublisherChannel]]()
-	pollingConsumerBuilders   = container.NewGenericContainer[string, BuildableComponent[message.InboundChannelAdapter]]()
+	inboundChannelBuilders    = container.NewGenericContainer[string, BuildableComponent[message.InboundChannelAdapter]]()
 	channelConnections        = container.NewGenericContainer[string, ChannelConnection]()
 	messageSystemContainer    = container.NewGenericContainer[any, any]()
+	activeEndpoints           = container.NewGenericContainer[string, any]()
 )
 
 type (
@@ -31,37 +31,7 @@ type (
 		Build(container container.Container[any, any]) (T, error)
 		ReferenceName() string
 	}
-	RegistrableComponent interface {
-		Register(container container.Container[any, any])
-	}
 )
-
-func AddGateway(builder BuildableComponent[message.Gateway]) {
-	if gatewayBuilders.Has(builder.ReferenceName()) {
-		panic(
-			fmt.Sprintf(
-				"[endpoint] gateway for channel %s already exists",
-				builder.ReferenceName(),
-			),
-		)
-	}
-	gatewayBuilders.Set(builder.ReferenceName(), builder)
-}
-
-func buildGateways(container container.Container[any, any]) {
-	for _, builder := range gatewayBuilders.GetAll() {
-		gateway, err := builder.Build(container)
-		if err != nil {
-			panic(
-				fmt.Sprintf(
-					"[endpoint] %s",
-					err,
-				),
-			)
-		}
-		container.Set(builder.ReferenceName(), gateway)
-	}
-}
 
 func AddPublisherChannel(publisher BuildableComponent[message.PublisherChannel]) {
 	if outboundChannelBuilders.Has(publisher.ReferenceName()) {
@@ -90,19 +60,20 @@ func buildOutboundChannels(container container.Container[any, any]) {
 	}
 }
 
-func registerDefaultCommandBus() {
-	AddGateway(endpoint.NewGatewayBuilder(
+func registerDefaultEndpoints(container container.Container[any, any]) {
+
+	commandDispatcher, _ := endpoint.NewMessageDispatcherBuilder(
 		defaultCommandChannelName,
 		"",
-	))
+	).Build(container)
 
-}
+	activeEndpoints.Set(defaultCommandChannelName, bus.NewCommandBus(commandDispatcher))
 
-func registerDefaultQueryBus() {
-	AddGateway(endpoint.NewGatewayBuilder(
+	queryDispatcher, _ := endpoint.NewMessageDispatcherBuilder(
 		defaultQueryChannelName,
 		"",
-	))
+	).Build(container)
+	activeEndpoints.Set(defaultQueryChannelName, bus.NewQueryBus(queryDispatcher))
 }
 
 func AddChannelConnection(con ChannelConnection) {
@@ -133,24 +104,24 @@ func buildChannelConnections(container container.Container[any, any]) {
 }
 
 func AddConsumerChannel(inboundChannel BuildableComponent[message.InboundChannelAdapter]) {
-	if pollingConsumerBuilders.Has(inboundChannel.ReferenceName()) {
+	if inboundChannelBuilders.Has(inboundChannel.ReferenceName()) {
 		panic(
 			fmt.Sprintf(
-				"[consumer-channel] channel %s already exists",
+				"[consumer-channel] consumer for channel %s already exists",
 				inboundChannel.ReferenceName(),
 			),
 		)
 	}
-	pollingConsumerBuilders.Set(inboundChannel.ReferenceName(), inboundChannel)
+	inboundChannelBuilders.Set(inboundChannel.ReferenceName(), inboundChannel)
 }
 
 func buildInboundChannels(container container.Container[any, any]) {
-	for _, v := range pollingConsumerBuilders.GetAll() {
+	for _, v := range inboundChannelBuilders.GetAll() {
 		inboundChannel, err := v.Build(container)
 		if err != nil {
 			panic(fmt.Sprintf("[consumer-channel] %s", err))
 		}
-		container.Set(v.ReferenceName(), inboundChannel)
+		container.Set(inboundChannel.ReferenceName(), inboundChannel)
 	}
 }
 
@@ -178,16 +149,10 @@ func AddActionHandler[
 }
 
 func Start() {
-	registerDefaultCommandBus()
-	registerDefaultQueryBus()
+	registerDefaultEndpoints(messageSystemContainer)
 	buildChannelConnections(messageSystemContainer)
 	buildOutboundChannels(messageSystemContainer)
 	buildInboundChannels(messageSystemContainer)
-	buildGateways(messageSystemContainer)
-
-	fmt.Println("================CONTAINER=================")
-	fmt.Println(messageSystemContainer.GetAll())
-	fmt.Println("================CONTAINER=================")
 }
 
 func CommandBus() *bus.CommandBus {
@@ -199,40 +164,65 @@ func QueryBus() *bus.QueryBus {
 }
 
 func CommandBusByChannel(channelName string) *bus.CommandBus {
-	return bus.NewCommandBus(getGatewayByReference(channelName), channelName)
+	dispatcher, err := activeEndpoints.Get(channelName)
+	if err != nil {
+		dispatcher, err := endpoint.NewMessageDispatcherBuilder(
+			channelName,
+			channelName,
+		).Build(messageSystemContainer)
+		if err != nil {
+			panic(err)
+		}
+
+		commandBus := bus.NewCommandBus(dispatcher)
+		activeEndpoints.Set(channelName, commandBus)
+		return commandBus
+	}
+
+	commandDispatcher, ok := dispatcher.(*bus.CommandBus)
+	if !ok {
+		panic(fmt.Sprintf("channel %s is not command channel", channelName))
+	}
+	return commandDispatcher
 }
 
 func QueryBusByChannel(channelName string) *bus.QueryBus {
-	return bus.NewQueryBus(getGatewayByReference(channelName), channelName)
+	dispatcher, err := activeEndpoints.Get(channelName)
+	if err != nil {
+		dispatcher, err := endpoint.NewMessageDispatcherBuilder(
+			channelName,
+			channelName,
+		).Build(messageSystemContainer)
+		if err != nil {
+			panic(err)
+		}
+
+		queryBus := bus.NewQueryBus(dispatcher)
+		activeEndpoints.Set(channelName, queryBus)
+		return queryBus
+	}
+
+	queryDispatcher, ok := dispatcher.(*bus.QueryBus)
+	if !ok {
+		panic(fmt.Sprintf("channel %s is not query channel", channelName))
+	}
+	return queryDispatcher
 }
 
-func EventBusByChannel(channelName string) *bus.EventBus {
+/* func EventBusByChannel(channelName string) *bus.EventBus {
 	return bus.NewEventBus(getGatewayByReference(channelName), channelName)
-}
+} */
 
-func getGatewayByReference(referenceName string) message.Gateway {
-	found, ok := messageSystemContainer.Get(endpoint.GatewayReferenceName(referenceName))
-	if ok != nil {
-		panic(fmt.Sprintf("bus for channel %s not found.", referenceName))
-	}
-
-	gtw, instance := found.(message.Gateway)
-	if !instance {
-		panic(fmt.Sprintf("bus for channel %s is not a gateway.", referenceName))
-	}
-	return gtw
-}
-
-func PollingConsumer(consumerName string) *endpoint.EventDrivenConsumer {
-	pollingConsumer, err := endpoint.
+func EventDrivenConsumer(consumerName string) (*endpoint.EventDrivenConsumer, error) {
+	consumer, err := endpoint.
 		NewEventDrivenConsumerBuilder(consumerName).
 		Build(messageSystemContainer)
 
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
-	return pollingConsumer
+	return consumer, nil
 }
 
 func Shutdown() {

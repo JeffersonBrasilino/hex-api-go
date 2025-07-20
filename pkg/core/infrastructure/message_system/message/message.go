@@ -34,10 +34,14 @@ type (
 		Subscribe(callable ...func(m *Message))
 		Unsubscribe() error
 	}
-	Gateway interface {
+/* 	Gateway interface {
 		Execute(parentContext context.Context, msg *Message) (any, error)
-	}
+	} */
 	InboundChannelAdapter interface {
+		ReferenceName() string
+		DeadLetterChannelName() string
+		AfterProcessors() []MessageHandler
+		BeforeProcessors() []MessageHandler
 		ReceiveMessage(ctx context.Context) (*Message, error)
 		Close() error
 	}

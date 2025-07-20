@@ -3,16 +3,14 @@ package adapter
 import (
 	"context"
 
-	messagesystem "github.com/hex-api-go/pkg/core/infrastructure/message_system"
 	"github.com/hex-api-go/pkg/core/infrastructure/message_system/message"
 	"github.com/hex-api-go/pkg/core/infrastructure/message_system/message/channel"
-	"github.com/hex-api-go/pkg/core/infrastructure/message_system/message/endpoint"
 )
 
 type OutboundChannelMessageTranslator[T any] interface {
 	FromMessage(msg *message.Message) T
 }
-
+//TODO: rever necessidade destes interceptors.
 type OutboundChannelAdapterBuilder[TMessageType any] struct {
 	referenceName     string
 	channelName       string
@@ -20,6 +18,32 @@ type OutboundChannelAdapterBuilder[TMessageType any] struct {
 	messageTranslator OutboundChannelMessageTranslator[TMessageType]
 	beforeProcessors  []message.MessageHandler
 	afterProcessors   []message.MessageHandler
+}
+
+type OutboundChannelAdapter struct {
+	outboundAdapter message.PublisherChannel
+}
+
+func NewOutboundChannelAdapterBuilder[T any](
+	referenceName string,
+	channelName string,
+	messageTranslator OutboundChannelMessageTranslator[T],
+) *OutboundChannelAdapterBuilder[T] {
+	return &OutboundChannelAdapterBuilder[T]{
+		referenceName:     referenceName,
+		channelName:       channelName,
+		messageTranslator: messageTranslator,
+		beforeProcessors:  []message.MessageHandler{},
+		afterProcessors:   []message.MessageHandler{},
+	}
+}
+
+func NewOutboundChannelAdapter(
+	adapter message.PublisherChannel,
+) *OutboundChannelAdapter {
+	return &OutboundChannelAdapter{
+		outboundAdapter: adapter,
+	}
 }
 
 func (b *OutboundChannelAdapterBuilder[TMessageType]) WithReferenceName(
@@ -90,35 +114,7 @@ func (b *OutboundChannelAdapterBuilder[TMessageType]) BuildOutboundAdapter(
 		outboundHandler.Handle(msg.GetContext(), msg)
 	})
 
-	gatewayBuilder := endpoint.NewGatewayBuilder(
-		b.referenceName,
-		b.channelName,
-	).
-		WithReplyChannel(b.replyChannelName)
-
-	if len(b.beforeProcessors) > 0 {
-		gatewayBuilder.WithBeforeInterceptors(b.beforeProcessors...)
-	}
-
-	if len(b.afterProcessors) > 0 {
-		gatewayBuilder.WithAfterInterceptors(b.afterProcessors...)
-	}
-
-	messagesystem.AddGateway(gatewayBuilder)
-
 	return chn, nil
-}
-
-type OutboundChannelAdapter struct {
-	outboundAdapter message.PublisherChannel
-}
-
-func NewOutboundChannelAdapter(
-	adapter message.PublisherChannel,
-) *OutboundChannelAdapter {
-	return &OutboundChannelAdapter{
-		outboundAdapter: adapter,
-	}
 }
 
 func (o *OutboundChannelAdapter) Handle(ctx context.Context, msg *message.Message) (*message.Message, error) {

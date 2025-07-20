@@ -24,18 +24,14 @@ func NewConsumerChannelAdapterBuilder(
 	consumerName string,
 ) *consumerChannelAdapterBuilder {
 	builder := &consumerChannelAdapterBuilder{
-		&adapter.InboundChannelAdapterBuilder[*sarama.ConsumerMessage]{
-			ReferenceName:     consumerName,
-			ChannelName:       topicName,
-			MessageTranslator: NewMessageTranslator(),
-		},
+		adapter.NewInboundChannelAdapterBuilder(
+			consumerName,
+			topicName,
+			NewMessageTranslator(),
+		),
 		connectionReferenceName,
 	}
 	return builder
-}
-
-func (c *consumerChannelAdapterBuilder) ReferenceName() string {
-	return c.InboundChannelAdapterBuilder.ReferenceName
 }
 
 func (c *consumerChannelAdapterBuilder) Build(

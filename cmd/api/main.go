@@ -11,7 +11,6 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/hex-api-go/internal/user"
 	messagesystem "github.com/hex-api-go/pkg/core/infrastructure/message_system"
-	"github.com/hex-api-go/pkg/core/infrastructure/message_system/channel/kafka"
 )
 
 func main() {
@@ -24,12 +23,19 @@ func main() {
 	user.Bootstrap().
 		WithHttpProtocol(ctx, app)
 
-	topicConsumerChannel := kafka.NewConsumerChannelAdapterBuilder(
+/* 	topicConsumerChannel := kafka.NewConsumerChannelAdapterBuilder(
 		"defaultConKafka",
 		"message_system.topic",
 		"test_consumer",
 	)
-	messagesystem.AddConsumerChannel(topicConsumerChannel)
+	messagesystem.AddConsumerChannel(topicConsumerChannel) */
+
+	/* topicConsumerChannel2 := kafka.NewConsumerChannelAdapterBuilder(
+		"defaultConKafka",
+		"message_system.topic",
+		"test_consumer2",
+	)
+	messagesystem.AddConsumerChannel(topicConsumerChannel2) */
 
 	messagesystem.Start()
 
@@ -40,12 +46,12 @@ func main() {
 		}
 	}()
 
-	log.Printf("START CONSUMER......")
+	/* log.Printf("START CONSUMER......")
 	a := messagesystem.PollingConsumer("test_consumer").
 	WithAmountOfProcessors(1)
 	go a.Run(ctx)
 
-	/* go func ()  {
+	go func ()  {
 		time.Sleep(time.Second * 10)
 		messagesystem.Shutdown()
 	}() */

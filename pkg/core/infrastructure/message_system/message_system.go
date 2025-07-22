@@ -209,11 +209,36 @@ func QueryBusByChannel(channelName string) *bus.QueryBus {
 	return queryDispatcher
 }
 
-/* func EventBusByChannel(channelName string) *bus.EventBus {
-	return bus.NewEventBus(getGatewayByReference(channelName), channelName)
-} */
+func EventBusByChannel(channelName string) *bus.EventBus {
+	dispatcher, err := activeEndpoints.Get(channelName)
+	if err != nil {
+		dispatcher, err := endpoint.NewMessageDispatcherBuilder(
+			channelName,
+			channelName,
+		).Build(messageSystemContainer)
+		if err != nil {
+			panic(err)
+		}
+
+		eventBus := bus.NewEventBus(dispatcher)
+		activeEndpoints.Set(channelName, eventBus)
+		return eventBus
+	}
+
+	eventDispatcher, ok := dispatcher.(*bus.EventBus)
+	if !ok {
+		panic(fmt.Sprintf("channel %s is not publish event channel", channelName))
+	}
+	return eventDispatcher
+}
 
 func EventDrivenConsumer(consumerName string) (*endpoint.EventDrivenConsumer, error) {
+
+	consumerActive, _ := activeEndpoints.Get(consumerName)
+	if consumerActive != nil {
+		return nil, fmt.Errorf("consumer for %s already exists", consumerName)
+	}
+
 	consumer, err := endpoint.
 		NewEventDrivenConsumerBuilder(consumerName).
 		Build(messageSystemContainer)
@@ -222,26 +247,51 @@ func EventDrivenConsumer(consumerName string) (*endpoint.EventDrivenConsumer, er
 		return nil, err
 	}
 
+	activeEndpoints.Set(consumerName, consumer)
+
 	return consumer, nil
 }
 
 func Shutdown() {
 	slog.Info("[message-system] shutdowning...")
-	for _, v := range messageSystemContainer.GetAll() {
+	for k, v := range activeEndpoints.GetAll() {
 		if inboundChannel, ok := v.(*endpoint.EventDrivenConsumer); ok {
+			slog.Info("[message-system] stop consumer", "name", k)
 			inboundChannel.Stop()
 		}
-		/* consumerChannel, ok := v.(message.ConsumerChannel)
-		if ok {
-			consumerChannel.Close()
-			return
-		}
+	}
 
-		subscriberChannel, ok := v.(message.SubscriberChannel)
-		if ok {
-			subscriberChannel.Unsubscribe()
-			return
-		} */
+	for _, v := range messageSystemContainer.GetAll() {
+		switch c := v.(type) {
+		case message.ConsumerChannel:
+			slog.Info("[message-system] close consumer channel", "name",  c.Name())
+			c.Close()
+		case message.SubscriberChannel:
+			slog.Info("[message-system] close subscriber channel", "name",  c.Name())
+			c.Unsubscribe()
+		}
 	}
 	slog.Info("[message-system] shutdown completed")
+}
+
+func ShowActiveEndpoints() {
+
+	fmt.Println("\n---[Message System] Active Endpoints ---")
+	fmt.Printf("%-30s | %-10s\n", "Endpoint Name", "Type")
+	fmt.Println("-------------------------------------------")
+	for name, ep := range activeEndpoints.GetAll() {
+		endpointType := "undefined"
+		switch ep.(type) {
+		case *endpoint.EventDrivenConsumer:
+			endpointType = "[inbound] Event-Driven"
+		case *bus.CommandBus:
+			endpointType = "[outbound] Command-Bus"
+		case *bus.QueryBus:
+			endpointType = "[outbound] Query-Bus"
+		case *bus.EventBus:
+			endpointType = "[outbound] Event-Bus"
+		}
+		fmt.Printf("%-30s | %-10s\n", name, endpointType)
+	}
+	fmt.Println("-------------------------------------------")
 }

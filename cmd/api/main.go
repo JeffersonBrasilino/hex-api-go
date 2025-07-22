@@ -11,6 +11,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/hex-api-go/internal/user"
 	messagesystem "github.com/hex-api-go/pkg/core/infrastructure/message_system"
+	"github.com/hex-api-go/pkg/core/infrastructure/message_system/channel/kafka"
 )
 
 func main() {
@@ -23,19 +24,12 @@ func main() {
 	user.Bootstrap().
 		WithHttpProtocol(ctx, app)
 
-/* 	topicConsumerChannel := kafka.NewConsumerChannelAdapterBuilder(
+	topicConsumerChannel := kafka.NewConsumerChannelAdapterBuilder(
 		"defaultConKafka",
 		"message_system.topic",
 		"test_consumer",
 	)
-	messagesystem.AddConsumerChannel(topicConsumerChannel) */
-
-	/* topicConsumerChannel2 := kafka.NewConsumerChannelAdapterBuilder(
-		"defaultConKafka",
-		"message_system.topic",
-		"test_consumer2",
-	)
-	messagesystem.AddConsumerChannel(topicConsumerChannel2) */
+	messagesystem.AddConsumerChannel(topicConsumerChannel)
 
 	messagesystem.Start()
 
@@ -46,12 +40,22 @@ func main() {
 		}
 	}()
 
-	/* log.Printf("START CONSUMER......")
-	a := messagesystem.PollingConsumer("test_consumer").
-	WithAmountOfProcessors(1)
-	go a.Run(ctx)
+	messagesystem.ShowActiveEndpoints()
+	
+	/*
+	a, _ := messagesystem.EventDrivenConsumer("test_consumer")
 
-	go func ()  {
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		log.Printf("START CONSUMER......")
+		defer wg.Done()
+		a.Run(ctx)
+	}()
+
+	a.WithAmountOfProcessors(1)
+	wg.Wait() */
+	/* 	go func() {
 		time.Sleep(time.Second * 10)
 		messagesystem.Shutdown()
 	}() */
@@ -69,9 +73,7 @@ func main() {
 
 	monigoInstance.Start() */
 
-	
 	<-ctx.Done()
-	log.Printf("shutdowning...")
 	messagesystem.Shutdown()
 	if err := app.Shutdown(); err != nil {
 		log.Printf("shutting down server error: %v\n", err)

@@ -34,9 +34,7 @@ type (
 		Subscribe(callable ...func(m *Message))
 		Unsubscribe() error
 	}
-/* 	Gateway interface {
-		Execute(parentContext context.Context, msg *Message) (any, error)
-	} */
+
 	InboundChannelAdapter interface {
 		ReferenceName() string
 		DeadLetterChannelName() string

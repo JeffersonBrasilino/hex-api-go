@@ -1,24 +1,23 @@
 package bus
 
-/* var createdEventBus sync.Map
+import (
+	"context"
+
+	"github.com/google/uuid"
+	"github.com/hex-api-go/pkg/core/infrastructure/message_system/message"
+	"github.com/hex-api-go/pkg/core/infrastructure/message_system/message/endpoint"
+	"github.com/hex-api-go/pkg/core/infrastructure/message_system/message/handler"
+)
 
 type EventBus struct {
-	*messageBus
+	dispatcher *endpoint.MessageDispatcher
 }
 
-func NewEventBus(gateway *endpoint.Gateway, channelName string) *EventBus {
-
-	bus, ok := createdEventBus.Load(channelName)
-	if ok {
-		return bus.(*EventBus)
-	}
+func NewEventBus(dispatcher *endpoint.MessageDispatcher) *EventBus {
 
 	eventBus := &EventBus{
-		messageBus: &messageBus{
-			gateway,
-		},
+		dispatcher: dispatcher,
 	}
-	createdEventBus.Store(channelName, bus)
 	return eventBus
 }
 
@@ -27,7 +26,7 @@ func (c *EventBus) Publish(ctx context.Context, action handler.Action) error {
 	msg := builder.WithPayload(action).
 		WithRoute(action.Name()).
 		Build()
-	return c.publishMessage(ctx, msg)
+	return c.dispatcher.PublishMessage(ctx, msg)
 }
 
 func (c *EventBus) PublishRaw(ctx context.Context, route string, payload any, headers map[string]string) error {
@@ -36,7 +35,7 @@ func (c *EventBus) PublishRaw(ctx context.Context, route string, payload any, he
 		WithRoute(route).
 		WithCustomHeader(headers).
 		Build()
-	return c.publishMessage(ctx, msg)
+	return c.dispatcher.PublishMessage(ctx, msg)
 }
 
 func (c *EventBus) buildMessage() *message.MessageBuilder {
@@ -45,4 +44,3 @@ func (c *EventBus) buildMessage() *message.MessageBuilder {
 		WithCorrelationId(uuid.New().String())
 	return builder
 }
-*/

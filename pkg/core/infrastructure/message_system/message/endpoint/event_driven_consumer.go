@@ -1,3 +1,9 @@
+// Package endpoint implements the event-driven consumer pattern for message processing systems.
+//
+// Intenção: Fornecer uma estrutura para consumir mensagens de forma assíncrona e escalável, utilizando múltiplos processadores e integração com gateways e canais de entrada.
+// Objetivo: Facilitar o consumo, processamento e roteamento de mensagens em sistemas orientados a eventos, com suporte a timeout, dead letter e interceptadores.
+//
+// Este pacote é parte do sistema de mensageria, permitindo a construção de consumidores desacoplados e resilientes.
 package endpoint
 
 import (
@@ -12,10 +18,14 @@ import (
 	"github.com/hex-api-go/pkg/core/infrastructure/message_system/message"
 )
 
+// EventDrivenConsumerBuilder é responsável por construir instâncias de EventDrivenConsumer.
+// referenceName identifica o canal de entrada a ser consumido.
 type EventDrivenConsumerBuilder struct {
 	referenceName string
 }
 
+// EventDrivenConsumer representa um consumidor orientado a eventos.
+// Gerencia múltiplos processadores, fila de processamento e integração com gateway e canal de entrada.
 type EventDrivenConsumer struct {
 	referenceName                 string
 	processingTimeoutMilliseconds int
@@ -28,6 +38,12 @@ type EventDrivenConsumer struct {
 	close                         context.CancelFunc
 }
 
+// NewEventDrivenConsumerBuilder cria uma nova instância de EventDrivenConsumerBuilder.
+//
+// Parâmetros:
+//   - referenceName: nome de referência do canal de entrada.
+//
+// Retorno: ponteiro para EventDrivenConsumerBuilder.
 func NewEventDrivenConsumerBuilder(
 	referenceName string,
 ) *EventDrivenConsumerBuilder {
@@ -36,6 +52,14 @@ func NewEventDrivenConsumerBuilder(
 	}
 }
 
+// NewEventDrivenConsumer cria uma nova instância de EventDrivenConsumer.
+//
+// Parâmetros:
+//   - referenceName: nome de referência do canal de entrada.
+//   - gateway: ponteiro para o Gateway associado.
+//   - inboundChannelAdapter: adaptador do canal de entrada.
+//
+// Retorno: ponteiro para EventDrivenConsumer.
 func NewEventDrivenConsumer(
 	referenceName string,
 	gateway *Gateway,
@@ -54,6 +78,12 @@ func NewEventDrivenConsumer(
 	return consumer
 }
 
+// Build constrói um EventDrivenConsumer a partir do container de dependências.
+//
+// Parâmetros:
+//   - container: container de dependências.
+//
+// Retorno: ponteiro para EventDrivenConsumer e erro, se houver.
 func (b *EventDrivenConsumerBuilder) Build(
 	container container.Container[any, any],
 ) (*EventDrivenConsumer, error) {
@@ -100,6 +130,12 @@ func (b *EventDrivenConsumerBuilder) Build(
 	return consumer, nil
 }
 
+// WithMessageProcessingTimeout define o timeout de processamento de mensagens em milissegundos.
+//
+// Parâmetros:
+//   - milisseconds: tempo limite em milissegundos.
+//
+// Retorno: ponteiro para EventDrivenConsumer.
 func (b *EventDrivenConsumer) WithMessageProcessingTimeout(
 	milisseconds int,
 ) *EventDrivenConsumer {
@@ -109,6 +145,12 @@ func (b *EventDrivenConsumer) WithMessageProcessingTimeout(
 	return b
 }
 
+// WithAmountOfProcessors define a quantidade de processadores concorrentes.
+//
+// Parâmetros:
+//   - value: quantidade de processadores.
+//
+// Retorno: ponteiro para EventDrivenConsumer.
 func (b *EventDrivenConsumer) WithAmountOfProcessors(
 	value int,
 ) *EventDrivenConsumer {
@@ -118,6 +160,12 @@ func (b *EventDrivenConsumer) WithAmountOfProcessors(
 	return b
 }
 
+// Run inicia o processamento das mensagens recebidas do canal de entrada.
+//
+// Parâmetros:
+//   - ctx: contexto para controle de cancelamento e timeout.
+//
+// Retorno: erro, se houver.
 func (e *EventDrivenConsumer) Run(ctx context.Context) error {
 	e.processingQueue = make(chan *message.Message, e.amountOfProcessors)
 	e.startProcessorsNodes(e.ctx)
@@ -168,16 +216,23 @@ func (e *EventDrivenConsumer) Run(ctx context.Context) error {
 
 }
 
+// Stop solicita a parada do consumidor, cancelando o contexto interno.
 func (e *EventDrivenConsumer) Stop() {
 	e.close()
 }
 
+// shutdown encerra o processamento, fecha o canal de entrada e aguarda finalização dos processadores.
 func (e *EventDrivenConsumer) shutdown() {
+	fmt.Println("shutdowning event-driven consumer...")
 	e.inboundChannelAdapter.Close()
 	close(e.processingQueue)
 	e.processorsWaitGroup.Wait()
 }
 
+// startProcessorsNodes inicia os processadores concorrentes para consumir mensagens da fila.
+//
+// Parâmetros:
+//   - ctx: contexto para controle de cancelamento e timeout.
 func (e *EventDrivenConsumer) startProcessorsNodes(ctx context.Context) {
 	for i := 0; i < e.amountOfProcessors; i++ {
 		e.processorsWaitGroup.Add(1)
@@ -190,6 +245,12 @@ func (e *EventDrivenConsumer) startProcessorsNodes(ctx context.Context) {
 	}
 }
 
+// sendToGateway envia a mensagem para o gateway para processamento.
+//
+// Parâmetros:
+//   - ctx: contexto para controle de timeout.
+//   - msg: mensagem a ser processada.
+//   - nodeId: identificador do processador.
 func (e *EventDrivenConsumer) sendToGateway(
 	ctx context.Context,
 	msg *message.Message,
@@ -215,6 +276,7 @@ func (e *EventDrivenConsumer) sendToGateway(
 
 	var err error
 	time.Sleep(time.Second * 7)
+	fmt.Println("processing OKOKOKOKOKOKOKOK")
 	//_, err := e.gateway.Execute(opCtx, msg)
 	if err != nil {
 		slog.Error("[event-driven consumer] failed to process message",

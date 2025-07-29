@@ -1,3 +1,18 @@
+// Package messagesystem provides the core message system implementation with
+// comprehensive message routing, processing, and management capabilities.
+//
+// This package implements a complete message system that supports command/query
+// separation (CQRS), event-driven processing, and various messaging patterns.
+// It provides centralized management of channels, connections, and endpoints
+// with support for both inbound and outbound message processing.
+//
+// The MessageSystem implementation supports:
+// - Command and Query bus management
+// - Event-driven consumer processing
+// - Channel connection management
+// - Action handler registration
+// - Default endpoint configuration
+// - System lifecycle management
 package messagesystem
 
 import (
@@ -11,28 +26,41 @@ import (
 	"github.com/hex-api-go/pkg/core/infrastructure/message_system/message/handler"
 )
 
+// Default channel names for the message system.
 var (
 	defaultCommandChannelName = "default.channel.command"
 	defaultQueryChannelName   = "default.channel.query"
-	outboundChannelBuilders   = container.NewGenericContainer[string, BuildableComponent[message.PublisherChannel]]()
-	inboundChannelBuilders    = container.NewGenericContainer[string, BuildableComponent[message.InboundChannelAdapter]]()
-	channelConnections        = container.NewGenericContainer[string, ChannelConnection]()
-	messageSystemContainer    = container.NewGenericContainer[any, any]()
-	activeEndpoints           = container.NewGenericContainer[string, any]()
 )
 
-type (
-	ChannelConnection interface {
-		ReferenceName() string
-		Connect() error
-		Disconnect() error
-	}
-	BuildableComponent[T any] interface {
-		Build(container container.Container[any, any]) (T, error)
-		ReferenceName() string
-	}
+// Global containers for managing system components.
+var (
+	outboundChannelBuilders = container.NewGenericContainer[string, BuildableComponent[message.PublisherChannel]]()
+	inboundChannelBuilders  = container.NewGenericContainer[string, BuildableComponent[message.InboundChannelAdapter]]()
+	channelConnections      = container.NewGenericContainer[string, ChannelConnection]()
+	messageSystemContainer  = container.NewGenericContainer[any, any]()
+	activeEndpoints         = container.NewGenericContainer[string, any]()
 )
 
+// ChannelConnection defines the contract for managing channel connections
+// with connect and disconnect capabilities.
+type ChannelConnection interface {
+	ReferenceName() string
+	Connect() error
+	Disconnect() error
+}
+
+// BuildableComponent defines the contract for components that can be built
+// from a dependency container.
+type BuildableComponent[T any] interface {
+	Build(container container.Container[any, any]) (T, error)
+	ReferenceName() string
+}
+
+// AddPublisherChannel registers a publisher channel builder with the message system.
+// Panics if a channel with the same reference name already exists.
+//
+// Parameters:
+//   - publisher: the publisher channel builder to register
 func AddPublisherChannel(publisher BuildableComponent[message.PublisherChannel]) {
 	if outboundChannelBuilders.Has(publisher.ReferenceName()) {
 		panic(
@@ -45,6 +73,11 @@ func AddPublisherChannel(publisher BuildableComponent[message.PublisherChannel])
 	outboundChannelBuilders.Set(publisher.ReferenceName(), publisher)
 }
 
+// buildOutboundChannels builds all registered outbound channels and adds them
+// to the message system container.
+//
+// Parameters:
+//   - container: the dependency container to add built channels to
 func buildOutboundChannels(container container.Container[any, any]) {
 	for _, v := range outboundChannelBuilders.GetAll() {
 		outboundChannel, err := v.Build(container)
@@ -60,6 +93,11 @@ func buildOutboundChannels(container container.Container[any, any]) {
 	}
 }
 
+// registerDefaultEndpoints registers the default command and query endpoints
+// with the message system.
+//
+// Parameters:
+//   - container: the dependency container to register endpoints with
 func registerDefaultEndpoints(container container.Container[any, any]) {
 
 	commandDispatcher, _ := endpoint.NewMessageDispatcherBuilder(
@@ -76,6 +114,11 @@ func registerDefaultEndpoints(container container.Container[any, any]) {
 	activeEndpoints.Set(defaultQueryChannelName, bus.NewQueryBus(queryDispatcher))
 }
 
+// AddChannelConnection registers a channel connection with the message system.
+// Panics if a connection with the same reference name already exists.
+//
+// Parameters:
+//   - con: the channel connection to register
 func AddChannelConnection(con ChannelConnection) {
 	if channelConnections.Has(con.ReferenceName()) {
 		panic(
@@ -88,6 +131,11 @@ func AddChannelConnection(con ChannelConnection) {
 	channelConnections.Set(con.ReferenceName(), con)
 }
 
+// buildChannelConnections builds all registered channel connections and adds them
+// to the message system container.
+//
+// Parameters:
+//   - container: the dependency container to add built connections to
 func buildChannelConnections(container container.Container[any, any]) {
 	for _, v := range channelConnections.GetAll() {
 		err := v.Connect()
@@ -103,6 +151,11 @@ func buildChannelConnections(container container.Container[any, any]) {
 	}
 }
 
+// AddConsumerChannel registers a consumer channel builder with the message system.
+// Panics if a consumer with the same reference name already exists.
+//
+// Parameters:
+//   - inboundChannel: the consumer channel builder to register
 func AddConsumerChannel(inboundChannel BuildableComponent[message.InboundChannelAdapter]) {
 	if inboundChannelBuilders.Has(inboundChannel.ReferenceName()) {
 		panic(
@@ -115,6 +168,11 @@ func AddConsumerChannel(inboundChannel BuildableComponent[message.InboundChannel
 	inboundChannelBuilders.Set(inboundChannel.ReferenceName(), inboundChannel)
 }
 
+// buildInboundChannels builds all registered inbound channels and adds them
+// to the message system container.
+//
+// Parameters:
+//   - container: the dependency container to add built channels to
 func buildInboundChannels(container container.Container[any, any]) {
 	for _, v := range inboundChannelBuilders.GetAll() {
 		inboundChannel, err := v.Build(container)
@@ -125,15 +183,17 @@ func buildInboundChannels(container container.Container[any, any]) {
 	}
 }
 
-func AddActionHandler[
-	T handler.Action,
-	U any,
-](handlerAction handler.ActionHandler[T, U]) {
+// AddActionHandler registers an action handler with the message system.
+// Panics if a handler for the same action already exists.
+//
+// Parameters:
+//   - handlerAction: the action handler to register
+func AddActionHandler[T handler.Action, U any](handlerAction handler.ActionHandler[T, U]) {
 	action := *new(T)
 	if outboundChannelBuilders.Has(action.Name()) {
 		panic(
 			fmt.Sprintf(
-				"hander for %s already exists",
+				"handler for %s already exists",
 				action.Name(),
 			),
 		)
@@ -148,6 +208,8 @@ func AddActionHandler[
 	)
 }
 
+// Start initializes the message system by building all registered components
+// and registering default endpoints.
 func Start() {
 	registerDefaultEndpoints(messageSystemContainer)
 	buildChannelConnections(messageSystemContainer)
@@ -155,14 +217,29 @@ func Start() {
 	buildInboundChannels(messageSystemContainer)
 }
 
+// CommandBus returns the default command bus instance.
+//
+// Returns:
+//   - *bus.CommandBus: the default command bus
 func CommandBus() *bus.CommandBus {
 	return CommandBusByChannel(defaultCommandChannelName)
 }
 
+// QueryBus returns the default query bus instance.
+//
+// Returns:
+//   - *bus.QueryBus: the default query bus
 func QueryBus() *bus.QueryBus {
 	return QueryBusByChannel(defaultQueryChannelName)
 }
 
+// CommandBusByChannel returns or creates a command bus for the specified channel.
+//
+// Parameters:
+//   - channelName: the name of the channel for the command bus
+//
+// Returns:
+//   - *bus.CommandBus: the command bus for the specified channel
 func CommandBusByChannel(channelName string) *bus.CommandBus {
 	dispatcher, err := activeEndpoints.Get(channelName)
 	if err != nil {
@@ -186,6 +263,13 @@ func CommandBusByChannel(channelName string) *bus.CommandBus {
 	return commandDispatcher
 }
 
+// QueryBusByChannel returns or creates a query bus for the specified channel.
+//
+// Parameters:
+//   - channelName: the name of the channel for the query bus
+//
+// Returns:
+//   - *bus.QueryBus: the query bus for the specified channel
 func QueryBusByChannel(channelName string) *bus.QueryBus {
 	dispatcher, err := activeEndpoints.Get(channelName)
 	if err != nil {
@@ -209,6 +293,13 @@ func QueryBusByChannel(channelName string) *bus.QueryBus {
 	return queryDispatcher
 }
 
+// EventBusByChannel returns or creates an event bus for the specified channel.
+//
+// Parameters:
+//   - channelName: the name of the channel for the event bus
+//
+// Returns:
+//   - *bus.EventBus: the event bus for the specified channel
 func EventBusByChannel(channelName string) *bus.EventBus {
 	dispatcher, err := activeEndpoints.Get(channelName)
 	if err != nil {
@@ -232,6 +323,15 @@ func EventBusByChannel(channelName string) *bus.EventBus {
 	return eventDispatcher
 }
 
+// EventDrivenConsumer creates and returns an event-driven consumer for the
+// specified consumer name.
+//
+// Parameters:
+//   - consumerName: the name of the consumer to create
+//
+// Returns:
+//   - *endpoint.EventDrivenConsumer: the created event-driven consumer
+//   - error: error if consumer creation fails
 func EventDrivenConsumer(consumerName string) (*endpoint.EventDrivenConsumer, error) {
 
 	consumerActive, _ := activeEndpoints.Get(consumerName)
@@ -252,8 +352,10 @@ func EventDrivenConsumer(consumerName string) (*endpoint.EventDrivenConsumer, er
 	return consumer, nil
 }
 
+// Shutdown gracefully shuts down the message system by stopping all active
+// consumers and closing all channels.
 func Shutdown() {
-	slog.Info("[message-system] shutdowning...")
+	slog.Info("[message-system] shutting down...")
 	for k, v := range activeEndpoints.GetAll() {
 		if inboundChannel, ok := v.(*endpoint.EventDrivenConsumer); ok {
 			slog.Info("[message-system] stop consumer", "name", k)
@@ -264,16 +366,17 @@ func Shutdown() {
 	for _, v := range messageSystemContainer.GetAll() {
 		switch c := v.(type) {
 		case message.ConsumerChannel:
-			slog.Info("[message-system] close consumer channel", "name",  c.Name())
+			slog.Info("[message-system] close consumer channel", "name", c.Name())
 			c.Close()
 		case message.SubscriberChannel:
-			slog.Info("[message-system] close subscriber channel", "name",  c.Name())
+			slog.Info("[message-system] close subscriber channel", "name", c.Name())
 			c.Unsubscribe()
 		}
 	}
 	slog.Info("[message-system] shutdown completed")
 }
 
+// ShowActiveEndpoints displays all currently active endpoints in the message system.
 func ShowActiveEndpoints() {
 
 	fmt.Println("\n---[Message System] Active Endpoints ---")

@@ -1,3 +1,16 @@
+// Package endpoint provides gateway functionality for message processing and routing.
+//
+// This package implements the Gateway pattern from Enterprise Integration Patterns,
+// serving as an entry point for message processing with support for interceptors,
+// dead letter channels, and reply channels. It provides a centralized message
+// processing pipeline with configurable routing and error handling.
+//
+// The Gateway implementation supports:
+// - Message processing with before/after interceptors
+// - Dead letter channel integration for failed messages
+// - Reply channel support for request-response patterns
+// - Asynchronous message processing with context support
+// - Configurable routing through recipient list routers
 package endpoint
 
 import (
@@ -12,10 +25,20 @@ import (
 	"github.com/hex-api-go/pkg/core/infrastructure/message_system/message/handler"
 	"github.com/hex-api-go/pkg/core/infrastructure/message_system/message/router"
 )
+
+// GatewayReferenceName generates a standardized reference name for gateways.
+//
+// Parameters:
+//   - referenceName: the base name for the gateway
+//
+// Returns:
+//   - string: the formatted reference name with prefix
 func GatewayReferenceName(referenceName string) string {
 	return fmt.Sprintf("gateway:%s", referenceName)
 }
 
+// gatewayBuilder provides a fluent interface for configuring gateway instances
+// with various options like interceptors, dead letter channels, and reply channels.
 type gatewayBuilder struct {
 	referenceName      string
 	requestChannelName string
@@ -25,6 +48,22 @@ type gatewayBuilder struct {
 	replyChannelName   string
 }
 
+// Gateway represents a message processing gateway that handles message routing,
+// interceptors, and error handling through a configurable processing pipeline.
+type Gateway struct {
+	messageProcessor   message.MessageHandler
+	replyChannelName   string
+	requestChannelName string
+}
+
+// NewGatewayBuilder creates a new gateway builder instance.
+//
+// Parameters:
+//   - referenceName: unique identifier for the gateway
+//   - requestChannelName: name of the channel to process messages from
+//
+// Returns:
+//   - *gatewayBuilder: configured builder instance
 func NewGatewayBuilder(
 	referenceName string,
 	requestChannelName string,
@@ -35,10 +74,42 @@ func NewGatewayBuilder(
 	}
 }
 
+// NewGateway creates a new gateway instance.
+//
+// Parameters:
+//   - messageProcessor: the message handler for processing messages
+//   - replyChannelName: name of the reply channel
+//   - requestChannelName: name of the request channel
+//
+// Returns:
+//   - *Gateway: configured gateway instance
+func NewGateway(
+	messageProcessor message.MessageHandler,
+	replyChannelName string,
+	requestChannelName string,
+) *Gateway {
+	return &Gateway{
+		messageProcessor:   messageProcessor,
+		replyChannelName:   replyChannelName,
+		requestChannelName: requestChannelName,
+	}
+}
+
+// ReferenceName returns the standardized reference name for the gateway.
+//
+// Returns:
+//   - string: the formatted reference name
 func (b *gatewayBuilder) ReferenceName() string {
 	return GatewayReferenceName(b.referenceName)
 }
 
+// WithBeforeInterceptors adds interceptors to be executed before message processing.
+//
+// Parameters:
+//   - interceptors: variable number of message handlers to execute before processing
+//
+// Returns:
+//   - *gatewayBuilder: builder instance for method chaining
 func (b *gatewayBuilder) WithBeforeInterceptors(
 	interceptors ...message.MessageHandler,
 ) *gatewayBuilder {
@@ -46,6 +117,13 @@ func (b *gatewayBuilder) WithBeforeInterceptors(
 	return b
 }
 
+// WithAfterInterceptors adds interceptors to be executed after message processing.
+//
+// Parameters:
+//   - interceptors: variable number of message handlers to execute after processing
+//
+// Returns:
+//   - *gatewayBuilder: builder instance for method chaining
 func (b *gatewayBuilder) WithAfterInterceptors(
 	interceptors ...message.MessageHandler,
 ) *gatewayBuilder {
@@ -53,20 +131,39 @@ func (b *gatewayBuilder) WithAfterInterceptors(
 	return b
 }
 
-func (b *gatewayBuilder) WithDeadLetterChannel(
-	channelName string,
-) *gatewayBuilder {
+// WithDeadLetterChannel sets the dead letter channel for failed messages.
+//
+// Parameters:
+//   - channelName: name of the dead letter channel
+//
+// Returns:
+//   - *gatewayBuilder: builder instance for method chaining
+func (b *gatewayBuilder) WithDeadLetterChannel(channelName string) *gatewayBuilder {
 	b.deadLetterChannel = channelName
 	return b
 }
 
-func (b *gatewayBuilder) WithReplyChannel(
-	channelName string,
-) *gatewayBuilder {
+// WithReplyChannel sets the reply channel for request-response patterns.
+//
+// Parameters:
+//   - channelName: name of the reply channel
+//
+// Returns:
+//   - *gatewayBuilder: builder instance for method chaining
+func (b *gatewayBuilder) WithReplyChannel(channelName string) *gatewayBuilder {
 	b.replyChannelName = channelName
 	return b
 }
 
+// Build constructs a Gateway from the dependency container with configured
+// interceptors, dead letter channel, and reply channel.
+//
+// Parameters:
+//   - container: dependency container containing required components
+//
+// Returns:
+//   - *Gateway: configured gateway instance
+//   - error: error if construction fails
 func (b *gatewayBuilder) Build(
 	container container.Container[any, any],
 ) (*Gateway, error) {
@@ -108,24 +205,16 @@ func (b *gatewayBuilder) Build(
 	return NewGateway(messageProcessor, b.replyChannelName, b.requestChannelName), nil
 }
 
-type Gateway struct {
-	messageProcessor   message.MessageHandler
-	replyChannelName   string
-	requestChannelName string
-}
-
-func NewGateway(
-	messageProcessor message.MessageHandler,
-	replyChannelName string,
-	requestChannelName string,
-) *Gateway {
-	return &Gateway{
-		messageProcessor:   messageProcessor,
-		replyChannelName:   replyChannelName,
-		requestChannelName: requestChannelName,
-	}
-}
-
+// Execute processes a message through the gateway's processing pipeline with
+// context support and response handling.
+//
+// Parameters:
+//   - parentContext: parent context for timeout/cancellation control
+//   - msg: the message to be processed
+//
+// Returns:
+//   - any: the processing result
+//   - error: error if processing fails or context is cancelled
 func (g *Gateway) Execute(
 	parentContext context.Context,
 	msg *message.Message,
@@ -151,7 +240,18 @@ func (g *Gateway) Execute(
 	}
 }
 
-func (g *Gateway) executeAsync(ctx context.Context, responseChannel chan<- any, msg *message.Message) {
+// executeAsync processes a message asynchronously and sends the result to the
+// response channel.
+//
+// Parameters:
+//   - ctx: context for timeout/cancellation control
+//   - responseChannel: channel to send processing results
+//   - msg: the message to be processed
+func (g *Gateway) executeAsync(
+	ctx context.Context,
+	responseChannel chan<- any,
+	msg *message.Message,
+) {
 	defer close(responseChannel)
 
 	messageToProcess := message.NewMessageBuilderFromMessage(msg)
@@ -176,7 +276,9 @@ func (g *Gateway) executeAsync(ctx context.Context, responseChannel chan<- any, 
 
 	select {
 	case <-ctx.Done():
-		responseChannel <- fmt.Errorf("[gateway]: Context cancelled after processing, before sending result")
+		responseChannel <- fmt.Errorf(
+			"[gateway]: Context cancelled after processing, before sending result",
+		)
 		return
 	default:
 	}
@@ -184,6 +286,11 @@ func (g *Gateway) executeAsync(ctx context.Context, responseChannel chan<- any, 
 	responseChannel <- resultMessage
 }
 
+// makeInternalChannel creates an internal point-to-point channel for handling
+// reply messages during processing.
+//
+// Returns:
+//   - *channel.PointToPointChannel: internal channel for reply handling
 func (g *Gateway) makeInternalChannel() *channel.PointToPointChannel {
 	internalChannelName := uuid.New().String()
 	chn := channel.NewPointToPointChannel(internalChannelName)

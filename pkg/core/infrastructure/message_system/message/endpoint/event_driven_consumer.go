@@ -1,9 +1,17 @@
-// Package endpoint implements the event-driven consumer pattern for message processing systems.
+// Package endpoint implements the event-driven consumer pattern for message processing
+// systems.
 //
-// Intenção: Fornecer uma estrutura para consumir mensagens de forma assíncrona e escalável, utilizando múltiplos processadores e integração com gateways e canais de entrada.
-// Objetivo: Facilitar o consumo, processamento e roteamento de mensagens em sistemas orientados a eventos, com suporte a timeout, dead letter e interceptadores.
+// This package provides a structure for consuming messages asynchronously and scalably,
+// using multiple processors and integration with gateways and input channels. It
+// facilitates the consumption, processing, and routing of messages in event-driven
+// systems, with support for timeout, dead letter channels, and interceptors.
 //
-// Este pacote é parte do sistema de mensageria, permitindo a construção de consumidores desacoplados e resilientes.
+// The EventDrivenConsumer implementation supports:
+// - Asynchronous message consumption with multiple concurrent processors
+// - Integration with inbound channel adapters and gateways
+// - Configurable processing timeouts and error handling
+// - Graceful shutdown and resource cleanup
+// - Dead letter channel support for failed messages
 package endpoint
 
 import (
@@ -18,14 +26,15 @@ import (
 	"github.com/hex-api-go/pkg/core/infrastructure/message_system/message"
 )
 
-// EventDrivenConsumerBuilder é responsável por construir instâncias de EventDrivenConsumer.
-// referenceName identifica o canal de entrada a ser consumido.
+// EventDrivenConsumerBuilder is responsible for building EventDrivenConsumer instances.
+// referenceName identifies the input channel to be consumed.
 type EventDrivenConsumerBuilder struct {
 	referenceName string
 }
 
-// EventDrivenConsumer representa um consumidor orientado a eventos.
-// Gerencia múltiplos processadores, fila de processamento e integração com gateway e canal de entrada.
+// EventDrivenConsumer represents an event-driven consumer.
+// Manages multiple processors, processing queue, and integration with gateway and
+// input channel.
 type EventDrivenConsumer struct {
 	referenceName                 string
 	processingTimeoutMilliseconds int
@@ -38,28 +47,28 @@ type EventDrivenConsumer struct {
 	close                         context.CancelFunc
 }
 
-// NewEventDrivenConsumerBuilder cria uma nova instância de EventDrivenConsumerBuilder.
+// NewEventDrivenConsumerBuilder creates a new EventDrivenConsumerBuilder instance.
 //
-// Parâmetros:
-//   - referenceName: nome de referência do canal de entrada.
+// Parameters:
+//   - referenceName: reference name of the input channel
 //
-// Retorno: ponteiro para EventDrivenConsumerBuilder.
-func NewEventDrivenConsumerBuilder(
-	referenceName string,
-) *EventDrivenConsumerBuilder {
+// Returns:
+//   - *EventDrivenConsumerBuilder: pointer to EventDrivenConsumerBuilder
+func NewEventDrivenConsumerBuilder(referenceName string) *EventDrivenConsumerBuilder {
 	return &EventDrivenConsumerBuilder{
 		referenceName: referenceName,
 	}
 }
 
-// NewEventDrivenConsumer cria uma nova instância de EventDrivenConsumer.
+// NewEventDrivenConsumer creates a new EventDrivenConsumer instance.
 //
-// Parâmetros:
-//   - referenceName: nome de referência do canal de entrada.
-//   - gateway: ponteiro para o Gateway associado.
-//   - inboundChannelAdapter: adaptador do canal de entrada.
+// Parameters:
+//   - referenceName: reference name of the input channel
+//   - gateway: pointer to the associated Gateway
+//   - inboundChannelAdapter: input channel adapter
 //
-// Retorno: ponteiro para EventDrivenConsumer.
+// Returns:
+//   - *EventDrivenConsumer: pointer to EventDrivenConsumer
 func NewEventDrivenConsumer(
 	referenceName string,
 	gateway *Gateway,
@@ -78,12 +87,14 @@ func NewEventDrivenConsumer(
 	return consumer
 }
 
-// Build constrói um EventDrivenConsumer a partir do container de dependências.
+// Build constructs an EventDrivenConsumer from the dependency container.
 //
-// Parâmetros:
-//   - container: container de dependências.
+// Parameters:
+//   - container: dependency container
 //
-// Retorno: ponteiro para EventDrivenConsumer e erro, se houver.
+// Returns:
+//   - *EventDrivenConsumer: pointer to EventDrivenConsumer
+//   - error: error if any occurs
 func (b *EventDrivenConsumerBuilder) Build(
 	container container.Container[any, any],
 ) (*EventDrivenConsumer, error) {
@@ -130,42 +141,43 @@ func (b *EventDrivenConsumerBuilder) Build(
 	return consumer, nil
 }
 
-// WithMessageProcessingTimeout define o timeout de processamento de mensagens em milissegundos.
+// WithMessageProcessingTimeout sets the message processing timeout in milliseconds.
 //
-// Parâmetros:
-//   - milisseconds: tempo limite em milissegundos.
+// Parameters:
+//   - milliseconds: timeout in milliseconds
 //
-// Retorno: ponteiro para EventDrivenConsumer.
+// Returns:
+//   - *EventDrivenConsumer: pointer to EventDrivenConsumer for method chaining
 func (b *EventDrivenConsumer) WithMessageProcessingTimeout(
-	milisseconds int,
+	milliseconds int,
 ) *EventDrivenConsumer {
-	if milisseconds > 0 {
-		b.processingTimeoutMilliseconds = milisseconds
+	if milliseconds > 0 {
+		b.processingTimeoutMilliseconds = milliseconds
 	}
 	return b
 }
 
-// WithAmountOfProcessors define a quantidade de processadores concorrentes.
+// WithAmountOfProcessors sets the number of concurrent processors.
 //
-// Parâmetros:
-//   - value: quantidade de processadores.
+// Parameters:
+//   - value: number of processors
 //
-// Retorno: ponteiro para EventDrivenConsumer.
-func (b *EventDrivenConsumer) WithAmountOfProcessors(
-	value int,
-) *EventDrivenConsumer {
+// Returns:
+//   - *EventDrivenConsumer: pointer to EventDrivenConsumer for method chaining
+func (b *EventDrivenConsumer) WithAmountOfProcessors(value int) *EventDrivenConsumer {
 	if value > 1 {
 		b.amountOfProcessors = value
 	}
 	return b
 }
 
-// Run inicia o processamento das mensagens recebidas do canal de entrada.
+// Run starts processing messages received from the input channel.
 //
-// Parâmetros:
-//   - ctx: contexto para controle de cancelamento e timeout.
+// Parameters:
+//   - ctx: context for cancellation and timeout control
 //
-// Retorno: erro, se houver.
+// Returns:
+//   - error: error if any occurs
 func (e *EventDrivenConsumer) Run(ctx context.Context) error {
 	e.processingQueue = make(chan *message.Message, e.amountOfProcessors)
 	e.startProcessorsNodes(e.ctx)
@@ -213,15 +225,14 @@ func (e *EventDrivenConsumer) Run(ctx context.Context) error {
 			return nil
 		}
 	}
-
 }
 
-// Stop solicita a parada do consumidor, cancelando o contexto interno.
+// Stop requests the consumer to stop by canceling the internal context.
 func (e *EventDrivenConsumer) Stop() {
 	e.close()
 }
 
-// shutdown encerra o processamento, fecha o canal de entrada e aguarda finalização dos processadores.
+// shutdown ends processing, closes the input channel and waits for processors to finish.
 func (e *EventDrivenConsumer) shutdown() {
 	fmt.Println("shutdowning event-driven consumer...")
 	e.inboundChannelAdapter.Close()
@@ -229,10 +240,10 @@ func (e *EventDrivenConsumer) shutdown() {
 	e.processorsWaitGroup.Wait()
 }
 
-// startProcessorsNodes inicia os processadores concorrentes para consumir mensagens da fila.
+// startProcessorsNodes starts concurrent processors to consume messages from the queue.
 //
-// Parâmetros:
-//   - ctx: contexto para controle de cancelamento e timeout.
+// Parameters:
+//   - ctx: context for cancellation and timeout control
 func (e *EventDrivenConsumer) startProcessorsNodes(ctx context.Context) {
 	for i := 0; i < e.amountOfProcessors; i++ {
 		e.processorsWaitGroup.Add(1)
@@ -245,19 +256,20 @@ func (e *EventDrivenConsumer) startProcessorsNodes(ctx context.Context) {
 	}
 }
 
-// sendToGateway envia a mensagem para o gateway para processamento.
+// sendToGateway sends the message to the gateway for processing.
 //
-// Parâmetros:
-//   - ctx: contexto para controle de timeout.
-//   - msg: mensagem a ser processada.
-//   - nodeId: identificador do processador.
+// Parameters:
+//   - ctx: context for timeout control
+//   - msg: message to be processed
+//   - nodeId: processor identifier
 func (e *EventDrivenConsumer) sendToGateway(
 	ctx context.Context,
 	msg *message.Message,
 	nodeId int,
 ) {
 
-	opCtx, cancel := context.WithTimeout(ctx,
+	opCtx, cancel := context.WithTimeout(
+		ctx,
 		time.Duration(e.processingTimeoutMilliseconds)*time.Millisecond,
 	)
 	defer cancel()

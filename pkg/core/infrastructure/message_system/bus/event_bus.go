@@ -1,3 +1,15 @@
+// Package bus provides message bus implementations for the message system.
+//
+// This package implements various message bus types that provide high-level
+// abstractions for sending and receiving messages. It supports command/query
+// separation (CQRS) patterns and event-driven messaging with different bus
+// types for different use cases.
+//
+// The EventBus implementation supports:
+// - Event publishing for notifications and broadcasts
+// - Raw message publishing with custom headers
+// - Automatic correlation ID generation
+// - Asynchronous event distribution
 package bus
 
 import (
@@ -9,10 +21,19 @@ import (
 	"github.com/hex-api-go/pkg/core/infrastructure/message_system/message/handler"
 )
 
+// EventBus provides event publishing capabilities for broadcasting events
+// throughout the system.
 type EventBus struct {
 	dispatcher *endpoint.MessageDispatcher
 }
 
+// NewEventBus creates a new event bus instance with the specified dispatcher.
+//
+// Parameters:
+//   - dispatcher: the message dispatcher to use for publishing events
+//
+// Returns:
+//   - *EventBus: new event bus instance
 func NewEventBus(dispatcher *endpoint.MessageDispatcher) *EventBus {
 
 	eventBus := &EventBus{
@@ -21,6 +42,14 @@ func NewEventBus(dispatcher *endpoint.MessageDispatcher) *EventBus {
 	return eventBus
 }
 
+// Publish publishes an event action asynchronously to the message system.
+//
+// Parameters:
+//   - ctx: context for timeout/cancellation control
+//   - action: the action to be published as an event
+//
+// Returns:
+//   - error: error if publishing fails
 func (c *EventBus) Publish(ctx context.Context, action handler.Action) error {
 	builder := c.buildMessage()
 	msg := builder.WithPayload(action).
@@ -29,7 +58,22 @@ func (c *EventBus) Publish(ctx context.Context, action handler.Action) error {
 	return c.dispatcher.PublishMessage(ctx, msg)
 }
 
-func (c *EventBus) PublishRaw(ctx context.Context, route string, payload any, headers map[string]string) error {
+// PublishRaw publishes a raw event message with custom payload and headers.
+//
+// Parameters:
+//   - ctx: context for timeout/cancellation control
+//   - route: the route for the event
+//   - payload: the event payload
+//   - headers: custom headers for the event
+//
+// Returns:
+//   - error: error if publishing fails
+func (c *EventBus) PublishRaw(
+	ctx context.Context,
+	route string,
+	payload any,
+	headers map[string]string,
+) error {
 	builder := c.buildMessage()
 	msg := builder.WithPayload(payload).
 		WithRoute(route).
@@ -38,6 +82,11 @@ func (c *EventBus) PublishRaw(ctx context.Context, route string, payload any, he
 	return c.dispatcher.PublishMessage(ctx, msg)
 }
 
+// buildMessage creates a message builder configured for event messages with
+// automatic correlation ID generation.
+//
+// Returns:
+//   - *message.MessageBuilder: configured message builder for events
 func (c *EventBus) buildMessage() *message.MessageBuilder {
 	builder := message.NewMessageBuilder().
 		WithMessageType(message.Event).

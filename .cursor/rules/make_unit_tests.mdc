@@ -1,0 +1,9 @@
+---
+description: gerar testes unitários
+globs:
+alwaysApply: false
+---
+analise o arquivo, e gere um arquivo de teste unitário:
+- O teste deve cobrir 100% das linhas de código.
+- Cada método e função deve ser checado seus parametros de entrada(se houver) e seus parametros de saída(se houver)
+- Gere um arquivo de teste por arquivo de código.

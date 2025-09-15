@@ -10,8 +10,8 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/hex-api-go/internal/user"
-	messagesystem "github.com/hex-api-go/pkg/core/infrastructure/message_system"
-	"github.com/hex-api-go/pkg/core/infrastructure/message_system/channel/kafka"
+	messagesystem "github.com/hex-api-go/pkg/core/infrastructure/messagesystem"
+	"github.com/hex-api-go/pkg/core/infrastructure/messagesystem/channel/kafka"
 )
 
 func main() {
@@ -26,7 +26,7 @@ func main() {
 
 	topicConsumerChannel := kafka.NewConsumerChannelAdapterBuilder(
 		"defaultConKafka",
-		"message_system.topic",
+		"messagesystem.topic",
 		"test_consumer",
 	)
 	messagesystem.AddConsumerChannel(topicConsumerChannel)
@@ -41,20 +41,20 @@ func main() {
 	}()
 
 	messagesystem.ShowActiveEndpoints()
-	
+
 	/*
-	a, _ := messagesystem.EventDrivenConsumer("test_consumer")
+		a, _ := messagesystem.EventDrivenConsumer("test_consumer")
 
-	var wg sync.WaitGroup
-	wg.Add(1)
-	go func() {
-		log.Printf("START CONSUMER......")
-		defer wg.Done()
-		a.Run(ctx)
-	}()
+		var wg sync.WaitGroup
+		wg.Add(1)
+		go func() {
+			log.Printf("START CONSUMER......")
+			defer wg.Done()
+			a.Run(ctx)
+		}()
 
-	a.WithAmountOfProcessors(1)
-	wg.Wait() */
+		a.WithAmountOfProcessors(1)
+		wg.Wait() */
 	/* 	go func() {
 		time.Sleep(time.Second * 10)
 		messagesystem.Shutdown()

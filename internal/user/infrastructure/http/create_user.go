@@ -8,7 +8,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/hex-api-go/internal/user/application/command/createuser"
 	"github.com/hex-api-go/internal/user/application/query/getuser"
-	messagesystem "github.com/hex-api-go/pkg/core/infrastructure/message_system"
+	messagesystem "github.com/hex-api-go/pkg/core/infrastructure/messagesystem"
 )
 
 type Request struct {
@@ -30,7 +30,7 @@ func CreateUser(ctx context.Context, fiberApp fiber.Router) {
 
 		opCtx, cancel := context.WithTimeout(c.Context(), time.Second*5)
 		defer cancel()
-		busA := messagesystem.CommandBusByChannel("message_system.topic")
+		busA := messagesystem.CommandBusByChannel("messagesystem.topic")
 		errA := busA.SendAsync(opCtx, createuser.CreateCommand("teste", "123"))
 		fmt.Println("[controller] ASYNC COMMAND SEND ERROR ", errA)
 

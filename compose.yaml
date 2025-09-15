@@ -70,7 +70,7 @@ services:
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       #KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_AUTO_CREATE_TOPICS_ENABLED: "true"
-      KAFKA_CREATE_TOPICS: "message_system.test:1:1"
+      KAFKA_CREATE_TOPICS: "messagesystem.test:1:1"
 
   kafka-ui:
     image: provectuslabs/kafka-ui:latest

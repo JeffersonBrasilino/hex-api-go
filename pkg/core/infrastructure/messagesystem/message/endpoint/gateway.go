@@ -194,8 +194,7 @@ func (b *gatewayBuilder) Build(
 	if b.deadLetterChannel != "" {
 		deadLetterChannel, err := container.Get(b.deadLetterChannel)
 		if err != nil {
-			//TODO: remover panic e retornar erro
-			panic(fmt.Sprintf("[gateway-builder] [dead-letter] %s", err))
+			return nil, fmt.Errorf("[gateway-builder] [dead-letter] %s", err)
 		}
 		messageProcessor = handler.NewDeadLetter(
 			deadLetterChannel.(message.PublisherChannel),

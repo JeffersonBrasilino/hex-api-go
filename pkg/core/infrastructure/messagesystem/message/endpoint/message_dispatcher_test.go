@@ -46,7 +46,6 @@ func TestNewMessageDispatcherBuilder_Build(t *testing.T) {
 		c := container.NewGenericContainer[any, any]()
 		builder := endpoint.NewMessageDispatcherBuilder("", "")
 		dispatcher, err := builder.Build(c)
-		fmt.Println("aaaaaaaaaa",dispatcher, err)
 		if err != nil {
 			t.Errorf("Build should return nil error, got: %v", err)
 		}

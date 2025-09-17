@@ -25,6 +25,7 @@ import (
 type PubSubChannel struct {
 	channel chan *message.Message
 	name    string
+	hasOpen bool
 }
 
 // NewPubSubChannel creates a new publish-subscribe channel instance.
@@ -38,6 +39,7 @@ func NewPubSubChannel(name string) *PubSubChannel {
 	return &PubSubChannel{
 		name:    name,
 		channel: make(chan *message.Message),
+		hasOpen: true,
 	}
 }
 
@@ -48,32 +50,16 @@ func NewPubSubChannel(name string) *PubSubChannel {
 //
 // Returns:
 //   - error: error if sending fails (typically nil)
-func (p *PubSubChannel) Send(msg *message.Message) error {
-	select {
-	case p.channel <- msg:
-		return nil
-	default:
-		return fmt.Errorf("channel is full or closed")
+func (p *PubSubChannel)Send(ctx context.Context, msg *message.Message) error  {
+	if !p.hasOpen {
+		return fmt.Errorf("channel has not been opened")
 	}
-}
 
-// SendWithContext publishes a message to all registered subscribers with context
-// support for timeout and cancellation.
-//
-// Parameters:
-//   - ctx: context for timeout/cancellation control
-//   - msg: the message to be published
-//
-// Returns:
-//   - error: error if sending fails or context is cancelled
-func (p *PubSubChannel) SendWithContext(ctx context.Context, msg *message.Message) error {
 	select {
 	case p.channel <- msg:
 		return nil
 	case <-ctx.Done():
 		return fmt.Errorf("context cancelled while sending message: %v", ctx.Err())
-	default:
-		return fmt.Errorf("channel is full or closed")
 	}
 }
 
@@ -87,6 +73,7 @@ func (p *PubSubChannel) Subscribe(callable ...func(m *message.Message)) {
 		for {
 			m, hasOpen := <-ch
 			if !hasOpen {
+				p.hasOpen = false
 				break
 			}
 
@@ -103,6 +90,10 @@ func (p *PubSubChannel) Subscribe(callable ...func(m *message.Message)) {
 // Returns:
 //   - error: error if closing the channel fails (typically nil)
 func (p *PubSubChannel) Unsubscribe() error {
+	if !p.hasOpen {
+		return nil
+	}
+	p.hasOpen = false
 	close(p.channel)
 	return nil
 }

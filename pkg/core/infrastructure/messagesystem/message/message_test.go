@@ -31,8 +31,8 @@ func TestMessageTypeString(t *testing.T) {
 }
 
 func TestNewMessageHeaders(t *testing.T) {
+	t.Parallel()
 	t.Run("should create MessageHeaders successfully", func(t *testing.T) {
-		t.Parallel()
 		headers := message.NewMessageHeaders("route", message.Command, nil, "cid", "ch", "rch")
 		if headers.Route != "route" {
 			t.Error("Route not set correctly")

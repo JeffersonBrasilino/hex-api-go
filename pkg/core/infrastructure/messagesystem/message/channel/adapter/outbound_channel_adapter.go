@@ -113,8 +113,9 @@ func (b *OutboundChannelAdapterBuilder[TMessageType]) WithReferenceName(
 //   - value: The channel name to set
 func (b *OutboundChannelAdapterBuilder[TMessageType]) WithChannelName(
 	value string,
-) {
+) *OutboundChannelAdapterBuilder[TMessageType] {
 	b.channelName = value
+	return b
 }
 
 // WithMessageTranslator sets the message translator for the adapter builder.
@@ -123,8 +124,9 @@ func (b *OutboundChannelAdapterBuilder[TMessageType]) WithChannelName(
 //   - transator: The message translator to use for converting messages
 func (b *OutboundChannelAdapterBuilder[TMessageType]) WithMessageTranslator(
 	transator OutboundChannelMessageTranslator[TMessageType],
-) {
+) *OutboundChannelAdapterBuilder[TMessageType] {
 	b.messageTranslator = transator
+	return b
 }
 
 // WithReplyChannelName sets the reply channel name for the adapter builder.
@@ -133,8 +135,9 @@ func (b *OutboundChannelAdapterBuilder[TMessageType]) WithMessageTranslator(
 //   - value: The reply channel name to set
 func (b *OutboundChannelAdapterBuilder[TMessageType]) WithReplyChannelName(
 	value string,
-) {
+) *OutboundChannelAdapterBuilder[TMessageType] {
 	b.replyChannelName = value
+	return b
 }
 
 // WithBeforeInterceptors sets the before processing interceptors for the adapter builder.
@@ -143,8 +146,9 @@ func (b *OutboundChannelAdapterBuilder[TMessageType]) WithReplyChannelName(
 //   - processors: Variable number of message handlers to execute before processing
 func (b *OutboundChannelAdapterBuilder[TMessageType]) WithBeforeInterceptors(
 	processors ...message.MessageHandler,
-) {
+) *OutboundChannelAdapterBuilder[TMessageType] {
 	b.beforeProcessors = processors
+	return b
 }
 
 // WithAfterInterceptors sets the after processing interceptors for the adapter builder.
@@ -153,8 +157,9 @@ func (b *OutboundChannelAdapterBuilder[TMessageType]) WithBeforeInterceptors(
 //   - processors: Variable number of message handlers to execute after processing
 func (b *OutboundChannelAdapterBuilder[TMessageType]) WithAfterInterceptors(
 	processors ...message.MessageHandler,
-) {
+) *OutboundChannelAdapterBuilder[TMessageType] {
 	b.afterProcessors = processors
+	return b
 }
 
 // ReferenceName returns the current reference name of the builder.

@@ -41,111 +41,93 @@ func (m *mockOutboundTranslator) FromMessage(msg *message.Message) string {
 
 func TestOutboundChannelAdapterBuilder_ReferenceName(t *testing.T) {
 	t.Parallel()
-	t.Run("success", func(t *testing.T) {
-		translator := &mockOutboundTranslator{}
-		builder := adapter.NewOutboundChannelAdapterBuilder("ref", "chan", translator)
-		builder = builder.WithReferenceName("newref")
-		if builder.ReferenceName() != "newref" {
-			t.Errorf("Expected ReferenceName 'newref', got '%s'", builder.ReferenceName())
-		}
-	})
+	translator := &mockOutboundTranslator{}
+	builder := adapter.NewOutboundChannelAdapterBuilder("ref", "chan", translator)
+	builder = builder.WithReferenceName("newref")
+	if builder.ReferenceName() != "newref" {
+		t.Errorf("Expected ReferenceName 'newref', got '%s'", builder.ReferenceName())
+	}
 }
 
 func TestOutboundChannelAdapterBuilder_ChannelName(t *testing.T) {
 	t.Parallel()
-	t.Run("success", func(t *testing.T) {
-		translator := &mockOutboundTranslator{}
-		builder := adapter.NewOutboundChannelAdapterBuilder("ref", "chan", translator)
-		builder.WithChannelName("newchan")
-		if builder.ChannelName() != "newchan" {
-			t.Errorf("Expected ChannelName 'newchan', got '%s'", builder.ChannelName())
-		}
-	})
+	translator := &mockOutboundTranslator{}
+	builder := adapter.NewOutboundChannelAdapterBuilder("ref", "chan", translator)
+	builder.WithChannelName("newchan")
+	if builder.ChannelName() != "newchan" {
+		t.Errorf("Expected ChannelName 'newchan', got '%s'", builder.ChannelName())
+	}
 }
 func TestOutboundChannelAdapterBuilder_MessageTranslator(t *testing.T) {
 	t.Parallel()
-	t.Run("success", func(t *testing.T) {
-		translator := &mockOutboundTranslator{}
-		builder := adapter.NewOutboundChannelAdapterBuilder("ref", "chan", translator)
-		builder.WithMessageTranslator(translator)
-		if builder.MessageTranslator() != translator {
-			t.Error("MessageTranslator not assigned correctly")
-		}
-	})
+	translator := &mockOutboundTranslator{}
+	builder := adapter.NewOutboundChannelAdapterBuilder("ref", "chan", translator)
+	builder.WithMessageTranslator(translator)
+	if builder.MessageTranslator() != translator {
+		t.Error("MessageTranslator not assigned correctly")
+	}
 }
 
 func TestOutboundChannelAdapterBuilder_WithReferenceName(t *testing.T) {
 	t.Parallel()
-	t.Run("success", func(t *testing.T) {
-		translator := &mockOutboundTranslator{}
-		builder := adapter.NewOutboundChannelAdapterBuilder("ref", "chan", translator)
-		builder = builder.WithReferenceName("newref")
-		if builder.ReferenceName() != "newref" {
-			t.Errorf("Expected ReferenceName 'newref', got '%s'", builder.ReferenceName())
-		}
-	})
+	translator := &mockOutboundTranslator{}
+	builder := adapter.NewOutboundChannelAdapterBuilder("ref", "chan", translator)
+	builder = builder.WithReferenceName("newref")
+	if builder.ReferenceName() != "newref" {
+		t.Errorf("Expected ReferenceName 'newref', got '%s'", builder.ReferenceName())
+	}
 }
 
 func TestOutboundChannelAdapterBuilder_WithChannelName(t *testing.T) {
 	t.Parallel()
-	t.Run("success", func(t *testing.T) {
-		translator := &mockOutboundTranslator{}
-		builder := adapter.NewOutboundChannelAdapterBuilder("ref", "chan", translator)
-		builder = builder.WithChannelName("newchan")
-		if builder.ChannelName() != "newchan" {
-			t.Errorf("Expected ChannelName 'newchan', got '%s'", builder.ChannelName())
-		}
-	})
+	translator := &mockOutboundTranslator{}
+	builder := adapter.NewOutboundChannelAdapterBuilder("ref", "chan", translator)
+	builder = builder.WithChannelName("newchan")
+	if builder.ChannelName() != "newchan" {
+		t.Errorf("Expected ChannelName 'newchan', got '%s'", builder.ChannelName())
+	}
 }
 
 func TestOutboundChannelAdapterBuilder_WithMessageTranslator(t *testing.T) {
 	t.Parallel()
-	t.Run("success", func(t *testing.T) {
-		translator := &mockOutboundTranslator{}
-		builder := adapter.NewOutboundChannelAdapterBuilder("ref", "chan", translator)
-		builder.WithMessageTranslator(translator)
-		if builder.MessageTranslator() != translator {
-			t.Error("MessageTranslator not assigned correctly")
-		}
-	})
+	translator := &mockOutboundTranslator{}
+	builder := adapter.NewOutboundChannelAdapterBuilder("ref", "chan", translator)
+	builder.WithMessageTranslator(translator)
+	if builder.MessageTranslator() != translator {
+		t.Error("MessageTranslator not assigned correctly")
+	}
 }
 
 func TestOutboundChannelAdapterBuilder_WithReplyChannelName(t *testing.T) {
 	t.Parallel()
-	t.Run("success", func(t *testing.T) {
-		translator := &mockOutboundTranslator{}
-		builder := adapter.NewOutboundChannelAdapterBuilder("ref", "chan", translator)
-		builder.WithReplyChannelName("replychan")
-		if builder.ReplyChannelName("") != "replychan" {
-			t.Errorf("Expected ReplyChannelName 'replychan', got '%s'", builder.ReplyChannelName(""))
-		}
-	})
+	translator := &mockOutboundTranslator{}
+	builder := adapter.NewOutboundChannelAdapterBuilder("ref", "chan", translator)
+	builder.WithReplyChannelName("replychan")
+	if builder.ReplyChannelName("") != "replychan" {
+		t.Errorf("Expected ReplyChannelName 'replychan', got '%s'", builder.ReplyChannelName(""))
+	}
 }
 
 func TestOutboundChannelAdapterBuilder_WithBeforeInterceptors(t *testing.T) {
 	t.Parallel()
-	t.Run("success", func(t *testing.T) {
-		translator := &mockOutboundTranslator{}
-		builder := adapter.NewOutboundChannelAdapterBuilder("ref", "chan", translator)
-		before := &mockOutboundMessageHandler{}
-		expect := builder.WithBeforeInterceptors(before)
-		if expect != builder {
-			t.Error("BeforeProcessors not assigned correctly")
-		}
-	})
+	translator := &mockOutboundTranslator{}
+	builder := adapter.NewOutboundChannelAdapterBuilder("ref", "chan", translator)
+	before := &mockOutboundMessageHandler{}
+	expect := builder.WithBeforeInterceptors(before)
+	if expect != builder {
+		t.Error("BeforeProcessors not assigned correctly")
+	}
 }
 
 func TestOutboundChannelAdapterBuilder_WithAfterInterceptors(t *testing.T) {
 	t.Parallel()
-	t.Run("success", func(t *testing.T) {
-		translator := &mockOutboundTranslator{}
-		builder := adapter.NewOutboundChannelAdapterBuilder("ref", "chan", translator)
-		after := &mockOutboundMessageHandler{}
-		expect := builder.WithAfterInterceptors(after)
-		if expect != builder {
-			t.Error("AfterProcessors not assigned correctly")
-		}
-	})
+	translator := &mockOutboundTranslator{}
+	builder := adapter.NewOutboundChannelAdapterBuilder("ref", "chan", translator)
+	after := &mockOutboundMessageHandler{}
+	expect := builder.WithAfterInterceptors(after)
+	if expect != builder {
+		t.Error("AfterProcessors not assigned correctly")
+	}
 }
 func TestOutboundChannelAdapterBuilder_BuildOutboundAdapter(t *testing.T) {
 	t.Parallel()
@@ -162,7 +144,6 @@ func TestOutboundChannelAdapterBuilder_BuildOutboundAdapter(t *testing.T) {
 }
 
 func TestOutboundChannelAdapter_Handle(t *testing.T) {
-	t.Parallel()
 	msg := message.NewMessageBuilder().
 		WithChannelName("channel").
 		WithMessageType(message.Command).
@@ -172,6 +153,7 @@ func TestOutboundChannelAdapter_Handle(t *testing.T) {
 	adapterInstance := adapter.NewOutboundChannelAdapter(pubChan)
 	ctx := context.Background()
 	t.Run("success with payload", func(t *testing.T) {
+		t.Parallel()
 		msg := message.NewMessageBuilder().
 			WithChannelName("channel").
 			WithMessageType(message.Command).
@@ -193,6 +175,7 @@ func TestOutboundChannelAdapter_Handle(t *testing.T) {
 	})
 
 	t.Run("success without payload", func(t *testing.T) {
+		t.Parallel()
 		msg := message.NewMessageBuilder().
 			WithChannelName("channel").
 			WithMessageType(message.Command).
@@ -213,6 +196,7 @@ func TestOutboundChannelAdapter_Handle(t *testing.T) {
 		})
 	})
 	t.Run("send error", func(t *testing.T) {
+		t.Parallel()
 		pubChan.sendErr = errors.New("send error")
 		m, err := adapterInstance.Handle(ctx, msg)
 		if err == nil {
@@ -224,28 +208,3 @@ func TestOutboundChannelAdapter_Handle(t *testing.T) {
 		pubChan.sendErr = nil
 	})
 }
-
-/* func TestOutboundChannelAdapter_publishOnInternalChannel(t *testing.T) {
-	t.Parallel()
-	msg := message.NewMessageBuilder().
-		WithChannelName("channel").
-		WithMessageType(message.Command).
-		WithPayload("payload").
-		Build()
-	pubChan := &mockPublisherChannel{}
-	adapterInstance := adapter.NewOutboundChannelAdapter(pubChan)
-	replyChan := channel.NewPointToPointChannel("reply")
-	msg.GetHeaders().ReplyChannel = replyChan
-	called := false
-	replyChan.Subscribe(func(m *message.Message) {
-		called = true
-		if m.GetPayload() != "payload" {
-			t.Errorf("Expected payload 'payload', got '%v'", m.GetPayload())
-		}
-	})
-	adapterInstance.Handle(context.Background(), msg)
-	if !called {
-		t.Error("Expected reply channel to be called")
-	}
-}
-*/

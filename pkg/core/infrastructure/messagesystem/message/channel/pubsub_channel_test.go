@@ -11,31 +11,30 @@ import (
 
 func TestNewPubSubChannel(t *testing.T) {
 	t.Parallel()
-	t.Run("should create a new PubSubChannel", func(t *testing.T) {
-		ch := channel.NewPubSubChannel("chan1")
-		if ch == nil {
-			t.Error("NewPubSubChannel should return a non-nil instance")
-		}
-		if ch.Name() != "chan1" {
-			t.Error("Channel name should be set correctly")
-		}
-	})
+	ch := channel.NewPubSubChannel("chan1")
+	if ch == nil {
+		t.Error("NewPubSubChannel should return a non-nil instance")
+	}
+	if ch.Name() != "chan1" {
+		t.Error("Channel name should be set correctly")
+	}
 }
 
 func TestPubSub_Send(t *testing.T) {
-	t.Parallel()
 	t.Run("should send message successfully", func(t *testing.T) {
+		t.Parallel()
 		ch := channel.NewPubSubChannel("chan1")
 		ctx := context.Background()
 		msg := &message.Message{}
 		ch.Subscribe()
-		ch.Send(ctx,msg)
+		ch.Send(ctx, msg)
 		t.Cleanup(func() {
 			ch.Unsubscribe()
 		})
 	})
 
 	t.Run("should error when send message with context cancel", func(t *testing.T) {
+		t.Parallel()
 		ch := channel.NewPubSubChannel("chan1")
 		msg := &message.Message{}
 		ctx, cancel := context.WithCancel(context.Background())
@@ -49,13 +48,13 @@ func TestPubSub_Send(t *testing.T) {
 		})
 	})
 
-
 	t.Run("should error when channel is closed", func(t *testing.T) {
+		t.Parallel()
 		ch := channel.NewPubSubChannel("chan1")
 		ch.Unsubscribe()
 		msg := &message.Message{}
 		ctx := context.Background()
-		err := ch.Send(ctx,msg)
+		err := ch.Send(ctx, msg)
 		if err == nil {
 			t.Error("Send should return error if channel is closed")
 		}
@@ -67,8 +66,8 @@ func TestPubSub_Send(t *testing.T) {
 }
 
 func TestPubSub_Subscribe(t *testing.T) {
-	t.Parallel()
 	t.Run("should receive message successfully", func(t *testing.T) {
+		t.Parallel()
 		ch := channel.NewPubSubChannel("chan1")
 		msg := &message.Message{}
 		ctx := context.Background()
@@ -85,6 +84,7 @@ func TestPubSub_Subscribe(t *testing.T) {
 	})
 
 	t.Run("should stop when channel is closed", func(t *testing.T) {
+		t.Parallel()
 		ch := channel.NewPubSubChannel("chan1")
 		ctx := context.Background()
 		msg := &message.Message{}

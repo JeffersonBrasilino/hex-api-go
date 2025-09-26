@@ -10,35 +10,30 @@ import (
 
 func TestPointToPointReferenceName(t *testing.T) {
 	t.Parallel()
-	t.Run("should format reference name correctly", func(t *testing.T) {
-		name := "test"
-		reference := channel.PointToPointReferenceName(name)
-		if reference != "point-to-point-channel:test" {
-			t.Errorf("Expected reference name 'point-to-point-channel:test', got: %s", reference)
-		}
-	})
+	name := "test"
+	reference := channel.PointToPointReferenceName(name)
+	if reference != "point-to-point-channel:test" {
+		t.Errorf("Expected reference name 'point-to-point-channel:test', got: %s", reference)
+	}
 }
 
 func TestNewPointToPointChannel(t *testing.T) {
 	t.Parallel()
-	t.Run("should create a new PointToPointChannel", func(t *testing.T) {
-		ch := channel.NewPointToPointChannel("chan1")
-		if ch == nil {
-			t.Error("NewPointToPointChannel should return a non-nil instance")
-		}
-		if ch.Name() != "chan1" {
-			t.Error("Channel name should be set correctly")
-		}
-
-		t.Cleanup(func() {
-			ch.Close()
-		})
+	ch := channel.NewPointToPointChannel("chan1")
+	if ch == nil {
+		t.Error("NewPointToPointChannel should return a non-nil instance")
+	}
+	if ch.Name() != "chan1" {
+		t.Error("Channel name should be set correctly")
+	}
+	t.Cleanup(func() {
+		ch.Close()
 	})
 }
 
 func TestPointToPoint_Send(t *testing.T) {
-	t.Parallel()
 	t.Run("should send message successfully", func(t *testing.T) {
+		t.Parallel()
 		msg := &message.Message{}
 		ctx := context.Background()
 		ch := channel.NewPointToPointChannel("chan1")
@@ -49,6 +44,7 @@ func TestPointToPoint_Send(t *testing.T) {
 		})
 	})
 	t.Run("should error when send message with context cancel", func(t *testing.T) {
+		t.Parallel()
 		ch := channel.NewPointToPointChannel("chan1")
 		msg := &message.Message{}
 		ctx, cancel := context.WithCancel(context.Background())
@@ -63,6 +59,7 @@ func TestPointToPoint_Send(t *testing.T) {
 	})
 
 	t.Run("shoud channel has been closed", func(t *testing.T) {
+		t.Parallel()
 		ch := channel.NewPointToPointChannel("chan1")
 		msg := &message.Message{}
 		ctx := context.Background()
@@ -75,8 +72,8 @@ func TestPointToPoint_Send(t *testing.T) {
 }
 
 func TestPointToPoint_Subscribe(t *testing.T) {
-	t.Parallel()
 	t.Run("should receive message successfully", func(t *testing.T) {
+		t.Parallel()
 		ch := channel.NewPointToPointChannel("chan1")
 		msg := &message.Message{}
 		processed := make(chan bool)
@@ -93,6 +90,7 @@ func TestPointToPoint_Subscribe(t *testing.T) {
 	})
 
 	t.Run("should stop when channel is closed", func(t *testing.T) {
+		t.Parallel()
 		ch := channel.NewPointToPointChannel("chan1")
 		msg := &message.Message{}
 		processed := make(chan bool)
@@ -107,8 +105,8 @@ func TestPointToPoint_Subscribe(t *testing.T) {
 }
 
 func TestReceive(t *testing.T) {
-	t.Parallel()
 	t.Run("should receive message successfully", func(t *testing.T) {
+		t.Parallel()
 		ch := channel.NewPointToPointChannel("chan1")
 		msg := &message.Message{}
 		go func() {
@@ -127,6 +125,7 @@ func TestReceive(t *testing.T) {
 	})
 
 	t.Run("should error when channel is closed", func(t *testing.T) {
+		t.Parallel()
 		ch := channel.NewPointToPointChannel("chan1")
 		ch.Close()
 		_, err := ch.Receive()

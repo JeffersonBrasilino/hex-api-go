@@ -21,17 +21,15 @@ func (d *dummyHandler) Handle(_ context.Context, msg *message.Message) (*message
 
 func TestNewMessageDispatcherBuilder(t *testing.T) {
 	t.Parallel()
-	t.Run("should create a new MessageDispatcherBuilder", func(t *testing.T) {
-		builder := endpoint.NewMessageDispatcherBuilder("ref", "channel")
-		if builder == nil {
-			t.Error("NewMessageDispatcherBuilder should return a non-nil instance")
-		}
-	})
+	builder := endpoint.NewMessageDispatcherBuilder("ref", "channel")
+	if builder == nil {
+		t.Error("NewMessageDispatcherBuilder should return a non-nil instance")
+	}
 }
 
 func TestNewMessageDispatcherBuilder_Build(t *testing.T) {
-	t.Parallel()
 	t.Run("should build a new MessageDispatcher successfully", func(t *testing.T) {
+		t.Parallel()
 		c := container.NewGenericContainer[any, any]()
 		builder := endpoint.NewMessageDispatcherBuilder("ref", "channel")
 		dispatcher, err := builder.Build(c)
@@ -43,6 +41,7 @@ func TestNewMessageDispatcherBuilder_Build(t *testing.T) {
 		}
 	})
 	t.Run("should build a new MessageDispatcher with error", func(t *testing.T) {
+		t.Parallel()
 		c := container.NewGenericContainer[any, any]()
 		builder := endpoint.NewMessageDispatcherBuilder("", "")
 		dispatcher, err := builder.Build(c)
@@ -57,20 +56,18 @@ func TestNewMessageDispatcherBuilder_Build(t *testing.T) {
 
 func TestNewMessageDispatcher(t *testing.T) {
 	t.Parallel()
-	t.Run("should create a new MessageDispatcher", func(t *testing.T) {
-		gw := endpoint.NewGateway(&dummyHandler{}, "", "channel")
-		dispatcher := endpoint.NewMessageDispatcher(gw)
-		if dispatcher == nil {
-			t.Error("NewMessageDispatcher should return a non-nil instance")
-		}
-	})
+	gw := endpoint.NewGateway(&dummyHandler{}, "", "channel")
+	dispatcher := endpoint.NewMessageDispatcher(gw)
+	if dispatcher == nil {
+		t.Error("NewMessageDispatcher should return a non-nil instance")
+	}
 }
 
 func TestSendMessage(t *testing.T) {
-	t.Parallel()
 	gw := endpoint.NewGateway(&dummyHandler{}, "", "channel")
 	dispatcher := endpoint.NewMessageDispatcher(gw)
 	t.Run("should send with success", func(t *testing.T) {
+		t.Parallel()
 		msg := message.NewMessageBuilder().
 			WithChannelName("channel").
 			WithMessageType(message.Command).
@@ -86,6 +83,7 @@ func TestSendMessage(t *testing.T) {
 	})
 
 	t.Run("should send message with error", func(t *testing.T) {
+		t.Parallel()
 		msg := message.NewMessageBuilder().
 			WithChannelName("channel").
 			WithMessageType(message.Command).
@@ -101,10 +99,10 @@ func TestSendMessage(t *testing.T) {
 	})
 }
 func TestPublishMessage(t *testing.T) {
-	t.Parallel()
 	gw := endpoint.NewGateway(&dummyHandler{}, "", "channel")
 	dispatcher := endpoint.NewMessageDispatcher(gw)
 	t.Run("should publish message without error", func(t *testing.T) {
+		t.Parallel()
 		msg := message.NewMessageBuilder().
 			WithChannelName("channel").
 			WithMessageType(message.Command).
@@ -117,6 +115,7 @@ func TestPublishMessage(t *testing.T) {
 	})
 
 	t.Run("should publish message with error", func(t *testing.T) {
+		t.Parallel()
 		msg := message.NewMessageBuilder().
 			WithChannelName("channel").
 			WithMessageType(message.Command).

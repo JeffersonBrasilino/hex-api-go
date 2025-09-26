@@ -59,121 +59,103 @@ func TestNewInboundChannelAdapterBuilder(t *testing.T) {
 
 func TestInboundChannelAdapterBuilder_WithDeadLetterChannelName(t *testing.T) {
 	t.Parallel()
-	t.Run("success", func(t *testing.T) {
-		translator := &mockTranslator{}
-		builder := adapter.NewInboundChannelAdapterBuilder("ref", "chan", translator)
-		builder.WithDeadLetterChannelName("dlc")
-		b := builder.BuildInboundAdapter(&mockConsumerChannel{})
-		if b.DeadLetterChannelName() != "dlc" {
-			t.Errorf("Expected DeadLetterChannelName 'dlc', got '%s'", b.DeadLetterChannelName())
-		}
-	})
+	translator := &mockTranslator{}
+	builder := adapter.NewInboundChannelAdapterBuilder("ref", "chan", translator)
+	builder.WithDeadLetterChannelName("dlc")
+	b := builder.BuildInboundAdapter(&mockConsumerChannel{})
+	if b.DeadLetterChannelName() != "dlc" {
+		t.Errorf("Expected DeadLetterChannelName 'dlc', got '%s'", b.DeadLetterChannelName())
+	}
 }
 
 func TestInboundChannelAdapterBuilder_WithBeforeInterceptors(t *testing.T) {
 	t.Parallel()
-	t.Run("success", func(t *testing.T) {
-		translator := &mockTranslator{}
-		builder := adapter.NewInboundChannelAdapterBuilder("ref", "chan", translator)
-		builder.WithBeforeInterceptors(&mockMessageHandler{})
-		b := builder.BuildInboundAdapter(&mockConsumerChannel{})
-		if len(b.BeforeProcessors()) != 1 {
-			t.Error("BeforeProcessors not assigned correctly")
-		}
-	})
+	translator := &mockTranslator{}
+	builder := adapter.NewInboundChannelAdapterBuilder("ref", "chan", translator)
+	builder.WithBeforeInterceptors(&mockMessageHandler{})
+	b := builder.BuildInboundAdapter(&mockConsumerChannel{})
+	if len(b.BeforeProcessors()) != 1 {
+		t.Error("BeforeProcessors not assigned correctly")
+	}
 }
 
 func TestInboundChannelAdapterBuilder_WithAfterInterceptors(t *testing.T) {
 	t.Parallel()
-	t.Run("success", func(t *testing.T) {
-		translator := &mockTranslator{}
-		builder := adapter.NewInboundChannelAdapterBuilder("ref", "chan", translator)
-		builder.WithAfterInterceptors(&mockMessageHandler{})
-		b := builder.BuildInboundAdapter(&mockConsumerChannel{})
-		if len(b.AfterProcessors()) != 1 {
-			t.Error("AfterProcessors not assigned correctly")
-		}
-	})
+	translator := &mockTranslator{}
+	builder := adapter.NewInboundChannelAdapterBuilder("ref", "chan", translator)
+	builder.WithAfterInterceptors(&mockMessageHandler{})
+	b := builder.BuildInboundAdapter(&mockConsumerChannel{})
+	if len(b.AfterProcessors()) != 1 {
+		t.Error("AfterProcessors not assigned correctly")
+	}
 }
 
 func TestInboundChannelAdapterBuilder_BuildInboundAdapter(t *testing.T) {
 	t.Parallel()
-	t.Run("success", func(t *testing.T) {
-		translator := &mockTranslator{}
-		builder := adapter.NewInboundChannelAdapterBuilder("ref", "chan", translator)
-		mockChan := &mockConsumerChannel{}
-		adapterInstance := builder.BuildInboundAdapter(mockChan)
-		if adapterInstance.ReferenceName() != "ref" {
-			t.Errorf("Expected ReferenceName 'ref', got '%s'", adapterInstance.ReferenceName())
-		}
-	})
+	translator := &mockTranslator{}
+	builder := adapter.NewInboundChannelAdapterBuilder("ref", "chan", translator)
+	mockChan := &mockConsumerChannel{}
+	adapterInstance := builder.BuildInboundAdapter(mockChan)
+	if adapterInstance.ReferenceName() != "ref" {
+		t.Errorf("Expected ReferenceName 'ref', got '%s'", adapterInstance.ReferenceName())
+	}
 }
 
 func TestInboundChannelAdapterBuilder_ReferenceName(t *testing.T) {
 	t.Parallel()
-	t.Run("success", func(t *testing.T) {
-		translator := &mockTranslator{}
-		builder := adapter.NewInboundChannelAdapterBuilder("ref", "chan", translator)
-		if builder.ReferenceName() != "chan" {
-			t.Errorf("Expected ReferenceName 'chan', got '%s'", builder.ReferenceName())
-		}
-	})
+	translator := &mockTranslator{}
+	builder := adapter.NewInboundChannelAdapterBuilder("ref", "chan", translator)
+	if builder.ReferenceName() != "chan" {
+		t.Errorf("Expected ReferenceName 'chan', got '%s'", builder.ReferenceName())
+	}
 }
 
 func TestInboundChannelAdapter_ReferenceName(t *testing.T) {
 	t.Parallel()
-	t.Run("success", func(t *testing.T) {
-		mockChan := &mockConsumerChannel{}
-		adapterInstance := adapter.NewInboundChannelAdapter(mockChan, "ref", "dlc", nil, nil)
-		if adapterInstance.ReferenceName() != "ref" {
-			t.Errorf("Expected ReferenceName 'ref', got '%s'", adapterInstance.ReferenceName())
-		}
-	})
+	mockChan := &mockConsumerChannel{}
+	adapterInstance := adapter.NewInboundChannelAdapter(mockChan, "ref", "dlc", nil, nil)
+	if adapterInstance.ReferenceName() != "ref" {
+		t.Errorf("Expected ReferenceName 'ref', got '%s'", adapterInstance.ReferenceName())
+	}
 }
 
 func TestInboundChannelAdapter_DeadLetterChannelName(t *testing.T) {
 	t.Parallel()
-	t.Run("success", func(t *testing.T) {
-		mockChan := &mockConsumerChannel{}
-		adapterInstance := adapter.NewInboundChannelAdapter(mockChan, "ref", "dlc", nil, nil)
-		if adapterInstance.DeadLetterChannelName() != "dlc" {
-			t.Errorf("Expected DeadLetterChannelName 'dlc', got '%s'", adapterInstance.DeadLetterChannelName())
-		}
-	})
+	mockChan := &mockConsumerChannel{}
+	adapterInstance := adapter.NewInboundChannelAdapter(mockChan, "ref", "dlc", nil, nil)
+	if adapterInstance.DeadLetterChannelName() != "dlc" {
+		t.Errorf("Expected DeadLetterChannelName 'dlc', got '%s'", adapterInstance.DeadLetterChannelName())
+	}
 }
 
 func TestInboundChannelAdapter_BeforeProcessors(t *testing.T) {
 	t.Parallel()
-	t.Run("success", func(t *testing.T) {
-		mockChan := &mockConsumerChannel{}
-		beforeHandlers := []message.MessageHandler{&mockMessageHandler{}}
-		adapterInstance := adapter.NewInboundChannelAdapter(mockChan, "ref", "dlc", beforeHandlers, nil)
-		if len(adapterInstance.BeforeProcessors()) != 1 {
-			t.Error("BeforeProcessors not assigned correctly")
-		}
-	})
+	mockChan := &mockConsumerChannel{}
+	beforeHandlers := []message.MessageHandler{&mockMessageHandler{}}
+	adapterInstance := adapter.NewInboundChannelAdapter(mockChan, "ref", "dlc", beforeHandlers, nil)
+	if len(adapterInstance.BeforeProcessors()) != 1 {
+		t.Error("BeforeProcessors not assigned correctly")
+	}
 }
 
 func TestInboundChannelAdapter_AfterProcessors(t *testing.T) {
 	t.Parallel()
-	t.Run("success", func(t *testing.T) {
-		mockChan := &mockConsumerChannel{}
-		afterHandlers := []message.MessageHandler{&mockMessageHandler{}}
-		adapterInstance := adapter.NewInboundChannelAdapter(mockChan, "ref", "dlc", nil, afterHandlers)
-		if len(adapterInstance.AfterProcessors()) != 1 {
-			t.Error("AfterProcessors not assigned correctly")
-		}
-	})
+	mockChan := &mockConsumerChannel{}
+	afterHandlers := []message.MessageHandler{&mockMessageHandler{}}
+	adapterInstance := adapter.NewInboundChannelAdapter(mockChan, "ref", "dlc", nil, afterHandlers)
+	if len(adapterInstance.AfterProcessors()) != 1 {
+		t.Error("AfterProcessors not assigned correctly")
+	}
 }
 
 func TestInboundChannelAdapter_ReceiveMessage(t *testing.T) {
-	t.Parallel()
 	msg := message.NewMessageBuilder().
 		WithChannelName("channel").
 		WithMessageType(message.Command).
 		WithPayload("payload").
 		Build()
 	t.Run("success", func(t *testing.T) {
+		t.Parallel()
 		mockChan := &mockConsumerChannel{msg: msg}
 		adapterInstance := adapter.NewInboundChannelAdapter(mockChan, "ref", "dlc", nil, nil)
 		ctx := context.Background()
@@ -186,6 +168,7 @@ func TestInboundChannelAdapter_ReceiveMessage(t *testing.T) {
 		}
 	})
 	t.Run("context cancel", func(t *testing.T) {
+		t.Parallel()
 		mockChan := &mockConsumerChannel{}
 		adapterInstance := adapter.NewInboundChannelAdapter(mockChan, "ref", "dlc", nil, nil)
 		ctxCancel, cancel := context.WithCancel(context.Background())
@@ -201,8 +184,8 @@ func TestInboundChannelAdapter_ReceiveMessage(t *testing.T) {
 }
 
 func TestClose(t *testing.T) {
-	t.Parallel()
 	t.Run("success", func(t *testing.T) {
+		t.Parallel()
 		mockChan := &mockConsumerChannel{closeErr: nil}
 		adapterInstance := adapter.NewInboundChannelAdapter(mockChan, "ref", "dlc", nil, nil)
 		if err := adapterInstance.Close(); err != nil {
@@ -210,6 +193,7 @@ func TestClose(t *testing.T) {
 		}
 	})
 	t.Run("error", func(t *testing.T) {
+		t.Parallel()
 		errClose := errors.New("erro ao fechar")
 		mockChan2 := &mockConsumerChannel{closeErr: errClose}
 		adapterInstance2 := adapter.NewInboundChannelAdapter(mockChan2, "ref", "dlc", nil, nil)

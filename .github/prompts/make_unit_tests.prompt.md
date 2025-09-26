@@ -16,11 +16,11 @@ Analise o arquivo, e gere um arquivo de teste unitário:
 * gere testes de sucesso e falha, se houver possibilidade de falha.
 * o namespace do arquivo de teste deve ser o mesmo do arquivo analisado seguido de _test.
 * cada metodo ou função a ser testada deve ser criado um único método de teste agrupando todos os casos de teste usando o t.Parallel().
-* exemplo de métodos de teste agrupados:
+* use este exemplo de métodos de teste como referencia:
 ```go
 func TestPointToPoint_Send(t *testing.T) {
-	t.Parallel()
 	t.Run("should send message successfully", func(t *testing.T) {
+		t.Parallel()
 		msg := &message.Message{}
 		ctx := context.Background()
 		ch := channel.NewPointToPointChannel("chan1")
@@ -31,6 +31,7 @@ func TestPointToPoint_Send(t *testing.T) {
 		})
 	})
 	t.Run("should error when send message with context cancel", func(t *testing.T) {
+		t.Parallel()
 		ch := channel.NewPointToPointChannel("chan1")
 		msg := &message.Message{}
 		ctx, cancel := context.WithCancel(context.Background())
@@ -45,6 +46,7 @@ func TestPointToPoint_Send(t *testing.T) {
 	})
 
 	t.Run("shoud channel has been closed", func(t *testing.T) {
+		t.Parallel()
 		ch := channel.NewPointToPointChannel("chan1")
 		msg := &message.Message{}
 		ctx := context.Background()

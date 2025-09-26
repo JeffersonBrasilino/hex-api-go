@@ -25,24 +25,20 @@ func (d *dummyGatewayHandler) Handle(_ context.Context, msg *message.Message) (*
 
 func TestGatewayReferenceName(t *testing.T) {
 	t.Parallel()
-	t.Run("should return the correct gateway reference name", func(t *testing.T) {
-		refName := "myGateway"
-		expected := "gateway:myGateway"
-		result := endpoint.GatewayReferenceName(refName)
-		if result != expected {
-			t.Errorf("GatewayReferenceName(%s) = %s; want %s", refName, result, expected)
-		}
-	})
+	refName := "myGateway"
+	expected := "gateway:myGateway"
+	result := endpoint.GatewayReferenceName(refName)
+	if result != expected {
+		t.Errorf("GatewayReferenceName(%s) = %s; want %s", refName, result, expected)
+	}
 }
 
 func TestNewGatewayBuilder(t *testing.T) {
 	t.Parallel()
-	t.Run("should create a new GatewayBuilder", func(t *testing.T) {
-		builder := endpoint.NewGatewayBuilder("ref", "channel")
-		if builder == nil {
-			t.Error("NewGatewayBuilder should return a non-nil instance")
-		}
-	})
+	builder := endpoint.NewGatewayBuilder("ref", "channel")
+	if builder == nil {
+		t.Error("NewGatewayBuilder should return a non-nil instance")
+	}
 }
 
 func TestMessageBuilder_WithBeforeInterceptors(t *testing.T) {
@@ -109,7 +105,7 @@ func TestMessageBuilder_WithDeadLetterChannel(t *testing.T) {
 			dlq.Close()
 		})
 	})
-	
+
 	t.Run("should return error if dead letter channel does not exist", func(t *testing.T) {
 		container := container.NewGenericContainer[any, any]()
 		_, err := endpoint.NewGatewayBuilder("ref", "channel").
@@ -137,17 +133,15 @@ func TestMessageBuilder_WithReplyChannel(t *testing.T) {
 }
 func TestNewGateway(t *testing.T) {
 	t.Parallel()
-	t.Run("should create a new Gateway", func(t *testing.T) {
-		gw := endpoint.NewGateway(&dummyGatewayHandler{}, "ref", "channel")
-		if gw == nil {
-			t.Error("NewGateway should return a non-nil instance")
-		}
-	})
+	gw := endpoint.NewGateway(&dummyGatewayHandler{}, "ref", "channel")
+	if gw == nil {
+		t.Error("NewGateway should return a non-nil instance")
+	}
 }
 func TestGateway_Execute(t *testing.T) {
-	t.Parallel()
 	gw := endpoint.NewGateway(&dummyGatewayHandler{}, "ref", "channel")
 	t.Run("should execute the message successfully", func(t *testing.T) {
+		t.Parallel()
 		msg := message.NewMessageBuilder().
 			WithChannelName("channel").
 			WithMessageType(message.Command).
@@ -164,6 +158,7 @@ func TestGateway_Execute(t *testing.T) {
 	})
 
 	t.Run("should error when execute the message", func(t *testing.T) {
+		t.Parallel()
 		msg := message.NewMessageBuilder().
 			WithChannelName("channel").
 			WithMessageType(message.Command).
@@ -180,6 +175,7 @@ func TestGateway_Execute(t *testing.T) {
 	})
 
 	t.Run("should cancel the execution when context is done", func(t *testing.T) {
+		t.Parallel()
 		msg := message.NewMessageBuilder().
 			WithChannelName("channel").
 			WithMessageType(message.Command).

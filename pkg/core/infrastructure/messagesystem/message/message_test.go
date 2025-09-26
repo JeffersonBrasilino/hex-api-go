@@ -32,85 +32,74 @@ func TestMessageTypeString(t *testing.T) {
 
 func TestNewMessageHeaders(t *testing.T) {
 	t.Parallel()
-	t.Run("should create MessageHeaders successfully", func(t *testing.T) {
-		headers := message.NewMessageHeaders("route", message.Command, nil, "cid", "ch", "rch")
-		if headers.Route != "route" {
-			t.Error("Route not set correctly")
-		}
-		if headers.MessageType != message.Command {
-			t.Error("MessageType not set correctly")
-		}
-		if headers.CorrelationId != "cid" {
-			t.Error("CorrelationId not set correctly")
-		}
-		if headers.ChannelName != "ch" {
-			t.Error("ChannelName not set correctly")
-		}
-		if headers.ReplyChannelName != "rch" {
-			t.Error("ReplyChannelName not set correctly")
-		}
-		if headers.CustomHeaders == nil {
-			t.Error("CustomHeaders should be initialized")
-		}
-	})
+	headers := message.NewMessageHeaders("route", message.Command, nil, "cid", "ch", "rch")
+	if headers.Route != "route" {
+		t.Error("Route not set correctly")
+	}
+	if headers.MessageType != message.Command {
+		t.Error("MessageType not set correctly")
+	}
+	if headers.CorrelationId != "cid" {
+		t.Error("CorrelationId not set correctly")
+	}
+	if headers.ChannelName != "ch" {
+		t.Error("ChannelName not set correctly")
+	}
+	if headers.ReplyChannelName != "rch" {
+		t.Error("ReplyChannelName not set correctly")
+	}
+	if headers.CustomHeaders == nil {
+		t.Error("CustomHeaders should be initialized")
+	}
 }
 
 func TestMessageHeaders_SetCustomHeaders(t *testing.T) {
 	t.Parallel()
-	t.Run("should set custom headers successfully", func(t *testing.T) {
-		headers := message.NewMessageHeaders("route", message.Command, nil, "cid", "ch", "rch")
-		headers.SetCustomHeaders(message.CustomHeaders{"foo": "bar"})
-		if headers.CustomHeaders["foo"] != "bar" {
-			t.Error("CustomHeaders not set correctly")
-		}
-	})
+	headers := message.NewMessageHeaders("route", message.Command, nil, "cid", "ch", "rch")
+	headers.SetCustomHeaders(message.CustomHeaders{"foo": "bar"})
+	if headers.CustomHeaders["foo"] != "bar" {
+		t.Error("CustomHeaders not set correctly")
+	}
 }
 
 func TestCustomMessageHeaders_MarshalJSON(t *testing.T) {
 	t.Parallel()
-	t.Run("should marshal MessageHeaders to JSON successfully", func(t *testing.T) {
-		headers := message.NewMessageHeaders("route", message.Command, nil, "cid", "ch", "rch")
-		headers.SetCustomHeaders(message.CustomHeaders{"foo": "bar"})
-		_, err := headers.MarshalJSON()
-		if err != nil {
-			t.Error("MarshalJSON should not return error")
-		}
-	})
+	headers := message.NewMessageHeaders("route", message.Command, nil, "cid", "ch", "rch")
+	headers.SetCustomHeaders(message.CustomHeaders{"foo": "bar"})
+	_, err := headers.MarshalJSON()
+	if err != nil {
+		t.Error("MarshalJSON should not return error")
+	}
 }
 
 func TestNewMessage(t *testing.T) {
 	t.Parallel()
-	t.Run("should create Message successfully", func(t *testing.T) {
-		headers := message.NewMessageHeaders("route", message.Command, nil, "cid", "ch", "rch")
-		ctx := context.Background()
-		msg := message.NewMessage("payload", headers, ctx)
-		if msg.GetPayload() != "payload" {
-			t.Error("GetPayload did not return correct value")
-		}
-		if msg.GetHeaders() != headers {
-			t.Error("GetHeaders did not return correct value")
-		}
-		if msg.GetContext() != ctx {
-			t.Error("GetContext did not return correct value")
-		}
-	})
+	headers := message.NewMessageHeaders("route", message.Command, nil, "cid", "ch", "rch")
+	ctx := context.Background()
+	msg := message.NewMessage("payload", headers, ctx)
+	if msg.GetPayload() != "payload" {
+		t.Error("GetPayload did not return correct value")
+	}
+	if msg.GetHeaders() != headers {
+		t.Error("GetHeaders did not return correct value")
+	}
+	if msg.GetContext() != ctx {
+		t.Error("GetContext did not return correct value")
+	}
 }
 
 func TestMessage_SetContext(t *testing.T) {
 	t.Parallel()
-	t.Run("should set context successfully", func(t *testing.T) {
-		headers := message.NewMessageHeaders("route", message.Command, nil, "cid", "ch", "rch")
-		msg := message.NewMessage("payload", headers, nil)
-		ctx := context.Background()
-		msg.SetContext(ctx)
-		if msg.GetContext() != ctx {
-			t.Error("SetContext did not set context correctly")
-		}
-	})
+	headers := message.NewMessageHeaders("route", message.Command, nil, "cid", "ch", "rch")
+	msg := message.NewMessage("payload", headers, nil)
+	ctx := context.Background()
+	msg.SetContext(ctx)
+	if msg.GetContext() != ctx {
+		t.Error("SetContext did not set context correctly")
+	}
 }
 
 func TestMessage_Getters(t *testing.T) {
-	t.Parallel()
 	headers := message.NewMessageHeaders("route", message.Command, nil, "cid", "ch", "rch")
 	ctx := context.Background()
 	msg := message.NewMessage("payload", headers, ctx)
@@ -141,10 +130,9 @@ func TestMessage_Getters(t *testing.T) {
 }
 
 func TestMessage_ReplyRequired(t *testing.T) {
-	t.Parallel()
 	cases := []struct {
 		description string
-		should     message.MessageType
+		should      message.MessageType
 		want        bool
 	}{
 		{"ReplyRequired should return true for Command", message.Command, true},
@@ -154,6 +142,7 @@ func TestMessage_ReplyRequired(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.description, func(t *testing.T) {
+			t.Parallel()
 			headers := message.NewMessageHeaders("route", c.should, nil, "cid", "ch", "rch")
 			msg := message.NewMessage("payload", headers, nil)
 			if msg.ReplyRequired() != c.want {
@@ -165,12 +154,10 @@ func TestMessage_ReplyRequired(t *testing.T) {
 
 func TestMessage_MarshalJSON(t *testing.T) {
 	t.Parallel()
-	t.Run("should marshal Message to JSON successfully", func(t *testing.T) {
-		headers := message.NewMessageHeaders("route", message.Command, nil, "cid", "ch", "rch")
-		msg := message.NewMessage("payload", headers, nil)
-		_, err := msg.MarshalJSON()
-		if err != nil {
-			t.Error("MarshalJSON should not return error")
-		}
-	})
+	headers := message.NewMessageHeaders("route", message.Command, nil, "cid", "ch", "rch")
+	msg := message.NewMessage("payload", headers, nil)
+	_, err := msg.MarshalJSON()
+	if err != nil {
+		t.Error("MarshalJSON should not return error")
+	}
 }

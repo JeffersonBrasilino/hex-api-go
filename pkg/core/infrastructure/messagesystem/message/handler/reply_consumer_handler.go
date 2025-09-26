@@ -45,14 +45,15 @@ func (s *replyConsumerHandler) Handle(
 	ctx context.Context,
 	msg *message.Message,
 ) (*message.Message, error) {
-	replyChannel, ok := msg.GetHeaders().ReplyChannel.(message.ConsumerChannel)
-
+	
+	channel := msg.GetHeaders().ReplyChannel
+	if channel == nil {
+		return nil, fmt.Errorf("reply channel not found")
+	}
+	
+	replyChannel, ok := channel.(message.ConsumerChannel)
 	if !ok {
 		return nil, fmt.Errorf("reply channel is not a consumer channel")
-	}
-
-	if replyChannel == nil {
-		return nil, fmt.Errorf("reply channel not found")
 	}
 
 	replyMessage, err := replyChannel.Receive()

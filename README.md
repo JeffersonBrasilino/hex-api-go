@@ -1,4 +1,4 @@
-# Sistema de Mensagens - Fluxos e Arquitetura
+# 📦 MessageSystem - Sistema de Mensagens Hexagonal
 
 ## 📋 Índice
 
@@ -8,24 +8,31 @@
 4. [Fluxos de Mensagens](#fluxos-de-mensagens)
 5. [Padrões de Consumo](#padrões-de-consumo)
 6. [Padrões de Integração](#padrões-de-integração)
-7. [Ciclo de Vida do Sistema](#ciclo-de-vida-do-sistema)
-8. [Exemplos de Uso](#exemplos-de-uso)
+7. [Dead Letter Channel](#dead-letter-channel)
+8. [Ciclo de Vida do Sistema](#ciclo-de-vida-do-sistema)
+9. [Monitoramento e Debug](#monitoramento-e-debug)
+10. [Performance e Resiliência](#performance-e-resiliência)
+11. [Exemplos de Uso](#exemplos-de-uso)
+12. [Documentação Detalhada](#documentação-detalhada)
 
 ---
 
 ## 🎯 Visão Geral
 
-O sistema de mensagens implementa uma arquitetura baseada em **Enterprise Integration Patterns (EIP)** e **Command Query Responsibility Segregation (CQRS)**, fornecendo uma infraestrutura robusta para comunicação assíncrona entre componentes de uma aplicação distribuída.
+O MessageSystem implementa uma arquitetura hexagonal baseada em **Enterprise Integration Patterns (EIP)** e **Command Query Responsibility Segregation (CQRS)**, fornecendo uma infraestrutura robusta e flexível para comunicação assíncrona entre componentes de uma aplicação distribuída.
 
 ### Características Principais
 
 - ✅ **CQRS**: Separação clara entre comandos e consultas
-- ✅ **Event-Driven**: Processamento baseado em eventos
-- ✅ **Message Routing**: Roteamento inteligente de mensagens
-- ✅ **Channel Adapters**: Adaptadores para sistemas externos
+- ✅ **Event-Driven**: Processamento baseado em eventos e pub/sub
+- ✅ **Message Routing**: Roteamento inteligente com suporte a múltiplos canais
+- ✅ **Channel Adapters**: Adaptadores para Kafka e outros sistemas externos
+- ✅ **Dead Letter Channel**: Tratamento robusto de mensagens falhas
 - ✅ **Lifecycle Management**: Gerenciamento completo do ciclo de vida
-- ✅ **Error Handling**: Tratamento robusto de erros
+- ✅ **Error Handling**: Tratamento robusto de erros com retry policies
 - ✅ **Context Support**: Suporte a contextos para timeout/cancelação
+- ✅ **Performance**: Processamento paralelo e otimização de recursos
+- ✅ **Monitoring**: Observabilidade e debug de endpoints ativos
 
 ---
 
@@ -888,12 +895,23 @@ slog.Info("[message-system] shutting down...")
 
 ## 📚 Conclusão
 
-O sistema de mensagens fornece uma infraestrutura robusta e escalável para comunicação entre componentes de uma aplicação distribuída. Com suporte completo a padrões CQRS, event-driven architecture e Enterprise Integration Patterns, o sistema oferece:
+O MessageSystem fornece uma infraestrutura robusta e escalável para comunicação entre componentes de uma aplicação distribuída. Com suporte completo a padrões CQRS, event-driven architecture e Enterprise Integration Patterns, o sistema oferece:
 
-- **Flexibilidade**: Suporte a múltiplos padrões de comunicação
-- **Escalabilidade**: Processamento paralelo e assíncrono
-- **Confiabilidade**: Tratamento robusto de erros e resiliência
-- **Observabilidade**: Logging estruturado e monitoramento
-- **Manutenibilidade**: Código bem documentado e estruturado
+- **Flexibilidade**: Suporte a múltiplos padrões de comunicação e extensibilidade
+- **Escalabilidade**: Processamento paralelo, Event-Driven e Polling Consumers
+- **Confiabilidade**: Dead Letter Channel, retry policies e circuit breakers
+- **Observabilidade**: Logging estruturado e monitoramento de endpoints
+- **Performance**: Otimização de recursos e processamento paralelo eficiente
+- **Manutenibilidade**: Código bem documentado e arquitetura hexagonal limpa
 
-A arquitetura modular permite fácil extensão e adaptação para diferentes cenários de uso, desde aplicações simples até sistemas distribuídos complexos.
+A arquitetura hexagonal modular permite fácil extensão e adaptação para diferentes cenários de uso, desde aplicações simples até sistemas distribuídos complexos.
+
+## 📖 Documentação Detalhada
+
+Para uma documentação completa do MessageSystem, incluindo exemplos detalhados, diagramas e considerações de arquitetura, consulte o [README do pacote messagesystem](pkg/core/infrastructure/messagesystem/README.md).
+
+---
+
+> 💡 **Nota:** Este projeto é um exemplo prático de implementação de padrões EIP e CQRS em Go usando arquitetura hexagonal.
+
+Última atualização: 27 de setembro de 2025

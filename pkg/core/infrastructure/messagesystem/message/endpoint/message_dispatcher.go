@@ -19,6 +19,18 @@ import (
 	"github.com/hex-api-go/pkg/core/infrastructure/messagesystem/message"
 )
 
+type Dispatcher interface {
+	SendMessage(
+		ctx context.Context,
+		msg *message.Message,
+	) (any, error)
+
+	PublishMessage(
+		ctx context.Context,
+		msg *message.Message,
+	) error
+}
+
 // messageDispatcherBuilder provides a builder pattern for creating MessageDispatcher
 // instances with specific channel configurations.
 type messageDispatcherBuilder struct {

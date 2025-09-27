@@ -23,7 +23,7 @@ import (
 
 // QueryBus provides query execution capabilities for data retrieval operations.
 type QueryBus struct {
-	dispatcher *endpoint.MessageDispatcher
+	dispatcher endpoint.Dispatcher
 }
 
 // NewQueryBus creates a new query bus instance with the specified dispatcher.
@@ -33,7 +33,7 @@ type QueryBus struct {
 //
 // Returns:
 //   - *QueryBus: new query bus instance
-func NewQueryBus(dispatcher *endpoint.MessageDispatcher) *QueryBus {
+func NewQueryBus(dispatcher endpoint.Dispatcher) *QueryBus {
 
 	queryBus := &QueryBus{
 		dispatcher: dispatcher,

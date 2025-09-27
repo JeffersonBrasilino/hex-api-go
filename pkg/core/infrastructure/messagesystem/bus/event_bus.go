@@ -24,7 +24,7 @@ import (
 // EventBus provides event publishing capabilities for broadcasting events
 // throughout the system.
 type EventBus struct {
-	dispatcher *endpoint.MessageDispatcher
+	dispatcher endpoint.Dispatcher
 }
 
 // NewEventBus creates a new event bus instance with the specified dispatcher.
@@ -34,7 +34,7 @@ type EventBus struct {
 //
 // Returns:
 //   - *EventBus: new event bus instance
-func NewEventBus(dispatcher *endpoint.MessageDispatcher) *EventBus {
+func NewEventBus(dispatcher endpoint.Dispatcher) *EventBus {
 
 	eventBus := &EventBus{
 		dispatcher: dispatcher,

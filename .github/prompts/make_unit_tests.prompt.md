@@ -1,6 +1,5 @@
 ---
 mode: agent
-model: GPT-4o
 description: Generate unit tests for the provided code files.
 ---
 
@@ -15,3 +14,47 @@ Analise o arquivo, e gere um arquivo de teste unitário:
 * não reescreva as structs e funções, apenas as chame.
 * Não gere testes para funções que não estão no arquivo analisado.
 * gere testes de sucesso e falha, se houver possibilidade de falha.
+* o namespace do arquivo de teste deve ser o mesmo do arquivo analisado seguido de _test.
+* cada metodo ou função a ser testada deve ser criado um único método de teste agrupando todos os casos de teste usando o t.Parallel().
+* use este exemplo de métodos de teste como referencia:
+```go
+func TestPointToPoint_Send(t *testing.T) {
+	t.Run("should send message successfully", func(t *testing.T) {
+		t.Parallel()
+		msg := &message.Message{}
+		ctx := context.Background()
+		ch := channel.NewPointToPointChannel("chan1")
+		go ch.Send(ctx, msg)
+		ch.Receive()
+		t.Cleanup(func() {
+			ch.Close()
+		})
+	})
+	t.Run("should error when send message with context cancel", func(t *testing.T) {
+		t.Parallel()
+		ch := channel.NewPointToPointChannel("chan1")
+		msg := &message.Message{}
+		ctx, cancel := context.WithCancel(context.Background())
+		cancel()
+		err := ch.Send(ctx, msg)
+		if err.Error() != "context cancelled while sending message: context canceled" {
+			t.Errorf("Send should return nil error, got: %v", err)
+		}
+		t.Cleanup(func() {
+			ch.Close()
+		})
+	})
+
+	t.Run("shoud channel has been closed", func(t *testing.T) {
+		t.Parallel()
+		ch := channel.NewPointToPointChannel("chan1")
+		msg := &message.Message{}
+		ctx := context.Background()
+		ch.Close()
+		err := ch.Send(ctx, msg)
+		if err.Error() != "channel has not been opened" {
+			t.Error("Send should return error if channel is closed")
+		}
+	})
+}
+```

@@ -1,7 +1,7 @@
 [build]
   args_bin = []
   bin = "./tmp/main"
-  cmd = "go build -o tmp/main cmd/api/main.go"
+  cmd = "go build -mod vendor -o tmp/main cmd/api/main.go"
   delay = 100
   exclude_dir = ["assets", "tmp"]
   exclude_file = []

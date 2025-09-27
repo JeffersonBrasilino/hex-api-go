@@ -1,6 +1,5 @@
 ---
 mode: agent
-model: GPT-4o
 description: Refactor the provided code files to improve readability, maintainability, and performance.
 ---
 

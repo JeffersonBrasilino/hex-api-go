@@ -34,7 +34,7 @@ O sistema de mensagens implementa uma arquitetura baseada em **Enterprise Integr
 ### Estrutura de Pacotes
 
 ```
-message_system/
+messagesystem/
 ├── bus/                    # Buses para CQRS
 │   ├── command_bus.go     # Bus de comandos
 │   ├── query_bus.go       # Bus de consultas
@@ -49,7 +49,7 @@ message_system/
 ├── channel/               # Adaptadores de canal
 │   └── kafka/            # Integração com Kafka
 ├── container/             # Container de dependências
-└── message_system.go      # Sistema principal
+└── messagesystem.go      # Sistema principal
 ```
 
 ### Componentes Arquiteturais
@@ -662,21 +662,21 @@ graph TD
 ```go
 // Configuração de conexão Kafka
 kafkaConnection := kafka.NewConnection("kafka.main", []string{"localhost:9092"})
-message_system.AddChannelConnection(kafkaConnection)
+messagesystem.AddChannelConnection(kafkaConnection)
 
 // Configuração de adaptadores
 outboundAdapter := kafka.NewPublisherChannelAdapterBuilder("kafka.main", "user.events")
-message_system.AddPublisherChannel(outboundAdapter)
+messagesystem.AddPublisherChannel(outboundAdapter)
 
 inboundAdapter := kafka.NewConsumerChannelAdapterBuilder("kafka.main", "user.events", "user.consumer")
-message_system.AddConsumerChannel(inboundAdapter)
+messagesystem.AddConsumerChannel(inboundAdapter)
 
 // Registro de handlers
-message_system.AddActionHandler(createUserHandler)
-message_system.AddActionHandler(getUserHandler)
+messagesystem.AddActionHandler(createUserHandler)
+messagesystem.AddActionHandler(getUserHandler)
 
 // Inicialização
-message_system.Start()
+messagesystem.Start()
 ```
 
 ### 2. **Uso de Command Bus**
@@ -689,14 +689,14 @@ createUserCommand := &CreateUserCommand{
 }
 
 // Envio síncrono
-user, err := message_system.CommandBus().Send(ctx, createUserCommand)
+user, err := messagesystem.CommandBus().Send(ctx, createUserCommand)
 if err != nil {
     log.Error("Failed to create user", "error", err)
     return
 }
 
 // Envio assíncrono
-err = message_system.CommandBus().SendAsync(ctx, createUserCommand)
+err = messagesystem.CommandBus().SendAsync(ctx, createUserCommand)
 if err != nil {
     log.Error("Failed to send command", "error", err)
     return
@@ -712,7 +712,7 @@ getUserQuery := &GetUserQuery{
 }
 
 // Execução de consulta
-user, err := message_system.QueryBus().Send(ctx, getUserQuery)
+user, err := messagesystem.QueryBus().Send(ctx, getUserQuery)
 if err != nil {
     log.Error("Failed to get user", "error", err)
     return
@@ -730,7 +730,7 @@ userCreatedEvent := &UserCreatedEvent{
 }
 
 // Publicação de evento
-err := message_system.EventBus().Publish(ctx, userCreatedEvent)
+err := messagesystem.EventBus().Publish(ctx, userCreatedEvent)
 if err != nil {
     log.Error("Failed to publish event", "error", err)
     return
@@ -741,7 +741,7 @@ if err != nil {
 
 ```go
 // Criação de consumer com configuração avançada
-consumer, err := message_system.EventDrivenConsumer("user.consumer")
+consumer, err := messagesystem.EventDrivenConsumer("user.consumer")
 if err != nil {
     log.Error("Failed to create consumer", "error", err)
     return
@@ -812,7 +812,7 @@ go func() {
 
 ```go
 // Exibe todos os endpoints ativos
-message_system.ShowActiveEndpoints()
+messagesystem.ShowActiveEndpoints()
 
 // Output:
 // ---[Message System] Active Endpoints ---

@@ -13,9 +13,9 @@ import (
 	"github.com/hex-api-go/internal/user/infrastructure/acl/gateway"
 	"github.com/hex-api-go/internal/user/infrastructure/database"
 	"github.com/hex-api-go/internal/user/infrastructure/http"
-	messagesystem "github.com/hex-api-go/pkg/core/infrastructure/message_system"
-	"github.com/hex-api-go/pkg/core/infrastructure/message_system/channel/kafka"
-	"github.com/hex-api-go/pkg/core/infrastructure/message_system/message"
+	messagesystem "github.com/hex-api-go/pkg/core/infrastructure/messagesystem"
+	"github.com/hex-api-go/pkg/core/infrastructure/messagesystem/channel/kafka"
+	"github.com/hex-api-go/pkg/core/infrastructure/messagesystem/message"
 )
 
 var userModuleInstance *userModule
@@ -69,7 +69,7 @@ func registerPublisher() {
 
 	a := kafka.NewPublisherChannelAdapterBuilder(
 		"defaultConKafka",
-		"message_system.topic",
+		"messagesystem.topic",
 	)
 	a.WithReplyChannelName("test_response_channel")
 	messagesystem.AddPublisherChannel(a)

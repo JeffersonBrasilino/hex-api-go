@@ -1,12 +1,12 @@
-FROM golang:1.24-alpine3.22 AS dev
+FROM golang:1.25-alpine3.22 AS dev
 
 WORKDIR /app
 
-RUN go install github.com/air-verse/air@latest
+RUN go install github.com/air-verse/air@v1.63.0
 
 CMD ["/go/bin/air"]
 
-FROM golang:1.24-alpine3.22 AS prd
+FROM golang:1.25-alpine3.22 AS prd
 
 ENV APP_PORT=3000
 

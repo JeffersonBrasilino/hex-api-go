@@ -5,12 +5,12 @@ deps:
 	go mod vendor
 
 start-dev:
-	@echo "Verificando dependências..."
-	if [ ! -d vendor ]; then \
+	echo "Verificando dependências..."
+	@if [ ! -d vendor ]; then \
 		echo "Diretório 'vendor' não encontrado. Executando 'make deps'..."; \
 		make deps; \
 	fi
-	docker compose up
+	docker compose up -d
 
 test:
 	go clean -testcache

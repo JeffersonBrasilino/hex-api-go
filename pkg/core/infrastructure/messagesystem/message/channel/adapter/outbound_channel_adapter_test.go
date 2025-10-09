@@ -35,8 +35,8 @@ func (m mockOutboundMessageHandler) Handle(ctx context.Context, msg *message.Mes
 // mockOutboundTranslator implements adapter.OutboundChannelMessageTranslator for tests.
 type mockOutboundTranslator struct{}
 
-func (m *mockOutboundTranslator) FromMessage(msg *message.Message) string {
-	return "translated"
+func (m *mockOutboundTranslator) FromMessage(msg *message.Message) (string, error) {
+	return "translated", nil
 }
 
 func TestOutboundChannelAdapterBuilder_ReferenceName(t *testing.T) {

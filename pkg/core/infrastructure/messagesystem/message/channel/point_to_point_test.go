@@ -38,7 +38,7 @@ func TestPointToPoint_Send(t *testing.T) {
 		ctx := context.Background()
 		ch := channel.NewPointToPointChannel("chan1")
 		go ch.Send(ctx, msg)
-		ch.Receive()
+		ch.Receive(ctx)
 		t.Cleanup(func() {
 			ch.Close()
 		})
@@ -112,7 +112,7 @@ func TestReceive(t *testing.T) {
 		go func() {
 			ch.Send(context.Background(), msg)
 		}()
-		receivedMsg, err := ch.Receive()
+		receivedMsg, err := ch.Receive(context.TODO())
 		if err != nil {
 			t.Error("Receive should not return an error")
 		}
@@ -128,7 +128,7 @@ func TestReceive(t *testing.T) {
 		t.Parallel()
 		ch := channel.NewPointToPointChannel("chan1")
 		ch.Close()
-		_, err := ch.Receive()
+		_, err := ch.Receive(context.TODO())
 		if err.Error() != "channel has not been opened" {
 			t.Error("Receive should return error if channel is closed")
 		}

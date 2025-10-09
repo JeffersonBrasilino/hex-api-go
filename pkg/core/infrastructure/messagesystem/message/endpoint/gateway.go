@@ -16,7 +16,6 @@ package endpoint
 import (
 	"context"
 	"fmt"
-	"log/slog"
 
 	"github.com/google/uuid"
 	"github.com/hex-api-go/pkg/core/infrastructure/messagesystem/container"
@@ -267,10 +266,6 @@ func (g *Gateway) executeAsync(
 	resultMessage, err := g.messageProcessor.Handle(ctx, messageToProcess.Build())
 	if err != nil {
 		internalReplyChannel.Close()
-		slog.Error("Failed to process message:",
-			"messageId", messageToProcess.Build().GetHeaders().MessageId,
-			"reason", err.Error(),
-		)
 		responseChannel <- err
 	}
 

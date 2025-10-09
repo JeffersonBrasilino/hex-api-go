@@ -3,6 +3,7 @@ docker-monitor:
 
 deps:
 	go mod vendor
+	go clean -modcache
 
 start-dev:
 	echo "Verificando dependências..."
@@ -23,3 +24,8 @@ coverage-terminal:
 coverage-html:
 	make coverage-terminal
 	go tool cover -html=coverage.out -o coverage.html
+
+profiling:
+	curl -o pprof/cpu.prof http://localhost:6061/debug/pprof/profile
+	curl -o pprof/heap.prof http://localhost:6061/debug/pprof/heap
+	curl -o pprof/goroutine.prof http://localhost:6061/debug/pprof/goroutine

@@ -78,7 +78,7 @@ func TestActionHandleActivator_Handle(t *testing.T) {
 			activator := handler.NewActionHandlerActivator(actionHandler)
 			replyChan := channel.NewPointToPointChannel(fmt.Sprintf("reply-%v", c.description))
 			go func(chn chan<- *message.Message, replyChn *channel.PointToPointChannel) {
-				r, _ := replyChn.Receive()
+				r, _ := replyChn.Receive(context.TODO())
 				chn <- r
 			}(resChn, replyChan)
 			msg := message.NewMessageBuilder().

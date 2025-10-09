@@ -3,6 +3,7 @@ package message_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/hex-api-go/pkg/core/infrastructure/messagesystem/message"
 )
@@ -32,7 +33,7 @@ func TestMessageTypeString(t *testing.T) {
 
 func TestNewMessageHeaders(t *testing.T) {
 	t.Parallel()
-	headers := message.NewMessageHeaders("route", message.Command, nil, "cid", "ch", "rch")
+	headers := message.NewMessageHeaders("test", "abc123", "route", message.Command, nil, "cid", "ch", "rch", time.Now(),"1.0")
 	if headers.Route != "route" {
 		t.Error("Route not set correctly")
 	}
@@ -55,26 +56,42 @@ func TestNewMessageHeaders(t *testing.T) {
 
 func TestMessageHeaders_SetCustomHeaders(t *testing.T) {
 	t.Parallel()
-	headers := message.NewMessageHeaders("route", message.Command, nil, "cid", "ch", "rch")
+	headers := message.NewMessageHeaders("test", "abc123", "route", message.Command, nil, "cid", "ch", "rch", time.Now(),"1.0")
 	headers.SetCustomHeaders(message.CustomHeaders{"foo": "bar"})
 	if headers.CustomHeaders["foo"] != "bar" {
 		t.Error("CustomHeaders not set correctly")
 	}
 }
 
-func TestCustomMessageHeaders_MarshalJSON(t *testing.T) {
+func TestCustomMessageHeaders_ToMap(t *testing.T) {
 	t.Parallel()
-	headers := message.NewMessageHeaders("route", message.Command, nil, "cid", "ch", "rch")
+	headers := message.NewMessageHeaders("test", "abc123", "route", message.Command, nil, "cid", "ch", "rch", time.Now(),"1.0")
 	headers.SetCustomHeaders(message.CustomHeaders{"foo": "bar"})
-	_, err := headers.MarshalJSON()
+	_, err := headers.ToMap()
 	if err != nil {
 		t.Error("MarshalJSON should not return error")
 	}
 }
 
+func TestCustomMessageHeaders_OptionalParams(t *testing.T) {
+	t.Parallel()
+	headers := message.NewMessageHeaders("", "", "route", message.Command, nil, "cid", "ch", "rch", time.Now().AddDate(0, 0, 0),"1.0")
+	msg := message.NewMessage("payload", headers, nil)
+	if msg.GetHeaders().MessageId == "" {
+		t.Error("MessageId did not empty")
+	}
+	if msg.GetHeaders().Timestamp.IsZero() {
+		t.Error("Timestamp did not empty")
+	}
+
+	if msg.GetHeaders().Origin == "" {
+		t.Error("Origin did not empty")
+	}
+}
+
 func TestNewMessage(t *testing.T) {
 	t.Parallel()
-	headers := message.NewMessageHeaders("route", message.Command, nil, "cid", "ch", "rch")
+	headers := message.NewMessageHeaders("test", "abc123", "route", message.Command, nil, "cid", "ch", "rch", time.Now(),"1.0")
 	ctx := context.Background()
 	msg := message.NewMessage("payload", headers, ctx)
 	if msg.GetPayload() != "payload" {
@@ -90,7 +107,7 @@ func TestNewMessage(t *testing.T) {
 
 func TestMessage_SetContext(t *testing.T) {
 	t.Parallel()
-	headers := message.NewMessageHeaders("route", message.Command, nil, "cid", "ch", "rch")
+	headers := message.NewMessageHeaders("test", "abc123", "route", message.Command, nil, "cid", "ch", "rch", time.Now(),"1.0")
 	msg := message.NewMessage("payload", headers, nil)
 	ctx := context.Background()
 	msg.SetContext(ctx)
@@ -100,7 +117,7 @@ func TestMessage_SetContext(t *testing.T) {
 }
 
 func TestMessage_Getters(t *testing.T) {
-	headers := message.NewMessageHeaders("route", message.Command, nil, "cid", "ch", "rch")
+	headers := message.NewMessageHeaders("test", "abc123", "route", message.Command, nil, "cid", "ch", "rch", time.Now(),"1.0")
 	ctx := context.Background()
 	msg := message.NewMessage("payload", headers, ctx)
 	cases := []struct {
@@ -143,21 +160,11 @@ func TestMessage_ReplyRequired(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.description, func(t *testing.T) {
 			t.Parallel()
-			headers := message.NewMessageHeaders("route", c.should, nil, "cid", "ch", "rch")
+			headers := message.NewMessageHeaders("test", "abc1234", "route", c.should, nil, "cid", "ch", "rch", time.Now(),"1.0")
 			msg := message.NewMessage("payload", headers, nil)
 			if msg.ReplyRequired() != c.want {
 				t.Errorf("%q: got %v, want %v", c.description, msg.ReplyRequired(), c.want)
 			}
 		})
-	}
-}
-
-func TestMessage_MarshalJSON(t *testing.T) {
-	t.Parallel()
-	headers := message.NewMessageHeaders("route", message.Command, nil, "cid", "ch", "rch")
-	msg := message.NewMessage("payload", headers, nil)
-	_, err := msg.MarshalJSON()
-	if err != nil {
-		t.Error("MarshalJSON should not return error")
 	}
 }

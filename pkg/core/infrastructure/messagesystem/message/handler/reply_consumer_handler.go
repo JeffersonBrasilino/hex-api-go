@@ -56,7 +56,7 @@ func (s *replyConsumerHandler) Handle(
 		return nil, fmt.Errorf("reply channel is not a consumer channel")
 	}
 
-	replyMessage, err := replyChannel.Receive()
+	replyMessage, err := replyChannel.Receive(ctx)
 
 	if err != nil {
 		return nil, err

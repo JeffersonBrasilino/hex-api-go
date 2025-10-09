@@ -16,7 +16,7 @@ type mockConsumerChannel struct {
 	closeErr error
 }
 
-func (m *mockConsumerChannel) Receive() (*message.Message, error) {
+func (m *mockConsumerChannel) Receive(ctx context.Context) (*message.Message, error) {
 	return m.msg, m.err
 }
 
@@ -37,22 +37,22 @@ func (m mockMessageHandler) Handle(ctx context.Context, msg *message.Message) (*
 // mockTranslator implements InboundChannelMessageTranslator for tests.
 type mockTranslator struct{}
 
-func (m *mockTranslator) ToMessage(msg string) *message.Message {
+func (m *mockTranslator) ToMessage(msg string) (*message.Message, error) {
 	return message.NewMessageBuilder().
 		WithChannelName("channel").
 		WithMessageType(message.Command).
 		WithPayload(msg).
-		Build()
+		Build(), nil
 }
 
 func TestNewInboundChannelAdapterBuilder(t *testing.T) {
 	t.Parallel()
 	translator := &mockTranslator{}
 	builder := adapter.NewInboundChannelAdapterBuilder("ref", "chan", translator)
-	if builder.ChannelName != "chan" {
-		t.Errorf("Expected ChannelName 'chan', got '%s'", builder.ChannelName)
+	if builder.ReferenceName() != "chan" {
+		t.Errorf("Expected ChannelName 'chan', got '%s'", builder.ReferenceName())
 	}
-	if builder.MessageTranslator != translator {
+	if builder.MessageTranslator() != translator {
 		t.Error("MessageTranslator not assigned correctly")
 	}
 }

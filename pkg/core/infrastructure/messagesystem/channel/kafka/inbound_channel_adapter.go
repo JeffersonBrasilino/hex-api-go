@@ -13,33 +13,32 @@ package kafka
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"time"
 
-	"github.com/IBM/sarama"
-	"github.com/google/uuid"
 	"github.com/hex-api-go/pkg/core/infrastructure/messagesystem/container"
 	"github.com/hex-api-go/pkg/core/infrastructure/messagesystem/message"
 	"github.com/hex-api-go/pkg/core/infrastructure/messagesystem/message/channel/adapter"
+	"github.com/segmentio/kafka-go"
 )
 
 // consumerChannelAdapterBuilder provides a builder pattern for creating
 // Kafka inbound channel adapters with connection and topic configuration.
 type consumerChannelAdapterBuilder struct {
-	*adapter.InboundChannelAdapterBuilder[*sarama.ConsumerMessage]
+	*adapter.InboundChannelAdapterBuilder[*kafka.Message]
 	connectionReferenceName string
+	consumerName            string
 }
 
 // inboundChannelAdapter implements the InboundChannelAdapter interface for Kafka,
 // providing message consumption capabilities through a Kafka consumer.
 type inboundChannelAdapter struct {
-	consumer          sarama.Consumer
+	consumer          *kafka.Reader
 	topic             string
-	messageTranslator adapter.InboundChannelMessageTranslator[*sarama.ConsumerMessage]
-	channel           chan *message.Message
+	messageTranslator adapter.InboundChannelMessageTranslator[*kafka.Message]
+	messageChannel    chan *message.Message
+	errorChannel      chan error
 	ctx               context.Context
-	close             context.CancelFunc
+	cancelCtx         context.CancelFunc
 }
 
 // NewConsumerChannelAdapterBuilder creates a new Kafka consumer channel
@@ -64,6 +63,7 @@ func NewConsumerChannelAdapterBuilder(
 			NewMessageTranslator(),
 		),
 		connectionReferenceName,
+		consumerName,
 	}
 	return builder
 }
@@ -78,20 +78,20 @@ func NewConsumerChannelAdapterBuilder(
 // Returns:
 //   - *inboundChannelAdapter: configured inbound channel adapter
 func NewInboundChannelAdapter(
-	consumer sarama.Consumer,
+	consumer *kafka.Reader,
 	topic string,
-	messageTranslator adapter.InboundChannelMessageTranslator[*sarama.ConsumerMessage],
+	messageTranslator adapter.InboundChannelMessageTranslator[*kafka.Message],
 ) *inboundChannelAdapter {
 	ctx, cancel := context.WithCancel(context.Background())
 	adp := &inboundChannelAdapter{
 		consumer:          consumer,
 		topic:             topic,
 		messageTranslator: messageTranslator,
-		channel:           make(chan *message.Message),
+		messageChannel:    make(chan *message.Message),
+		errorChannel:      make(chan error),
 		ctx:               ctx,
-		close:             cancel,
+		cancelCtx:         cancel,
 	}
-
 	go adp.subscribeOnTopic()
 	return adp
 }
@@ -115,8 +115,9 @@ func (c *consumerChannelAdapterBuilder) Build(
 			c.connectionReferenceName,
 		)
 	}
-	consumer := con.(*connection).GetConsumer()
-	adapter := NewInboundChannelAdapter(consumer, c.ChannelName, c.MessageTranslator)
+
+	consumer := con.(*connection).Consumer(c.ReferenceName(), fmt.Sprintf("%s:%s", c.connectionReferenceName, c.consumerName))
+	adapter := NewInboundChannelAdapter(consumer, c.ReferenceName(), c.MessageTranslator())
 	return c.InboundChannelAdapterBuilder.BuildInboundAdapter(adapter), nil
 }
 
@@ -130,15 +131,23 @@ func (a *inboundChannelAdapter) Name() string {
 
 // Receive receives a message from the Kafka topic.
 //
+// Parameters:
+//   - ctx: context
+//
 // Returns:
 //   - *message.Message: the received message
 //   - error: error if receiving fails or channel is closed
-func (a *inboundChannelAdapter) Receive() (*message.Message, error) {
-	result, hasOpen := <-a.channel
-	if !hasOpen {
-		return nil, errors.New("channel has not been opened")
+func (a *inboundChannelAdapter) Receive(ctx context.Context) (*message.Message, error) {
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	case <-a.ctx.Done():
+		return nil, a.ctx.Err()
+	case msg := <-a.messageChannel:
+		return msg, nil
+	case err := <-a.errorChannel:
+		return nil, err
 	}
-	return result, nil
 }
 
 // Close gracefully closes the Kafka inbound channel adapter and stops
@@ -147,38 +156,40 @@ func (a *inboundChannelAdapter) Receive() (*message.Message, error) {
 // Returns:
 //   - error: error if closing fails (typically nil)
 func (a *inboundChannelAdapter) Close() error {
-	a.close()
+	a.cancelCtx()
+	a.consumer.Close()
+	close(a.messageChannel)
+	close(a.errorChannel)
 	return nil
 }
 
 // subscribeOnTopic subscribes to the Kafka topic and processes incoming messages.
 // This method runs in a separate goroutine and continuously polls for messages.
 func (a *inboundChannelAdapter) subscribeOnTopic() {
-	ticker := time.NewTicker(time.Second * 3)
-	defer ticker.Stop()
-	defer close(a.channel)
-	var msgId int = 1
 	for {
 		select {
 		case <-a.ctx.Done():
 			return
-		case <-ticker.C:
+		default:
 		}
-		//message := a.messageTranslator.ToMessage(msg)
+		msg, err := a.consumer.FetchMessage(a.ctx)
 
-		msg := message.NewMessageBuilder().
-			WithMessageType(message.Event).
-			WithCorrelationId(uuid.New().String()).
-			WithPayload(fmt.Sprintf("MESSAGE - %v", msgId)).
-			Build()
+		if err != nil {
+			if err == context.Canceled {
+				return
+			}
+			a.errorChannel <- err
+		}
+
+		message, translateErr := a.messageTranslator.ToMessage(&msg)
+		if translateErr != nil {
+			a.errorChannel <- translateErr
+		}
 
 		select {
-		case a.channel <- msg: // Envio bem-sucedido
-			//slog.Info("Message sent to internal channel.", "messageId", msgId)
-			msgId++
-		case <-a.ctx.Done(): // Contexto cancelado ENQUANTO esperava para enviar
-			//slog.Info("Context cancelled while trying to send message. Dropping message.")
-			return // Sai da goroutine
+		case <-a.ctx.Done():
+			return
+		case a.messageChannel <- message:
 		}
 	}
 }

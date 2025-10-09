@@ -101,7 +101,7 @@ func (c *PointToPointChannel) Subscribe(callable func(m *message.Message)) {
 // Returns:
 //   - *message.Message: The received message
 //   - error: Error if the channel is closed or no message is available
-func (c *PointToPointChannel) Receive() (*message.Message, error) {
+func (c *PointToPointChannel) Receive(ctx context.Context) (*message.Message, error) {
 	result, hasOpen := <-c.channel
 	if !hasOpen {
 		c.hasOpen = false

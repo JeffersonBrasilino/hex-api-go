@@ -30,7 +30,7 @@ type InboundChannelMessageTranslator[T any] interface {
 	//
 	// Returns:
 	//   - *message.Message: The translated message in internal format
-	ToMessage(msg T) *message.Message
+	ToMessage(msg T) (*message.Message, error)
 }
 
 // InboundChannelAdapterBuilder provides a fluent interface for configuring
@@ -39,8 +39,8 @@ type InboundChannelMessageTranslator[T any] interface {
 //
 // TMessageType represents the external message type that will be received.
 type InboundChannelAdapterBuilder[TMessageType any] struct {
-	ChannelName           string
-	MessageTranslator     InboundChannelMessageTranslator[TMessageType]
+	channelName           string
+	messageTranslator     InboundChannelMessageTranslator[TMessageType]
 	referenceName         string
 	deadLetterChannelName string
 	beforeProcessors      []message.MessageHandler
@@ -73,8 +73,8 @@ func NewInboundChannelAdapterBuilder[T any](
 	messageTranslator InboundChannelMessageTranslator[T],
 ) *InboundChannelAdapterBuilder[T] {
 	return &InboundChannelAdapterBuilder[T]{
-		ChannelName:       channelName,
-		MessageTranslator: messageTranslator,
+		channelName:       channelName,
+		messageTranslator: messageTranslator,
 		referenceName:     referenceName,
 		beforeProcessors:  []message.MessageHandler{},
 		afterProcessors:   []message.MessageHandler{},
@@ -138,12 +138,18 @@ func (b *InboundChannelAdapterBuilder[TMessageType]) WithAfterInterceptors(
 	b.afterProcessors = processors
 }
 
-// ReferenceName returns the current reference name of the builder.
+// ReferenceName returns the current reference(ChannelName) name of the builder.
 //
 // Returns:
 //   - string: The reference name
 func (b *InboundChannelAdapterBuilder[TMessageType]) ReferenceName() string {
-	return b.ChannelName
+	return b.channelName
+}
+
+func (
+	b *InboundChannelAdapterBuilder[TMessageType],
+) MessageTranslator() InboundChannelMessageTranslator[TMessageType] {
+	return b.messageTranslator
 }
 
 // BuildInboundAdapter creates a configured inbound channel adapter from the builder
@@ -214,7 +220,7 @@ func (i *InboundChannelAdapter) ReceiveMessage(ctx context.Context) (*message.Me
 		)
 	default:
 	}
-	return i.inboundAdapter.Receive()
+	return i.inboundAdapter.Receive(ctx)
 }
 
 // Close closes the inbound channel adapter, releasing associated resources.

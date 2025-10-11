@@ -52,7 +52,7 @@ func NewComandHandler() *CommandHandler {
 func (c *CommandHandler) Handle(ctx context.Context, data *Command) (*ResultCm, error) {
 	fmt.Println("process command ok")
 	time.Sleep(time.Second * 2)
-	return &ResultCm{"deu tudo certo"}, nil
+	return &ResultCm{"deu tudo certo"}, fmt.Errorf("DEU ERRO")
 }
 
 func main() {
@@ -66,7 +66,7 @@ func main() {
 	//be registered only once after registration.
 	//To use it in your channels, simply use its name in the channel reference name.
 	messagesystem.AddChannelConnection(
-		kafka.NewConnection("defaultConKafka", []string{"kafka:9092"}),
+		kafka.NewConnection("defaultConKafka", []string{"localhost:9093"}),
 	)
 
 	//create DLQ publisher channel
@@ -123,12 +123,17 @@ func main() {
 	//- WithStopOnError: If a processing error occurs, the consumer is shut down (default is true)
 	go consumer.WithAmountOfProcessors(1).
 		WithMessageProcessingTimeout(50000).
-		WithStopOnError(true).
+		WithStopOnError(false).
 		Run(ctx)
 
 	//publish message command
 	go func() {
-		maxPublishMessages := 5
+		select {
+		case <-ctx.Done():
+			return
+		default:
+		}
+		maxPublishMessages := 50
 		for i := 1; i <= maxPublishMessages; i++ {
 			fmt.Println("publish command message...")
 			//get command bus

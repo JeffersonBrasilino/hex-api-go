@@ -16,6 +16,7 @@ import (
 	"fmt"
 
 	"github.com/hex-api-go/pkg/core/infrastructure/messagesystem/message"
+	"github.com/hex-api-go/pkg/core/infrastructure/messagesystem/message/handler"
 )
 
 // InboundChannelMessageTranslator defines the contract for translating external messages
@@ -45,6 +46,7 @@ type InboundChannelAdapterBuilder[TMessageType any] struct {
 	deadLetterChannelName string
 	beforeProcessors      []message.MessageHandler
 	afterProcessors       []message.MessageHandler
+	retryTimeAttempts     []int
 }
 
 // InboundChannelAdapter handles the reception, processing, and forwarding of messages
@@ -55,6 +57,7 @@ type InboundChannelAdapter struct {
 	deadLetterChannelName string
 	beforeProcessors      []message.MessageHandler
 	afterProcessors       []message.MessageHandler
+	retryTimeAttempts     []int
 }
 
 // NewInboundChannelAdapterBuilder creates a new builder instance for configuring
@@ -89,6 +92,7 @@ func NewInboundChannelAdapterBuilder[T any](
 //   - deadLetterChannelName: Name of the dead letter channel for failed messages
 //   - beforeProcessors: List of pre-processing message handlers
 //   - afterProcessors: List of post-processing message handlers
+//   - retryTimeAttempts: time and number of retry attempts
 //
 // Returns:
 //   - *InboundChannelAdapter: Configured inbound channel adapter
@@ -98,6 +102,7 @@ func NewInboundChannelAdapter(
 	deadLetterChannelName string,
 	beforeProcessors []message.MessageHandler,
 	afterProcessors []message.MessageHandler,
+	retryTimeAttempts []int,
 ) *InboundChannelAdapter {
 	return &InboundChannelAdapter{
 		inboundAdapter:        adapter,
@@ -105,6 +110,7 @@ func NewInboundChannelAdapter(
 		deadLetterChannelName: deadLetterChannelName,
 		beforeProcessors:      beforeProcessors,
 		afterProcessors:       afterProcessors,
+		retryTimeAttempts:     retryTimeAttempts,
 	}
 }
 
@@ -146,6 +152,16 @@ func (b *InboundChannelAdapterBuilder[TMessageType]) ReferenceName() string {
 	return b.channelName
 }
 
+// WithRetryTimes Sets the time and number of retry attempts.
+//
+// Parameters:
+//   - hitTimesMillisecond: retry time attempt
+func (b *InboundChannelAdapterBuilder[TMessageType]) WithRetryTimes(
+	hitTimesMillisecond ...int,
+) {
+	b.retryTimeAttempts = hitTimesMillisecond
+}
+
 func (
 	b *InboundChannelAdapterBuilder[TMessageType],
 ) MessageTranslator() InboundChannelMessageTranslator[TMessageType] {
@@ -169,6 +185,7 @@ func (b *InboundChannelAdapterBuilder[TMessageType]) BuildInboundAdapter(
 		b.deadLetterChannelName,
 		b.beforeProcessors,
 		b.afterProcessors,
+		b.retryTimeAttempts,
 	)
 }
 
@@ -204,6 +221,14 @@ func (i *InboundChannelAdapter) AfterProcessors() []message.MessageHandler {
 	return i.afterProcessors
 }
 
+// RetryAttempts returns the configured retry time and attempts.
+//
+// Returns:
+//   - []int: List of time attempts
+func (i *InboundChannelAdapter) RetryAttempts() []int {
+	return i.retryTimeAttempts
+}
+
 // ReceiveMessage receives a message from the channel, respecting context cancellation.
 //
 // Parameters:
@@ -229,4 +254,13 @@ func (i *InboundChannelAdapter) ReceiveMessage(ctx context.Context) (*message.Me
 //   - error: Error if closing the channel fails
 func (i *InboundChannelAdapter) Close() error {
 	return i.inboundAdapter.Close()
+}
+
+func (i *InboundChannelAdapter) CommitMessage(msg *message.Message) error {
+	ackChannel, ok := i.inboundAdapter.(handler.ChannelMessageAcknowledgment)
+	if !ok {
+		return nil
+	}
+
+	return ackChannel.CommitMessage(msg)
 }

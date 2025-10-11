@@ -45,7 +45,7 @@ type PollingConsumer struct {
 	stopOnError                   bool
 	hasRunning                    bool
 	gateway                       *Gateway
-	inboundChannelAdapter         message.InboundChannelAdapter
+	inboundChannelAdapter         InboundChannelAdapter
 }
 
 // NewPolllingConsumerBuilder creates a new polling consumer builder instance.
@@ -72,7 +72,7 @@ func NewPolllingConsumerBuilder(referenceName string) *PollingConsumerBuilder {
 //   - *PollingConsumer: configured polling consumer
 func NewPollingConsumer(
 	gateway *Gateway,
-	inboundChannelAdapter message.InboundChannelAdapter,
+	inboundChannelAdapter InboundChannelAdapter,
 	referenceName string,
 ) *PollingConsumer {
 	return &PollingConsumer{
@@ -108,7 +108,7 @@ func (b *PollingConsumerBuilder) Build(
 		panic(fmt.Sprintf("consumer channel %s not found.", b.referenceName))
 	}
 
-	inboundChannel, instance := channel.(message.InboundChannelAdapter)
+	inboundChannel, instance := channel.(InboundChannelAdapter)
 	if !instance {
 		panic(fmt.Sprintf("consumer channel %s is not a consumer channel.", b.referenceName))
 	}

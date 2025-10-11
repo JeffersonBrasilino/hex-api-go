@@ -24,7 +24,7 @@ func (d *mockConsumerChannel) Send(_ context.Context, msg *message.Message) erro
 	return nil
 }
 
-func (d *mockConsumerChannel) Receive() (*message.Message, error) {
+func (d *mockConsumerChannel) Receive(ctx context.Context) (*message.Message, error) {
 	msg := <-d.msgReceived
 	if msg.GetPayload() == "error" {
 		return nil, fmt.Errorf("error processing")

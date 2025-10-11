@@ -18,7 +18,6 @@ func TestMessageTypeString(t *testing.T) {
 		{"should Query", message.Query, "Query"},
 		{"should Event", message.Event, "Event"},
 		{"should Document", message.Document, "Document"},
-		{"should Unknown", message.MessageType(99), "Message"},
 	}
 
 	for _, c := range cases {

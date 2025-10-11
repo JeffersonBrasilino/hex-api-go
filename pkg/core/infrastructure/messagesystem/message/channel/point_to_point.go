@@ -107,7 +107,7 @@ func (c *PointToPointChannel) Receive(ctx context.Context) (*message.Message, er
 		c.hasOpen = false
 		return nil, errors.New("channel has not been opened")
 	}
-	c.Close()
+	
 	return result, nil
 }
 

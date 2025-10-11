@@ -35,7 +35,7 @@ var (
 // Global containers for managing system components.
 var (
 	outboundChannelBuilders = container.NewGenericContainer[string, BuildableComponent[message.PublisherChannel]]()
-	inboundChannelBuilders  = container.NewGenericContainer[string, BuildableComponent[message.InboundChannelAdapter]]()
+	inboundChannelBuilders  = container.NewGenericContainer[string, BuildableComponent[endpoint.InboundChannelAdapter]]()
 	channelConnections      = container.NewGenericContainer[string, ChannelConnection]()
 	messageSystemContainer  = container.NewGenericContainer[any, any]()
 	activeEndpoints         = container.NewGenericContainer[string, any]()
@@ -156,7 +156,7 @@ func buildChannelConnections(container container.Container[any, any]) {
 //
 // Parameters:
 //   - inboundChannel: the consumer channel builder to register
-func AddConsumerChannel(inboundChannel BuildableComponent[message.InboundChannelAdapter]) {
+func AddConsumerChannel(inboundChannel BuildableComponent[endpoint.InboundChannelAdapter]) {
 	if inboundChannelBuilders.Has(inboundChannel.ReferenceName()) {
 		panic(
 			fmt.Sprintf(

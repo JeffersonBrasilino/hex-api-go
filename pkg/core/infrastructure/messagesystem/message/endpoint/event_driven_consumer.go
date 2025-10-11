@@ -23,6 +23,7 @@ import (
 
 	"github.com/hex-api-go/pkg/core/infrastructure/messagesystem/container"
 	"github.com/hex-api-go/pkg/core/infrastructure/messagesystem/message"
+	"github.com/hex-api-go/pkg/core/infrastructure/messagesystem/message/handler"
 )
 
 // EventDrivenConsumerBuilder is responsible for building EventDrivenConsumer instances.
@@ -38,7 +39,7 @@ type EventDrivenConsumer struct {
 	referenceName                 string
 	processingTimeoutMilliseconds int
 	gateway                       *Gateway
-	inboundChannelAdapter         message.InboundChannelAdapter
+	inboundChannelAdapter         InboundChannelAdapter
 	amountOfProcessors            int
 	processingQueue               chan *message.Message
 	processorsWaitGroup           sync.WaitGroup
@@ -73,7 +74,7 @@ func NewEventDrivenConsumerBuilder(referenceName string) *EventDrivenConsumerBui
 func NewEventDrivenConsumer(
 	referenceName string,
 	gateway *Gateway,
-	inboundChannelAdapter message.InboundChannelAdapter,
+	inboundChannelAdapter InboundChannelAdapter,
 ) *EventDrivenConsumer {
 	consumer := &EventDrivenConsumer{
 		referenceName:                 referenceName,
@@ -109,7 +110,7 @@ func (b *EventDrivenConsumerBuilder) Build(
 		)
 	}
 
-	inboundChannel, ok := anyChannel.(message.InboundChannelAdapter)
+	inboundChannel, ok := anyChannel.(InboundChannelAdapter)
 	if !ok {
 		panic(
 			fmt.Sprintf(
@@ -120,6 +121,7 @@ func (b *EventDrivenConsumerBuilder) Build(
 	}
 
 	gatewayBuilder := NewGatewayBuilder(inboundChannel.ReferenceName(), "")
+
 	if inboundChannel.DeadLetterChannelName() != "" {
 		gatewayBuilder.WithDeadLetterChannel(inboundChannel.DeadLetterChannelName())
 	}
@@ -130,6 +132,14 @@ func (b *EventDrivenConsumerBuilder) Build(
 
 	if len(inboundChannel.AfterProcessors()) > 0 {
 		gatewayBuilder.WithAfterInterceptors(inboundChannel.AfterProcessors()...)
+	}
+
+	if len(inboundChannel.RetryAttempts()) > 0 {
+		gatewayBuilder.WithRetry(inboundChannel.RetryAttempts())
+	}
+
+	if ackChannel, ok := inboundChannel.(handler.ChannelMessageAcknowledgment); ok {
+		gatewayBuilder.WithAcknowledge(ackChannel)
 	}
 
 	gateway, err := gatewayBuilder.Build(container)
@@ -163,6 +173,8 @@ func (b *EventDrivenConsumer) WithMessageProcessingTimeout(
 
 // WithAmountOfProcessors sets the number of concurrent processors.
 //
+// default value: 1
+//
 // Warning: If the order of message processing is crucial (such as data streaming),
 // it is not recommended to configure this setting, as we do not guarantee the processing order in parallel goroutines.
 //
@@ -178,6 +190,15 @@ func (b *EventDrivenConsumer) WithAmountOfProcessors(value int) *EventDrivenCons
 	return b
 }
 
+// WithStopOnError sets the stop run when error occured.
+//
+// default value: true
+//
+// Parameters:
+//   - value: flag(bool)
+//
+// Returns:
+//   - *EventDrivenConsumer: pointer to EventDrivenConsumer for method chaining
 func (b *EventDrivenConsumer) WithStopOnError(value bool) *EventDrivenConsumer {
 	b.stopOnError = value
 	return b

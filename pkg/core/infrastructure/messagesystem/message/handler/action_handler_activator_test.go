@@ -88,7 +88,7 @@ func TestActionHandleActivator_Handle(t *testing.T) {
 				WithReplyChannel(replyChan)
 
 			if c.description == "invalid payload" {
-				msg.WithPayload("not-an-action")
+				msg.WithPayload("teste")
 			}
 			ctx := context.Background()
 			result, err := activator.Handle(ctx, msg.Build())

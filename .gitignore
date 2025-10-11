@@ -1,3 +1,5 @@
 tmp
 monigo
 coverage.*
+pprof/
+anotations.md

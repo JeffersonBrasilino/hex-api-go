@@ -148,6 +148,7 @@ func (m *MessageTranslator) ToMessage(data *kafka.Message) (*message.Message, er
 	}
 
 	messageBuilder.WithPayload(data.Value)
+	messageBuilder.WithRawMessage(data)
 	msg := messageBuilder.Build()
 	return msg, nil
 }

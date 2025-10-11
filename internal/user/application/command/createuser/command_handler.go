@@ -16,15 +16,9 @@ type ResultCm struct {
 }
 
 func NewComandHandler(repository contract.UserRepository) *CommandHandler {
-	return &CommandHandler{repository}
+	return &CommandHandler{repository: repository}
 }
 
-func (c *CommandHandler) Handle(ctx context.Context, data *Command) (*ResultCm, error) {
-
-	fmt.Println("iniciando regra de negocio", data)
-	//time.Sleep(time.Second * 3)
-
-	//return &ResultCm{"MENSAGEM PROCESSADA COM SUCESSO"}, fmt.Errorf("deu ruim ao processar a mensagem")
-
-	return &ResultCm{"MENSAGEM PROCESSADA COM SUCESSO"}, nil
+func (c *CommandHandler) Handle(ctx context.Context, data *Command) (string, error) {
+	return "deu tudo certo", fmt.Errorf("deu ruim ao processar a mensagem")
 }

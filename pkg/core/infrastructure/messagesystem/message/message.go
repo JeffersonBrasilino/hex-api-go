@@ -59,17 +59,6 @@ type SubscriberChannel interface {
 	Unsubscribe() error
 }
 
-// InboundChannelAdapter defines the contract for inbound channel adapters that
-// receive messages from external sources.
-type InboundChannelAdapter interface {
-	ReferenceName() string
-	DeadLetterChannelName() string
-	AfterProcessors() []MessageHandler
-	BeforeProcessors() []MessageHandler
-	ReceiveMessage(ctx context.Context) (*Message, error)
-	Close() error
-}
-
 // customHeaders represents a map of custom header key-value pairs.
 type CustomHeaders map[string]string
 
@@ -91,9 +80,10 @@ type messageHeaders struct {
 
 // Message represents a message in the system with payload, headers, and context.
 type Message struct {
-	payload any
-	headers *messageHeaders
-	context context.Context
+	payload    any
+	headers    *messageHeaders
+	context    context.Context
+	rawMessage any
 }
 
 // NewMessageHeaders creates a new message headers instance with the specified
@@ -264,4 +254,20 @@ func (m *Message) GetContext() context.Context {
 //   - bool: true if the message requires a reply, false otherwise
 func (m *Message) ReplyRequired() bool {
 	return m.headers.MessageType == Command || m.headers.MessageType == Query
+}
+
+// SetRawMessage sets the raw message.
+//
+// Parameters:
+//   - rawMessage: the raw message
+func (m *Message) SetRawMessage(rawMessage any) {
+	m.rawMessage = rawMessage
+}
+
+// GetRawMessage returns the raw message.
+//
+// Returns:
+//   - any: the raw message
+func (m *Message) GetRawMessage() any {
+	return m.rawMessage
 }

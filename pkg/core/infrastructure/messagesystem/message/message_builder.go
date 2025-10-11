@@ -35,6 +35,7 @@ type MessageBuilder struct {
 	timestamp        time.Time
 	context          context.Context
 	version          string
+	rawMessage       any
 }
 
 // NewMessageBuilder creates a new message builder instance.
@@ -67,6 +68,7 @@ func NewMessageBuilderFromMessage(msg *Message) *MessageBuilder {
 		timestamp:     msg.GetHeaders().Timestamp,
 		context:       msg.GetContext(),
 		version:       msg.GetHeaders().Version,
+		rawMessage:    msg.GetRawMessage(),
 	}
 }
 
@@ -226,6 +228,18 @@ func (b *MessageBuilder) WithVersion(value string) *MessageBuilder {
 	return b
 }
 
+// WithRawMessage sets raw message for the message being built.
+//
+// Parameters:
+//   - value: the raw message
+//
+// Returns:
+//   - *MessageBuilder: builder instance for method chaining
+func (b *MessageBuilder) WithRawMessage(value any) *MessageBuilder {
+	b.rawMessage = value
+	return b
+}
+
 // Build constructs a new message instance with all configured properties.
 //
 // Returns:
@@ -233,6 +247,9 @@ func (b *MessageBuilder) WithVersion(value string) *MessageBuilder {
 func (b *MessageBuilder) Build() *Message {
 	headers := b.buildHeaders()
 	msg := NewMessage(b.payload, headers, b.context)
+	if b.rawMessage != nil {
+		msg.SetRawMessage(b.rawMessage)
+	}
 	return msg
 }
 

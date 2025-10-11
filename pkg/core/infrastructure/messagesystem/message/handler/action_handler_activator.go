@@ -131,10 +131,20 @@ func (c *ActionHandleActivator[THandler, TInput, TOutput]) Handle(
 		WithMessageType(message.Document)
 
 	if !ok {
-		errUnmsl := json.Unmarshal(msg.GetPayload().([]byte), &action)
-		if errUnmsl != nil {
+		payload, ok := msg.GetPayload().([]byte)
+		if !ok {
 			err := fmt.Errorf(
 				"[action-handler] cannot process action: incorrect contract data",
+			)
+			resultMessageBuilder.WithPayload(err)
+			c.sendResponseToReplyChannel(ctx, msg, resultMessageBuilder.Build())
+			return nil, err
+		}
+
+		errUnmsl := json.Unmarshal(payload, &action)
+		if errUnmsl != nil {
+			err := fmt.Errorf(
+				"[action-handler] cannot process action: %v", errUnmsl.Error(),
 			)
 			resultMessageBuilder.WithPayload(err)
 			c.sendResponseToReplyChannel(ctx, msg, resultMessageBuilder.Build())

@@ -18,6 +18,7 @@ import (
 	"github.com/hex-api-go/pkg/core/infrastructure/messagesystem/container"
 	"github.com/hex-api-go/pkg/core/infrastructure/messagesystem/message"
 	"github.com/hex-api-go/pkg/core/infrastructure/messagesystem/message/channel/adapter"
+	"github.com/hex-api-go/pkg/core/infrastructure/messagesystem/message/endpoint"
 	"github.com/segmentio/kafka-go"
 )
 
@@ -106,7 +107,7 @@ func NewInboundChannelAdapter(
 //   - error: error if construction fails
 func (c *consumerChannelAdapterBuilder) Build(
 	container container.Container[any, any],
-) (message.InboundChannelAdapter, error) {
+) (endpoint.InboundChannelAdapter, error) {
 	con, err := container.Get(c.connectionReferenceName)
 
 	if err != nil {
@@ -192,4 +193,11 @@ func (a *inboundChannelAdapter) subscribeOnTopic() {
 		case a.messageChannel <- message:
 		}
 	}
+}
+
+func (a *inboundChannelAdapter) CommitMessage(msg *message.Message) error {
+	if segmentioMessage, ok := msg.GetRawMessage().(*kafka.Message); ok {
+		return a.consumer.CommitMessages(a.ctx, *segmentioMessage)
+	}
+	return fmt.Errorf("[kafka-inbound-channel] failed to commit message")
 }

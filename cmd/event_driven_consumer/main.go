@@ -108,6 +108,8 @@ func main() {
 	//start the message system
 	messagesystem.Start()
 
+	go publishMessage()
+
 	//For the consumer channel endpoint,
 	//the advantage of having an abstraction between the consumer channel and the consumer endpoint
 	//is that we can have two different endpoints for the same channel (event-driven or polling).
@@ -126,25 +128,19 @@ func main() {
 		WithStopOnError(false).
 		Run(ctx)
 
-	//publish message command
-	go func() {
-		select {
-		case <-ctx.Done():
-			return
-		default:
-		}
-		maxPublishMessages := 50
-		for i := 1; i <= maxPublishMessages; i++ {
-			fmt.Println("publish command message...")
-			//get command bus
-			//the message type is defined by bus(command/query/event)
-			busA := messagesystem.CommandBusByChannel("messagesystem.topic")
-			busA.SendAsync(context.Background(), CreateCommand("teste", "123"))
-			time.Sleep(time.Second * 3)
-		}
-	}()
-
 	<-ctx.Done()
 	//message system graceful shutdown
 	messagesystem.Shutdown()
+}
+
+func publishMessage() {
+	maxPublishMessages := 5
+	for i := 1; i <= maxPublishMessages; i++ {
+		fmt.Println("publish command message...")
+		//get command bus
+		//the message type is defined by bus(command/query/event)
+		busA := messagesystem.CommandBusByChannel("messagesystem.topic")
+		busA.SendAsync(context.Background(), CreateCommand("teste", "123"))
+		time.Sleep(time.Second * 3)
+	}
 }

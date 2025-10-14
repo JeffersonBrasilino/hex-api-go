@@ -3,6 +3,7 @@ package message_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/hex-api-go/pkg/core/infrastructure/messagesystem/message"
 )
@@ -106,6 +107,47 @@ func TestWithContext(t *testing.T) {
 	b := message.NewMessageBuilder().WithContext(ctx).Build()
 	if b.GetContext() != ctx {
 		t.Error("WithContext did not set context correctly")
+	}
+}
+
+func TestWithMessageId(t *testing.T) {
+	t.Parallel()
+	b := message.NewMessageBuilder().WithMessageId("msgId").Build()
+	if b.GetHeaders().MessageId != "msgId" {
+		t.Error("WithMessageId did not set messageId correctly")
+	}
+}
+
+func TestWithTimestamp(t *testing.T) {
+	t.Parallel()
+	timestamp := time.Now()
+	b := message.NewMessageBuilder().WithTimestamp(timestamp).Build()
+	if b.GetHeaders().Timestamp != timestamp {
+		t.Error("WithTimestamp did not set timestamp correctly")
+	}
+}
+
+func TestWithOrigin(t *testing.T) {
+	t.Parallel()
+	b := message.NewMessageBuilder().WithOrigin("origin").Build()
+	if b.GetHeaders().Origin != "origin" {
+		t.Error("WithOrigin did not set origin correctly")
+	}
+}
+
+func TestWithVersion(t *testing.T) {
+	t.Parallel()
+	b := message.NewMessageBuilder().WithVersion("version").Build()
+	if b.GetHeaders().Version != "version" {
+		t.Error("WithVersion did not set version correctly")
+	}
+}
+
+func TestWithRawMessage(t *testing.T) {
+	t.Parallel()
+	b := message.NewMessageBuilder().WithRawMessage("rawMessage").Build()
+	if b.GetRawMessage() != "rawMessage" {
+		t.Error("WithRawMessage did not set rawMessage correctly")
 	}
 }
 

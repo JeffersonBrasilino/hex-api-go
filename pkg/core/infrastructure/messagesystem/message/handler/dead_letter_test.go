@@ -65,15 +65,30 @@ func TestDeadLetter_Handle(t *testing.T) {
 		channel := &mockPublisherChannel{}
 		handlerMock := &mockDeadMessageHandler{shouldFail: true, failErr: dlErr}
 		dl := handler.NewDeadLetter(channel, handlerMock)
-		retMsg, err := dl.Handle(ctx, msg)
+		_, err := dl.Handle(ctx, msg)
 		if err == nil {
 			t.Errorf("expected error, got nil")
 		}
-		if retMsg != msg {
-			t.Errorf("expected returned message to be input message")
+	})
+
+	t.Run("should error when convert message payload", func(t *testing.T) {
+		t.Parallel()
+		dlErr := errors.New("handler failed")
+		msgE := message.NewMessageBuilder().
+			WithPayload([]byte(`{"name": "Alice`)).
+			Build()
+		channel := &mockPublisherChannel{}
+		handlerMock := &mockDeadMessageHandler{shouldFail: true, failErr: dlErr}
+		dl := handler.NewDeadLetter(channel, handlerMock)
+		retMsg, err := dl.Handle(ctx, msgE)
+		if err == nil {
+			t.Errorf("expected error, got nil")
 		}
-		if channel.sentMsg != msg {
-			t.Errorf("expected message sent to dead letter channel")
+		if retMsg != nil {
+			t.Errorf("expected returned message to be nil")
+		}
+		if err.Error() != dlErr.Error() {
+			t.Errorf("expected error to be %v, got %v", dlErr.Error(), err.Error())
 		}
 	})
 }

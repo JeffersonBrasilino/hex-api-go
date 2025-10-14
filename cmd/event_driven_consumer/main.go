@@ -52,7 +52,7 @@ func NewComandHandler() *CommandHandler {
 func (c *CommandHandler) Handle(ctx context.Context, data *Command) (*ResultCm, error) {
 	fmt.Println("process command ok")
 	time.Sleep(time.Second * 2)
-	return &ResultCm{"deu tudo certo"}, fmt.Errorf("DEU ERRO")
+	return &ResultCm{"deu tudo certo"}, nil
 }
 
 func main() {
@@ -66,7 +66,7 @@ func main() {
 	//be registered only once after registration.
 	//To use it in your channels, simply use its name in the channel reference name.
 	messagesystem.AddChannelConnection(
-		kafka.NewConnection("defaultConKafka", []string{"localhost:9093"}),
+		kafka.NewConnection("defaultConKafka", []string{"kafka:9092"}),
 	)
 
 	//create DLQ publisher channel

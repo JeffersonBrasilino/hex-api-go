@@ -29,20 +29,6 @@ services:
     mem_limit: 300m
     networks:
       - api
-  message-publisher:
-    container_name: ${APP_NAME}-publisher
-    image: golang:1.25-alpine3.22
-    working_dir: /app
-    volumes:
-      - ./:/app
-    env_file:
-      - .env
-    command: go run cmd/message_publisher/main.go
-    ports:
-      - "6061:6061"
-    mem_limit: 300m
-    networks:
-      - api
   lazydocker:
     build:
       context: https://github.com/jesseduffield/lazydocker.git
@@ -72,7 +58,6 @@ services:
       KAFKA_NODE_ID: 1
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_INTERNAL:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT,CONTROLLER:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_INTERNAL://kafka:29092,CONTROLLER://kafka:29093,PLAINTEXT_HOST://localhost:9093
-      #KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,PLAINTEXT_INTERNAL://0.0.0.0:29092,CONTROLLER://0.0.0.0:29093 #,PLAINTEXT_HOST://0.0.0.0:9093
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_AUTO_CREATE_TOPICS_ENABLED: "true"
       KAFKA_CREATE_TOPICS: "messagesystem.test:1:1"

@@ -31,7 +31,7 @@ type OutboundChannelMessageTranslator[T any] interface {
 	//
 	// Returns:
 	//   - T: The translated message in external format
-	FromMessage(msg *message.Message) T
+	FromMessage(msg *message.Message) (T, error)
 }
 
 // OutboundChannelAdapterBuilder provides a fluent interface for configuring

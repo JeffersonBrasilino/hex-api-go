@@ -14,6 +14,7 @@ package handler
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/hex-api-go/pkg/core/infrastructure/messagesystem/container"
@@ -109,6 +110,8 @@ func (b *ActionHandleActivatorBuilder[TInput, TOutput]) Build(
 // Handle processes an action message by delegating to the appropriate handler
 // and managing the response through reply channels.
 //
+// When it is an external message, the payload MUST be of type []byte
+//
 // Parameters:
 //   - ctx: context for timeout/cancellation control
 //   - msg: the message containing the action to be processed
@@ -120,18 +123,36 @@ func (c *ActionHandleActivator[THandler, TInput, TOutput]) Handle(
 	ctx context.Context,
 	msg *message.Message,
 ) (*message.Message, error) {
+
+	var action TInput
 	action, ok := msg.GetPayload().(TInput)
-	if !ok {
-		return nil, fmt.Errorf(
-			"[action-handler] cannot process action: handler for action does not exists",
-		)
-	}
-
-	output, err := c.executeAction(ctx, action)
-
 	resultMessageBuilder := message.NewMessageBuilder().
 		WithChannelName(msg.GetHeaders().ReplyChannel.Name()).
 		WithMessageType(message.Document)
+
+	if !ok {
+		payload, ok := msg.GetPayload().([]byte)
+		if !ok {
+			err := fmt.Errorf(
+				"[action-handler] cannot process action: incorrect contract data",
+			)
+			resultMessageBuilder.WithPayload(err)
+			c.sendResponseToReplyChannel(ctx, msg, resultMessageBuilder.Build())
+			return nil, err
+		}
+
+		errUnmsl := json.Unmarshal(payload, &action)
+		if errUnmsl != nil {
+			err := fmt.Errorf(
+				"[action-handler] cannot process action: %v", errUnmsl.Error(),
+			)
+			resultMessageBuilder.WithPayload(err)
+			c.sendResponseToReplyChannel(ctx, msg, resultMessageBuilder.Build())
+			return nil, err
+		}
+	}
+
+	output, err := c.executeAction(ctx, action)
 
 	if err != nil {
 		resultMessageBuilder.WithPayload(err)
@@ -140,9 +161,7 @@ func (c *ActionHandleActivator[THandler, TInput, TOutput]) Handle(
 	}
 
 	resultMessage := resultMessageBuilder.Build()
-	if msg.GetHeaders().ReplyChannel != nil {
-		msg.GetHeaders().ReplyChannel.Send(ctx, resultMessage)
-	}
+	c.sendResponseToReplyChannel(ctx, msg, resultMessage)
 
 	return resultMessage, err
 }
@@ -162,4 +181,15 @@ func (c *ActionHandleActivator[THandler, TInput, TOutput]) executeAction(
 ) (TOutput, error) {
 	result, err := c.handler.Handle(ctx, args)
 	return result, err
+}
+
+func (c *ActionHandleActivator[THandler, TInput, TOutput]) sendResponseToReplyChannel(
+	ctx context.Context,
+	requestMessage,
+	responseMessage *message.Message,
+) {
+	replyChannel := requestMessage.GetHeaders().ReplyChannel
+	if replyChannel != nil {
+		replyChannel.Send(ctx, responseMessage)
+	}
 }

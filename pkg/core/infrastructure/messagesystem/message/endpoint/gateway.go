@@ -16,7 +16,6 @@ package endpoint
 import (
 	"context"
 	"fmt"
-	"log/slog"
 
 	"github.com/google/uuid"
 	"github.com/hex-api-go/pkg/core/infrastructure/messagesystem/container"
@@ -40,12 +39,14 @@ func GatewayReferenceName(referenceName string) string {
 // gatewayBuilder provides a fluent interface for configuring gateway instances
 // with various options like interceptors, dead letter channels, and reply channels.
 type gatewayBuilder struct {
-	referenceName      string
-	requestChannelName string
-	beforeInterceptors []message.MessageHandler
-	afterInterceptors  []message.MessageHandler
-	deadLetterChannel  string
-	replyChannelName   string
+	referenceName            string
+	requestChannelName       string
+	beforeInterceptors       []message.MessageHandler
+	afterInterceptors        []message.MessageHandler
+	deadLetterChannel        string
+	replyChannelName         string
+	acknowledgeChannel       handler.ChannelMessageAcknowledgment
+	retryHitTimeMilliseconds []int
 }
 
 // Gateway represents a message processing gateway that handles message routing,
@@ -155,6 +156,20 @@ func (b *gatewayBuilder) WithReplyChannel(channelName string) *gatewayBuilder {
 	return b
 }
 
+func (b *gatewayBuilder) WithAcknowledge(
+	adapter handler.ChannelMessageAcknowledgment,
+) *gatewayBuilder {
+	b.acknowledgeChannel = adapter
+	return b
+}
+
+func (b *gatewayBuilder) WithRetry(
+	retryHitTimeMilliseconds []int,
+) *gatewayBuilder {
+	b.retryHitTimeMilliseconds = retryHitTimeMilliseconds
+	return b
+}
+
 // Build constructs a Gateway from the dependency container with configured
 // interceptors, dead letter channel, and reply channel.
 //
@@ -168,41 +183,56 @@ func (b *gatewayBuilder) Build(
 	container container.Container[any, any],
 ) (*Gateway, error) {
 
-	rt := router.NewRouter()
+	messageRouter := router.NewRouter()
 	if b.beforeInterceptors != nil {
 		for _, beforeInterceptors := range b.beforeInterceptors {
-			rt.AddHandler(handler.NewContextHandler(beforeInterceptors))
+			messageRouter.AddHandler(handler.NewContextHandler(beforeInterceptors))
 		}
 	}
 
-	rt.AddHandler(
+	messageRouter.AddHandler(
 		handler.NewContextHandler(router.NewRecipientListRouter(container)),
 	)
-	rt.AddHandler(
+	messageRouter.AddHandler(
 		handler.NewContextHandler(handler.NewReplyConsumerHandler()),
 	)
 
 	if b.afterInterceptors != nil {
 		for _, afterInterceptors := range b.afterInterceptors {
-			rt.AddHandler(handler.NewContextHandler(afterInterceptors))
+			messageRouter.AddHandler(handler.NewContextHandler(afterInterceptors))
 		}
 	}
 
-	var messageProcessor message.MessageHandler
-	messageProcessor = rt
+	if b.retryHitTimeMilliseconds != nil {
+		messageRouter = router.NewRouter().
+			AddHandler(
+				handler.NewRetryHandler(b.retryHitTimeMilliseconds, messageRouter),
+			)
+	}
 
 	if b.deadLetterChannel != "" {
 		deadLetterChannel, err := container.Get(b.deadLetterChannel)
 		if err != nil {
 			return nil, fmt.Errorf("[gateway-builder] [dead-letter] %s", err)
 		}
-		messageProcessor = handler.NewDeadLetter(
-			deadLetterChannel.(message.PublisherChannel),
-			messageProcessor,
+		messageRouter = router.NewRouter().
+			AddHandler(
+				handler.NewDeadLetter(
+					deadLetterChannel.(message.PublisherChannel),
+					messageRouter,
+				),
+			)
+	}
+
+	if b.acknowledgeChannel != nil {
+		messageRouter = router.NewRouter().AddHandler(
+			handler.NewContextHandler(
+				handler.NewAcknowledgeHandler(b.acknowledgeChannel, messageRouter),
+			),
 		)
 	}
 
-	return NewGateway(messageProcessor, b.replyChannelName, b.requestChannelName), nil
+	return NewGateway(messageRouter, b.replyChannelName, b.requestChannelName), nil
 }
 
 // Execute processes a message through the gateway's processing pipeline with
@@ -267,10 +297,6 @@ func (g *Gateway) executeAsync(
 	resultMessage, err := g.messageProcessor.Handle(ctx, messageToProcess.Build())
 	if err != nil {
 		internalReplyChannel.Close()
-		slog.Error("Failed to process message:",
-			"messageId", messageToProcess.Build().GetHeaders().MessageId,
-			"reason", err.Error(),
-		)
 		responseChannel <- err
 	}
 

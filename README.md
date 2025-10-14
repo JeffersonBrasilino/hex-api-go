@@ -1,917 +1,1329 @@
-# 📦 MessageSystem - Sistema de Mensagens Hexagonal
+# 📦 MessageSystem - Sistema de Mensagens para Arquitetura Hexagonal
 
 ## 📋 Índice
 
-1. [Visão Geral](#visão-geral)
-2. [Arquitetura do Sistema](#arquitetura-do-sistema)
-3. [Componentes Principais](#componentes-principais)
-4. [Fluxos de Mensagens](#fluxos-de-mensagens)
-5. [Padrões de Consumo](#padrões-de-consumo)
-6. [Padrões de Integração](#padrões-de-integração)
-7. [Dead Letter Channel](#dead-letter-channel)
-8. [Ciclo de Vida do Sistema](#ciclo-de-vida-do-sistema)
-9. [Monitoramento e Debug](#monitoramento-e-debug)
-10. [Performance e Resiliência](#performance-e-resiliência)
-11. [Exemplos de Uso](#exemplos-de-uso)
-12. [Documentação Detalhada](#documentação-detalhada)
-
----
+- [Visão Geral](#-visão-geral)
+- [Bootstrap](#-bootstrap)
+- [Componentes Principais](#-componentes-principais)
+- [CQRS](#-cqrs)
+- [Processamento Assíncrono](#-async-processing)
+    - [Padrões de Publicação](#-padrões-de-publicação)
+    - [Padrões de Consumo](#-padrões-de-consumo)
+    - [Resiliência](#-resiliência)
+    - [Kafka](#-kafka)
 
 ## 🎯 Visão Geral
 
-O MessageSystem implementa uma arquitetura hexagonal baseada em **Enterprise Integration Patterns (EIP)** e **Command Query Responsibility Segregation (CQRS)**, fornecendo uma infraestrutura robusta e flexível para comunicação assíncrona entre componentes de uma aplicação distribuída.
+O **MessageSystem** é um plugin robusto e flexível para sistemas de mensagens em arquitetura hexagonal, implementando padrões de Enterprise Integration Patterns (EIP) e Command Query Responsibility Segregation (CQRS). Este sistema oferece uma abstração completa para comunicação assíncrona entre componentes, facilitando a construção de aplicações distribuídas e escaláveis.
 
 ### Características Principais
 
-- ✅ **CQRS**: Separação clara entre comandos e consultas
-- ✅ **Event-Driven**: Processamento baseado em eventos e pub/sub
-- ✅ **Message Routing**: Roteamento inteligente com suporte a múltiplos canais
-- ✅ **Channel Adapters**: Adaptadores para Kafka e outros sistemas externos
-- ✅ **Dead Letter Channel**: Tratamento robusto de mensagens falhas
-- ✅ **Lifecycle Management**: Gerenciamento completo do ciclo de vida
-- ✅ **Error Handling**: Tratamento robusto de erros com retry policies
-- ✅ **Context Support**: Suporte a contextos para timeout/cancelação
-- ✅ **Performance**: Processamento paralelo e otimização de recursos
-- ✅ **Monitoring**: Observabilidade e debug de endpoints ativos
+- **Arquitetura Hexagonal**: Separação clara entre domínio, aplicação e infraestrutura
+- **Padrão CQRS**: Separação entre comandos (modificação) e queries (consulta)
+- **Event-Driven Architecture**: Processamento assíncrono baseado em eventos
+- **Enterprise Integration Patterns**: Implementação de padrões consolidados da indústria
+- **Resiliência**: Suporte a retry automático e dead letter channels
+- **Múltiplos Drivers**: Suporte a diferentes sistemas de mensagens (Kafka, RabbitMQ, etc.)
+- **Processamento Paralelo**: Suporte a múltiplos processadores concorrentes
 
----
+### Padrões e Abordagens Utilizadas
 
-## 🏗️ Arquitetura do Sistema
+- **Message Channel**: Comunicação entre componentes através de canais
+- **Message Router**: Roteamento inteligente de mensagens baseado em conteúdo
+- **Dead Letter Channel**: Gerenciamento de mensagens que falharam no processamento
+- **Message Dispatcher**: Distribuição de mensagens para handlers apropriados
+- **Event-Driven Consumer**: Consumo assíncrono com processamento paralelo
+- **Polling Consumer**: Consumo periódico para processamento em lote
 
-### Estrutura de Pacotes
+### Estrutura de Pastas do Plugin
 
 ```
-messagesystem/
-├── bus/                    # Buses para CQRS
-│   ├── command_bus.go     # Bus de comandos
-│   ├── query_bus.go       # Bus de consultas
-│   └── event_bus.go       # Bus de eventos
-├── message/               # Definições de mensagens
-│   ├── message.go         # Estruturas de mensagem
-│   ├── message_builder.go # Builder para mensagens
-│   ├── channel/           # Canais de comunicação
-│   ├── endpoint/          # Endpoints de processamento
-│   ├── handler/           # Handlers de mensagens
-│   └── router/            # Roteadores de mensagens
-├── channel/               # Adaptadores de canal
-│   └── kafka/            # Integração com Kafka
-├── container/             # Container de dependências
-└── messagesystem.go      # Sistema principal
+pkg/core/infrastructure/messagesystem/
+├── bus/                    # Implementações CQRS
+│   ├── command_bus.go      # Processamento de comandos
+│   ├── query_bus.go        # Processamento de queries
+│   └── event_bus.go        # Processamento de eventos
+├── channel/                # Implementações de canais
+│   ├── kafka/              # Driver Kafka
+│   │   ├── connection.go   # Gerenciamento de conexões
+│   │   ├── inbound_channel_adapter.go  # Consumo de mensagens
+│   │   ├── outbound_channel_adapter.go # Publicação de mensagens
+│   │   └── message_translator.go       # Tradução de mensagens
+│   ├── pubsub_channel.go   # Canal publish-subscribe
+│   └── point_to_point.go   # Canal point-to-point
+├── container/              # Gerenciamento de dependências
+│   └── generic_container.go
+├── message/                # Core do sistema
+│   ├── message.go          # Estrutura base de mensagens
+│   ├── message_builder.go  # Builder para construção de mensagens
+│   ├── channel/            # Canais de mensagens
+│   ├── endpoint/           # Endpoints de processamento
+│   │   ├── event_driven_consumer.go  # Consumer event-driven
+│   │   ├── polling_consumer.go       # Consumer polling
+│   │   ├── gateway.go                # Gateway de processamento
+│   │   └── interfaces.go             # Interfaces dos endpoints
+│   ├── handler/            # Handlers de mensagens
+│   │   ├── dead_letter.go  # Handler para dead letter
+│   │   └── retry_handler.go # Handler para retry
+│   └── router/             # Roteamento de mensagens
+└── message_system.go       # Entry point principal
 ```
 
-### Componentes Arquiteturais
+## 🚀 Bootstrap
 
-```mermaid
-graph TB
-    subgraph "Application Layer"
-        A[Application] --> B[Command Bus]
-        A --> C[Query Bus]
-        A --> D[Event Bus]
-    end
+O Bootstrap é o processo de inicialização do MessageSystem, onde todos os componentes são registrados e configurados antes do sistema começar a processar mensagens. Este processo é fundamental para garantir que o sistema funcione corretamente.
 
-    subgraph "Message System Core"
-        B --> E[Message Dispatcher]
-        C --> E
-        D --> E
-        E --> F[Gateway]
-        F --> G[Channel Router]
-    end
+### Exemplo
 
-    subgraph "Channel Layer"
-        G --> H[Point-to-Point Channel]
-        G --> I[Pub/Sub Channel]
-        G --> J[Inbound Channel Adapter]
-        G --> K[Outbound Channel Adapter]
-    end
+```go
+package main
 
-    subgraph "External Systems"
-        J --> L[Kafka Consumer]
-        K --> M[Kafka Producer]
-        H --> N[Database]
-        I --> O[Notification Service]
-    end
+import (
+    "context"
+    "log/slog"
+    "os/signal"
+    "syscall"
+    "time"
+
+    "github.com/hex-api-go/pkg/core/infrastructure/messagesystem"
+    kafka "github.com/hex-api-go/pkg/core/infrastructure/messagesystem/channel/kafka"
+)
+
+func main() {
+    // Configurar contexto para graceful shutdown
+    ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+    defer stop()
+
+    slog.Info("Iniciando MessageSystem...")
+
+    // 1. REGISTRAR HANDLERS
+    // Registre todos os handlers de comandos, queries e eventos
+    messagesystem.AddActionHandler(&CreateUserHandler{})
+    messagesystem.AddActionHandler(&GetUserHandler{})
+    messagesystem.AddActionHandler(&UserCreatedEventHandler{})
+
+    // 2. CONFIGURAR CONEXÕES
+    // Configure conexões com sistemas de mensagens (Kafka, RabbitMQ, etc.)
+    messagesystem.AddChannelConnection(
+        kafka.NewConnection("defaultConKafka", []string{"localhost:9093"}),
+    )
+
+    // 3. CONFIGURAR CANAIS DE PUBLICAÇÃO
+    // Configure canais para envio de mensagens
+    publisherChannel := kafka.NewPublisherChannelAdapterBuilder(
+        "defaultConKafka",
+        "messagesystem.topic",
+    )
+    messagesystem.AddPublisherChannel(publisherChannel)
+
+    // Configure canal de Dead Letter Queue
+    dlqPublisherChannel := kafka.NewPublisherChannelAdapterBuilder(
+        "defaultConKafka",
+        "messagesystem.dlq",
+    )
+    messagesystem.AddPublisherChannel(dlqPublisherChannel)
+
+    // 4. CONFIGURAR CANAIS DE CONSUMO
+    // Configure canais para recebimento de mensagens
+    consumerChannel := kafka.NewConsumerChannelAdapterBuilder(
+        "defaultConKafka",
+        "messagesystem.topic",
+        "test_consumer",
+    )
+    // Configure resiliência
+    consumerChannel.WithRetryTimes(2_000, 3_000)
+    consumerChannel.WithDeadLetterChannelName("messagesystem.dlq")
+
+    messagesystem.AddConsumerChannel(consumerChannel)
+
+    // 5. INICIAR O SISTEMA
+    // Inicie o MessageSystem - este passo é obrigatório
+    messagesystem.Start()
+    slog.Info("MessageSystem iniciado com sucesso!")
+
+    // 6. CONFIGURAR CONSUMERS
+    // Configure e inicie os consumers
+    consumer, err := messagesystem.EventDrivenConsumer("test_consumer")
+    if err != nil {
+        slog.Error("Erro ao criar consumer", "error", err)
+        return
+    }
+
+    // Execute consumer com configurações específicas
+    go consumer.WithAmountOfProcessors(2).
+        WithMessageProcessingTimeout(30000).
+        WithStopOnError(false).
+        Run(ctx)
+
+    // 7. SISTEMA OPERACIONAL
+    // Aqui o sistema está pronto para processar mensagens
+    slog.Info("Sistema operacional - processando mensagens...")
+
+    // Exemplo de uso dos buses
+    go publishMessages(ctx)
+
+    // 8. GRACEFUL SHUTDOWN
+    // Aguarde sinal de interrupção
+    <-ctx.Done()
+    slog.Info("Iniciando shutdown gracioso...")
+
+    // Encerre o sistema graciosamente
+    messagesystem.Shutdown()
+    slog.Info("MessageSystem encerrado com sucesso!")
+}
+
+func publishMessages(ctx context.Context) {
+    ticker := time.NewTicker(5 * time.Second)
+    defer ticker.Stop()
+
+    for {
+        select {
+        case <-ctx.Done():
+            return
+        case <-ticker.C:
+            // Publique comandos
+            commandBus := messagesystem.CommandBusByChannel("messagesystem.topic")
+            commandBus.SendAsync(ctx, &CreateUserCommand{
+                Username: "user_" + time.Now().Format("20060102150405"),
+                Password: "secure_password",
+            })
+
+            // Publique queries
+            queryBus := messagesystem.QueryBusByChannel("messagesystem.topic")
+            queryBus.SendAsync(ctx, &GetUserQuery{
+                UserID: "123",
+            })
+
+            // Publique eventos
+            eventBus := messagesystem.EventBusByChannel("messagesystem.topic")
+            eventBus.Publish(ctx, &UserCreatedEvent{
+                UserID:    "123",
+                Username:  "john_doe",
+                Timestamp: time.Now(),
+            })
+        }
+    }
+}
 ```
 
----
+### Métodos de Bootstrap
+
+#### Registro de Componentes
+
+- **`AddActionHandler(handler)`**: Registra handlers de comandos, queries e eventos
+- **`AddChannelConnection(connection)`**: Registra conexões com sistemas de mensagens
+- **`AddPublisherChannel(channel)`**: Registra canais de publicação
+- **`AddConsumerChannel(channel)`**: Registra canais de consumo
+
+#### Controle do Sistema
+
+- **`Start()`**: Inicia o MessageSystem (obrigatório)
+- **`Shutdown()`**: Encerra o sistema graciosamente
+- **`ShowActiveEndpoints()`**: Mostra endpoints ativos para debug
+
+### Boas Práticas de Bootstrap
+
+1. **Ordem Importante**: Sempre registre handlers antes de iniciar o sistema
+2. **Conexões Únicas**: Use o mesmo nome de conexão para reutilizar instâncias
+3. **Graceful Shutdown**: Sempre configure graceful shutdown para produção
+4. **Error Handling**: Trate erros durante a inicialização
+5. **Logging**: Use logging adequado para monitorar o processo
+
 
 ## 🔧 Componentes Principais
 
-### 1. **Message System Core**
+### Diagrama de Fluxo
 
-O coração do sistema que gerencia todos os componentes e coordena o fluxo de mensagens.
+```mermaid
+flowchart TD
+    A[Cliente] -->|1. Envia Mensagem| B[MessageSystem]
+    B -->|2. Identifica Tipo| C{Tipo de Mensagem}
+    C -->|Command| D[CommandBus]
+    C -->|Query| E[QueryBus]
+    C -->|Event| F[EventBus]
 
-**Responsabilidades:**
+    D -->|3. Roteia| G[MessageRouter]
+    E -->|3. Roteia| G
+    F -->|3. Roteia| G
 
-- Gerenciamento de containers de dependências
-- Registro e construção de componentes
-- Lifecycle management
-- Endpoint management
+    G -->|4. Despacha| H[MessageHandler]
+    H -->|5. Processa| I[Domain Logic]
+    I -->|6. Resultado| H
+    H -->|7. Resposta| G
+    G -->|8. Retorno| B
+    B -->|9. Entrega| A
 
-### 2. **Bus Layer (CQRS)**
-
-#### **Command Bus**
-
-```go
-// Envio síncrono de comandos
-result, err := CommandBus().Send(ctx, createUserCommand)
-
-// Envio assíncrono de comandos
-err := CommandBus().SendAsync(ctx, createUserCommand)
+    J[Channel Adapter] -->|Consumo| K[Consumer Endpoint]
+    K -->|Processamento| L[Gateway]
+    L -->|Retry/Dead Letter| M[Resilience Layer]
 ```
 
-#### **Query Bus**
+### Diagrama de Execução
 
-```go
-// Execução de consultas
-user, err := QueryBus().Send(ctx, getUserQuery)
+```mermaid
+sequenceDiagram
+    participant C as Cliente
+    participant MS as MessageSystem
+    participant CB as CommandBus
+    participant R as Router
+    participant H as Handler
+    participant D as Domain
+    participant CA as ChannelAdapter
+    participant CE as ConsumerEndpoint
 
-// Consultas assíncronas
-err := QueryBus().SendAsync(ctx, getUserQuery)
+    Note over C,CE: Fluxo de Publicação
+    C->>MS: Send(Command)
+    MS->>CB: Route(Command)
+    CB->>R: Dispatch(Command)
+    R->>H: Handle(Command)
+    H->>D: Execute Business Logic
+    D-->>H: Result
+    H-->>R: Return Result
+    R-->>CB: Forward Result
+    CB-->>MS: Response
+    MS-->>C: Return Result
+
+    Note over C,CE: Fluxo de Consumo
+    CA->>CE: Receive Message
+    CE->>R: Process Message
+    R->>H: Handle Message
+    H->>D: Execute Logic
+    D-->>H: Result
+    H-->>R: Return Result
+    R-->>CE: Acknowledge
+    CE-->>CA: Message Processed
 ```
 
-#### **Event Bus**
+## ⚡ CQRS
 
-```go
-// Publicação de eventos
-err := EventBus().Publish(ctx, userCreatedEvent)
+O MessageSystem implementa o padrão **Command Query Responsibility Segregation (CQRS)** de forma nativa, separando claramente as operações de modificação (Commands) das operações de consulta (Queries), além de incluir o processamento de eventos (Events) para notificações assíncronas.
+
+### Arquitetura CQRS no MessageSystem
+
+```mermaid
+flowchart TD
+    A[Cliente] --> B{Tipo de Operação}
+
+    B -->|Modificação| C[Command Bus]
+    B -->|Consulta| D[Query Bus]
+    B -->|Notificação| E[Event Bus]
+
+    C --> F[Command Handler]
+    D --> G[Query Handler]
+    E --> H[Event Handler 1]
+    E --> I[Event Handler 2]
+    E --> J[Event Handler N]
+
+    F --> K[Domain Logic<br/>Modificação de Estado]
+    G --> L[Domain Logic<br/>Leitura de Dados]
+    H --> M[Side Effects<br/>Email, Log, etc.]
+    I --> M
+    J --> M
+
+    K --> N[Resposta Síncrona]
+    L --> N
+    M --> O[Processamento Assíncrono]
 ```
 
-### 3. **Message Layer**
+### Diagrama de Execução CQRS
 
-#### **Message Structure**
+```mermaid
+sequenceDiagram
+    participant C as Cliente
+    participant CB as CommandBus
+    participant QB as QueryBus
+    participant EB as EventBus
+    participant CH as CommandHandler
+    participant QH as QueryHandler
+    participant EH1 as EventHandler1
+    participant EH2 as EventHandler2
+    participant D as Domain
+
+    Note over C,D: Command Flow
+    C->>CB: Send(Command)
+    CB->>CH: Handle(Command)
+    CH->>D: Execute Business Logic
+    D-->>CH: Result
+    CH-->>CB: Response
+    CB-->>C: Return Result
+
+    Note over C,D: Query Flow
+    C->>QB: Send(Query)
+    QB->>QH: Handle(Query)
+    QH->>D: Read Data
+    D-->>QH: Data
+    QH-->>QB: Response
+    QB-->>C: Return Data
+
+    Note over C,D: Event Flow
+    C->>EB: Publish(Event)
+    EB->>EH1: Handle(Event)
+    EB->>EH2: Handle(Event)
+    EH1->>D: Side Effect 1
+    EH2->>D: Side Effect 2
+    EH1-->>EB: Acknowledged
+    EH2-->>EB: Acknowledged
+    EB-->>C: Published
+```
+
+### Implementação dos Buses
+
+#### Command Bus
+
+O Command Bus é responsável por processar comandos que modificam o estado do sistema. Cada comando tem exatamente um handler e retorna uma resposta síncrona.
 
 ```go
-type Message struct {
-    Payload    any
-    Headers    *messageHeaders
-    Context    context.Context
-    ReplyRequired bool
+// Definição de um Command
+type CreateUserCommand struct {
+    Username string `json:"username"`
+    Email    string `json:"email"`
+    Password string `json:"password"`
+}
+
+func (c *CreateUserCommand) Name() string {
+    return "CreateUser"
+}
+
+// Handler do Command
+type CreateUserHandler struct {
+    userRepository UserRepository
+}
+
+func (h *CreateUserHandler) Handle(ctx context.Context, cmd *CreateUserCommand) (*UserCreatedResult, error) {
+    // Validação
+    if cmd.Username == "" || cmd.Email == "" {
+        return nil, errors.New("username and email are required")
+    }
+
+    // Criação do usuário
+    user := &User{
+        ID:       uuid.New().String(),
+        Username: cmd.Username,
+        Email:    cmd.Email,
+        Password: hashPassword(cmd.Password),
+    }
+
+    // Persistência
+    err := h.userRepository.Save(ctx, user)
+    if err != nil {
+        return nil, fmt.Errorf("failed to save user: %w", err)
+    }
+
+    // Retorno do resultado
+    return &UserCreatedResult{
+        UserID:   user.ID,
+        Username: user.Username,
+        Email:    user.Email,
+    }, nil
+}
+
+// Uso do Command Bus
+func createUser() {
+    commandBus := messagesystem.CommandBus()
+
+    result, err := commandBus.Send(context.Background(), &CreateUserCommand{
+        Username: "john_doe",
+        Email:    "john@example.com",
+        Password: "secure_password",
+    })
+
+    if err != nil {
+        log.Printf("Erro ao criar usuário: %v", err)
+        return
+    }
+
+    log.Printf("Usuário criado: %+v", result)
 }
 ```
 
-#### **Message Types**
+#### Query Bus
 
-- `Command`: Instruções para executar ações
-- `Query`: Solicitações para recuperar dados
-- `Event`: Notificações de mudanças de estado
+O Query Bus é responsável por processar consultas que leem dados do sistema. Cada query tem exatamente um handler e retorna dados síncronos.
 
-### 4. **Channel Layer**
+```go
+// Definição de uma Query
+type GetUserByIDQuery struct {
+    UserID string `json:"user_id"`
+}
 
-#### **Point-to-Point Channel**
+func (q *GetUserByIDQuery) Name() string {
+    return "GetUserByID"
+}
 
-- Comunicação um-para-um
-- Garantia de entrega única
-- Processamento sequencial
+// Handler da Query
+type GetUserByIDHandler struct {
+    userRepository UserRepository
+}
 
-#### **Pub/Sub Channel**
+func (h *GetUserByIDHandler) Handle(ctx context.Context, query *GetUserByIDQuery) (*User, error) {
+    // Busca o usuário
+    user, err := h.userRepository.FindByID(ctx, query.UserID)
+    if err != nil {
+        return nil, fmt.Errorf("failed to find user: %w", err)
+    }
 
-- Comunicação um-para-muitos
-- Distribuição de eventos
-- Processamento paralelo
+    if user == nil {
+        return nil, errors.New("user not found")
+    }
 
-### 5. **Adapter Layer**
+    // Retorna os dados (sem informações sensíveis)
+    return &User{
+        ID:       user.ID,
+        Username: user.Username,
+        Email:    user.Email,
+        // Password não é retornado por segurança
+    }, nil
+}
 
-#### **Inbound Channel Adapter**
+// Uso do Query Bus
+func getUser() {
+    queryBus := messagesystem.QueryBus()
 
-- Recebe mensagens de sistemas externos
-- Traduz para formato interno
-- Roteia para processamento
+    user, err := queryBus.SendAsync(context.Background(), &GetUserByIDQuery{
+        UserID: "123",
+    })
 
-#### **Outbound Channel Adapter**
+    if err != nil {
+        log.Printf("Erro ao buscar usuário: %v", err)
+        return
+    }
 
-- Envia mensagens para sistemas externos
-- Traduz de formato interno
-- Gerencia conexões externas
-
----
-
-## 🔄 Fluxos de Mensagens
-
-### 1. **Fluxo de Comando (Command Flow)**
-
-```mermaid
-sequenceDiagram
-    participant App as Application
-    participant CB as Command Bus
-    participant MD as Message Dispatcher
-    participant GW as Gateway
-    participant AH as Action Handler
-    participant DB as Database
-
-    App->>CB: Send(createUserCommand)
-    CB->>MD: SendMessage(command)
-    MD->>GW: Execute(command)
-    GW->>AH: Handle(command)
-    AH->>DB: Create User
-    DB-->>AH: User Created
-    AH-->>GW: Success Response
-    GW-->>MD: Response
-    MD-->>CB: Result
-    CB-->>App: User Created
+    log.Printf("Usuário encontrado: %+v", user)
+}
 ```
 
-**Detalhes do Fluxo:**
+#### Event Bus
 
-1. **Application** envia comando através do Command Bus
-2. **Command Bus** cria mensagem com tipo `Command` e correlation ID
-3. **Message Dispatcher** roteia para o canal apropriado
-4. **Gateway** executa interceptors antes e depois do processamento
-5. **Action Handler** processa o comando e executa a lógica de negócio
-6. **Response** retorna através da mesma cadeia
+O Event Bus é responsável por processar eventos que notificam sobre mudanças no sistema. Um evento pode ter múltiplos handlers e é processado de forma assíncrona.
 
-### 2. **Fluxo de Consulta (Query Flow)**
+```go
+// Definição de um Event
+type UserCreatedEvent struct {
+    UserID    string    `json:"user_id"`
+    Username  string    `json:"username"`
+    Email     string    `json:"email"`
+    Timestamp time.Time `json:"timestamp"`
+}
 
-```mermaid
-sequenceDiagram
-    participant App as Application
-    participant QB as Query Bus
-    participant MD as Message Dispatcher
-    participant GW as Gateway
-    participant AH as Action Handler
-    participant DB as Database
+func (e *UserCreatedEvent) Name() string {
+    return "UserCreated"
+}
 
-    App->>QB: Send(getUserQuery)
-    QB->>MD: SendMessage(query)
-    MD->>GW: Execute(query)
-    GW->>AH: Handle(query)
-    AH->>DB: Get User
-    DB-->>AH: User Data
-    AH-->>GW: User Data
-    GW-->>MD: Response
-    MD-->>QB: Result
-    QB-->>App: User Data
+// Handler 1: Envio de Email
+type UserCreatedEmailHandler struct {
+    emailService EmailService
+}
+
+func (h *UserCreatedEmailHandler) Handle(ctx context.Context, evt *UserCreatedEvent) error {
+    // Enviar email de boas-vindas
+    email := &Email{
+        To:      evt.Email,
+        Subject: "Bem-vindo!",
+        Body:    fmt.Sprintf("Olá %s, sua conta foi criada com sucesso!", evt.Username),
+    }
+
+    return h.emailService.Send(ctx, email)
+}
+
+// Handler 2: Log de Auditoria
+type UserCreatedAuditHandler struct {
+    auditLogger AuditLogger
+}
+
+func (h *UserCreatedAuditHandler) Handle(ctx context.Context, evt *UserCreatedEvent) error {
+    // Registrar no log de auditoria
+    return h.auditLogger.Log(ctx, &AuditEntry{
+        Action:    "USER_CREATED",
+        UserID:    evt.UserID,
+        Timestamp: evt.Timestamp,
+        Details:   fmt.Sprintf("User %s created with email %s", evt.Username, evt.Email),
+    })
+}
+
+// Handler 3: Notificação Push
+type UserCreatedNotificationHandler struct {
+    notificationService NotificationService
+}
+
+func (h *UserCreatedNotificationHandler) Handle(ctx context.Context, evt *UserCreatedEvent) error {
+    // Enviar notificação push
+    notification := &Notification{
+        UserID:  evt.UserID,
+        Title:   "Conta Criada",
+        Message: "Sua conta foi criada com sucesso!",
+        Type:    "SUCCESS",
+    }
+
+    return h.notificationService.Send(ctx, notification)
+}
+
+// Uso do Event Bus
+func publishUserCreated(user *User) {
+    eventBus := messagesystem.EventBus()
+
+    err := eventBus.Publish(context.Background(), &UserCreatedEvent{
+        UserID:    user.ID,
+        Username:  user.Username,
+        Email:     user.Email,
+        Timestamp: time.Now(),
+    })
+
+    if err != nil {
+        log.Printf("Erro ao publicar evento: %v", err)
+    }
+}
 ```
 
-**Detalhes do Fluxo:**
+### Benefícios da Implementação CQRS
 
-1. **Application** envia consulta através do Query Bus
-2. **Query Bus** cria mensagem com tipo `Query` e correlation ID
-3. **Message Dispatcher** roteia para o canal apropriado
-4. **Gateway** executa interceptors e roteia para handler
-5. **Action Handler** executa consulta e retorna dados
-6. **Response** retorna dados através da mesma cadeia
+1. **Separação de Responsabilidades**: Commands modificam, Queries leem, Events notificam
+2. **Escalabilidade Independente**: Cada tipo pode ser escalado separadamente
+3. **Otimização de Performance**: Queries podem usar views otimizadas
+4. **Flexibilidade**: Handlers podem ser adicionados/removidos independentemente
+5. **Testabilidade**: Cada handler pode ser testado isoladamente
+6. **Manutenibilidade**: Código mais organizado e fácil de manter
 
-### 3. **Fluxo de Evento (Event Flow)**
+### Métodos dos Buses
 
-```mermaid
-sequenceDiagram
-    participant App as Application
-    participant EB as Event Bus
-    participant MD as Message Dispatcher
-    participant PSC as Pub/Sub Channel
-    participant EDC as Event-Driven Consumer
-    participant AH as Action Handler
-    participant NS as Notification Service
+#### Command Bus
 
-    App->>EB: Publish(userCreatedEvent)
-    EB->>MD: PublishMessage(event)
-    MD->>PSC: Send(event)
-    PSC->>EDC: Event Received
-    EDC->>AH: Handle(event)
-    AH->>NS: Send Notification
-    NS-->>AH: Notification Sent
-    AH-->>EDC: Success
-    EDC-->>PSC: Acknowledged
+- **`SendAsync(ctx, command)`**: Envia comando de forma assíncrona
+- **`SendRawAsync(ctx, route, payload, headers)`**: Envia comando com payload e headers customizados
+
+#### Query Bus
+
+- **`SendAsync(ctx, query)`**: Envia query de forma assíncrona
+- **`SendRawAsync(ctx, route, payload, headers)`**: Envia query com payload customizado e headers customizados
+
+#### Event Bus
+
+- **`Publish(ctx, event)`**: Publica evento de forma assíncrona
+- **`PublishRaw(ctx, route, payload, headers)`**: Publica evento com payload customizado e headers customizados
+
+## ⏱ Processamento assíncrono
+### 📤 Padrões de Publicação
+
+#### Comandos
+
+Os comandos representam ações que modificam o estado do sistema. Eles são processados de forma síncrona e devem retornar uma resposta.
+
+##### Exemplo de Uso
+
+```go
+// 1. Defina seu comando
+type CreateUserCommand struct {
+    Username string `json:"username"`
+    Password string `json:"password"`
+}
+
+func (c *CreateUserCommand) Name() string {
+    return "createUser"
+}
+
+// 2. Implemente o handler
+type CreateUserHandler struct{}
+
+func (h *CreateUserHandler) Handle(ctx context.Context, cmd *CreateUserCommand) (*ResultCm, error) {
+    // Implemente a lógica de negócio
+    fmt.Println("process command ok")
+    return &ResultCm{"User created successfully"}, nil
+}
+
+// 3. Configure e use o sistema
+func main() {
+    // Configure conexão Kafka
+    messagesystem.AddChannelConnection(
+        kafka.NewConnection("defaultConKafka", []string{"localhost:9093"}),
+    )
+
+    // Configure canal de publicação
+    publisherChannel := kafka.NewPublisherChannelAdapterBuilder(
+        "defaultConKafka",
+        "messagesystem.topic",
+    )
+    messagesystem.AddPublisherChannel(publisherChannel)
+
+    // Registre o handler
+    messagesystem.AddActionHandler(&CreateUserHandler{})
+
+    // Inicie o sistema
+    messagesystem.Start()
+
+    // Use o command bus
+    commandBus := messagesystem.CommandBusByChannel("messagesystem.topic")
+    commandBus.SendAsync(context.Background(), &CreateUserCommand{
+        Username: "teste",
+        Password: "123",
+    })
+}
 ```
 
-**Detalhes do Fluxo:**
+##### Métodos do Fluxo de Comando
 
-1. **Application** publica evento através do Event Bus
-2. **Event Bus** cria mensagem com tipo `Event` e correlation ID
-3. **Message Dispatcher** publica no canal Pub/Sub
-4. **Pub/Sub Channel** distribui para todos os subscribers
-5. **Event-Driven Consumer** processa evento assincronamente
-6. **Action Handler** executa lógica de negócio baseada no evento
+- **`SendAsync(ctx, command)`**: Envia comando de forma assíncrona
+- **`SendRawAsync(ctx, route, payload, headers)`**: Envia comando com payload customizado
+- **`Handle(ctx, command)`**: Processa o comando no handler
+- **`Route(command)`**: Roteia o comando para o handler apropriado
 
-### 4. **Fluxo de Integração Externa (Kafka)**
+#### Queries
 
-```mermaid
-sequenceDiagram
-    participant App as Application
-    participant OCA as Outbound Channel Adapter
-    participant MT as Message Translator
-    participant KP as Kafka Producer
-    participant KC as Kafka Consumer
-    participant ICA as Inbound Channel Adapter
-    participant EDC as Event-Driven Consumer
+As queries representam consultas que não modificam o estado do sistema. Elas são processadas de forma síncrona e retornam dados.
 
-    App->>OCA: Send(message)
-    OCA->>MT: FromMessage(internal)
-    MT->>OCA: Kafka Message
-    OCA->>KP: SendMessage(kafka)
-    KP-->>OCA: Success
+##### Exemplo de Uso
 
-    KC->>ICA: ConsumerMessage
-    ICA->>MT: ToMessage(kafka)
-    MT->>ICA: Internal Message
-    ICA->>EDC: Receive(message)
-    EDC->>App: Process Message
+```go
+// 1. Defina sua query
+type GetUserQuery struct {
+    UserID string `json:"user_id"`
+}
+
+func (q *GetUserQuery) Name() string {
+    return "getUser"
+}
+
+// 2. Implemente o handler
+type GetUserHandler struct{}
+
+func (h *GetUserHandler) Handle(ctx context.Context, query *GetUserQuery) (*User, error) {
+    // Implemente a lógica de consulta
+    return &User{ID: query.UserID, Name: "John Doe"}, nil
+}
+
+// 3. Use o query bus
+func getUser() {
+    queryBus := messagesystem.QueryBusByChannel("messagesystem.topic")
+    user, err := queryBus.SendAsync(context.Background(), &GetUserQuery{
+        UserID: "123",
+    })
+}
 ```
 
-**Detalhes do Fluxo:**
+##### Métodos do Fluxo de Query
 
-1. **Application** envia mensagem para adaptador outbound
-2. **Message Translator** converte formato interno para Kafka
-3. **Kafka Producer** envia mensagem para tópico
-4. **Kafka Consumer** recebe mensagem do tópico
-5. **Message Translator** converte formato Kafka para interno
-6. **Event-Driven Consumer** processa mensagem internamente
+- **`SendAsync(ctx, query)`**: Envia query de forma assíncrona
+- **`SendRawAsync(ctx, route, payload, headers)`**: Envia query com payload customizado
+- **`Handle(ctx, query)`**: Processa a query no handler
+- **`Route(query)`**: Roteia a query para o handler apropriado
 
-### 5. **Fluxo de Event-Driven Consumer**
+#### Eventos
 
-```mermaid
-sequenceDiagram
-    participant ICA as Inbound Channel Adapter
-    participant EDC as Event-Driven Consumer
-    participant PQ as Processing Queue
-    participant P1 as Processor 1
-    participant P2 as Processor 2
-    participant P3 as Processor N
-    participant GW as Gateway
-    participant AH as Action Handler
-    participant DLC as Dead Letter Channel
+Os eventos representam notificações sobre mudanças no sistema. Eles são processados de forma assíncrona e podem ter múltiplos handlers.
 
-    ICA->>EDC: Receive Message
-    EDC->>PQ: Add to Queue
-    PQ->>P1: Process Message
-    PQ->>P2: Process Message
-    PQ->>P3: Process Message
+##### Exemplo de Uso
 
-    P1->>GW: Send to Gateway
-    GW->>AH: Handle Message
-    AH-->>GW: Success/Error
+```go
+// 1. Defina seu evento
+type UserCreatedEvent struct {
+    UserID    string    `json:"user_id"`
+    Username  string    `json:"username"`
+    Timestamp time.Time `json:"timestamp"`
+}
 
-    alt Success
-        GW-->>P1: Success Response
-        P1-->>PQ: Message Processed
-    else Error
-        GW-->>P1: Error Response
-        P1->>DLC: Send to Dead Letter
-    end
+func (e *UserCreatedEvent) Name() string {
+    return "userCreated"
+}
+
+// 2. Implemente handlers do evento
+type EmailNotificationHandler struct{}
+
+func (h *EmailNotificationHandler) Handle(ctx context.Context, evt *UserCreatedEvent) error {
+    // Enviar email de boas-vindas
+    fmt.Printf("Sending welcome email to user %s\n", evt.Username)
+    return nil
+}
+
+type AuditLogHandler struct{}
+
+func (h *AuditLogHandler) Handle(ctx context.Context, evt *UserCreatedEvent) error {
+    // Registrar no log de auditoria
+    fmt.Printf("Audit log: User %s created at %s\n", evt.Username, evt.Timestamp)
+    return nil
+}
+
+// 3. Use o event bus
+func publishUserCreated() {
+    eventBus := messagesystem.EventBusByChannel("messagesystem.topic")
+    eventBus.Publish(context.Background(), &UserCreatedEvent{
+        UserID:    "123",
+        Username:  "john_doe",
+        Timestamp: time.Now(),
+    })
+}
 ```
 
-**Detalhes do Fluxo:**
+##### Métodos do Fluxo de Evento
 
-1. **Inbound Channel Adapter** recebe mensagem de sistema externo
-2. **Event-Driven Consumer** adiciona mensagem à fila de processamento
-3. **Processors** (múltiplos) consomem mensagens da fila concorrentemente
-4. **Gateway** executa interceptors e roteia para handler apropriado
-5. **Action Handler** processa a mensagem e executa lógica de negócio
-6. **Response** retorna através da cadeia ou mensagem vai para Dead Letter Channel
+- **`Publish(ctx, event)`**: Publica evento de forma assíncrona
+- **`PublishRaw(ctx, route, payload, headers)`**: Publica evento com payload customizado
+- **`Handle(ctx, event)`**: Processa o evento em todos os handlers registrados
+- **`Route(event)`**: Roteia o evento para todos os handlers apropriados
 
-**Características do Event-Driven Consumer:**
+### 📥 Padrões de Consumo
 
-- **Processamento Paralelo**: Múltiplos processors trabalham simultaneamente
-- **Queue-based**: Fila interna para gerenciar mensagens
-- **Timeout Management**: Controle de timeout por mensagem
-- **Error Handling**: Suporte a Dead Letter Channel
-- **Graceful Shutdown**: Parada controlada de todos os processors
+#### Event-Driven Consumer
 
-### 6. **Fluxo de Polling Consumer**
+O Event-Driven Consumer processa mensagens de forma assíncrona e em tempo real, ideal para sistemas que precisam de baixa latência e alta throughput.
 
-```mermaid
-sequenceDiagram
-    participant PC as Polling Consumer
-    participant Ticker as Timer
-    participant ICA as Inbound Channel Adapter
-    participant GW as Gateway
-    participant AH as Action Handler
-    participant DLC as Dead Letter Channel
-
-    loop Polling Cycle
-        Ticker->>PC: Poll Interval
-        PC->>ICA: Check for Messages
-        alt Message Available
-            ICA-->>PC: Message Received
-            PC->>GW: Send to Gateway
-            GW->>AH: Handle Message
-            AH-->>GW: Success/Error
-
-            alt Success
-                GW-->>PC: Success Response
-                PC->>PC: Processing Delay
-            else Error
-                GW-->>PC: Error Response
-                alt Stop on Error
-                    PC->>PC: Stop Consumer
-                else Continue
-                    PC->>DLC: Send to Dead Letter
-                end
-            end
-        else No Message
-            ICA-->>PC: No Messages
-            PC->>PC: Wait for Next Poll
-        end
-    end
-```
-
-**Detalhes do Fluxo:**
-
-1. **Polling Consumer** inicia ciclo de polling baseado em intervalo configurado
-2. **Timer** dispara verificação periódica por mensagens
-3. **Inbound Channel Adapter** verifica disponibilidade de mensagens
-4. **Gateway** processa mensagem através de interceptors
-5. **Action Handler** executa lógica de negócio
-6. **Processing Delay** aplica delay configurado entre processamentos
-7. **Error Handling** decide se para ou continua baseado na configuração
-
-**Características do Polling Consumer:**
-
-- **Polling Interval**: Intervalo configurável entre verificações
-- **Processing Delay**: Delay entre processamento de mensagens
-- **Stop on Error**: Configuração para parar em caso de erro
-- **Timeout Management**: Controle de timeout por processamento
-- **Resource Efficient**: Não consome recursos quando não há mensagens
-
----
-
-## 🔄 Padrões de Consumo
-
-### 1. **Event-Driven Consumer Pattern**
-
-O Event-Driven Consumer implementa o padrão de consumo baseado em eventos, onde mensagens são processadas assim que chegam, de forma assíncrona e escalável.
-
-#### **Características Principais:**
+##### Características
 
 - **Processamento Assíncrono**: Mensagens são processadas assim que chegam
-- **Múltiplos Processors**: Suporte a processamento paralelo com N processors
-- **Queue-based**: Fila interna para gerenciar mensagens em trânsito
-- **Timeout Management**: Controle de timeout por mensagem processada
-- **Error Handling**: Suporte a Dead Letter Channel para mensagens falhadas
-- **Graceful Shutdown**: Parada controlada de todos os processors
+- **Múltiplos Processadores**: Suporte a processamento paralelo
+- **Baixa Latência**: Processamento imediato das mensagens
+- **Alto Throughput**: Capacidade de processar muitas mensagens simultaneamente
 
-#### **Configuração Avançada:**
+##### Exemplo de Uso
 
 ```go
-// Configuração de Event-Driven Consumer
-consumer := NewEventDrivenConsumerBuilder("user.consumer").
-    WithAmountOfProcessors(5).                    // 5 processors paralelos
-    WithMessageProcessingTimeout(30 * time.Second). // 30s timeout por mensagem
-    Build(container)
-
-// Inicialização
-consumer.Run(ctx)
-
-// Shutdown graceful
-defer consumer.Stop()
-```
-
-#### **Cenários de Uso:**
-
-- **Alta Throughput**: Quando há muitas mensagens chegando simultaneamente
-- **Processamento Paralelo**: Quando mensagens podem ser processadas independentemente
-- **Real-time Processing**: Quando latência é crítica
-- **Scalability**: Quando o sistema precisa escalar horizontalmente
-
-### 2. **Polling Consumer Pattern**
-
-O Polling Consumer implementa o padrão de verificação periódica, onde o sistema verifica periodicamente por novas mensagens para processamento.
-
-#### **Características Principais:**
-
-- **Polling Interval**: Intervalo configurável entre verificações
-- **Processing Delay**: Delay entre processamento de mensagens
-- **Stop on Error**: Configuração para parar em caso de erro
-- **Resource Efficient**: Não consome recursos quando não há mensagens
-- **Timeout Management**: Controle de timeout por processamento
-- **Error Handling**: Configuração flexível para tratamento de erros
-
-#### **Configuração Avançada:**
-
-```go
-// Configuração de Polling Consumer
-consumer := NewPollingConsumerBuilder("user.polling").
-    WithPollIntervalMilliseconds(1000).           // Verifica a cada 1 segundo
-    WithProcessingDelayMilliseconds(100).         // 100ms delay entre processamentos
-    WithProcessingTimeoutMilliseconds(30000).     // 30s timeout por processamento
-    WithStopOnError(false).                       // Continua mesmo com erros
-    Build(container)
-
-// Inicialização
-consumer.Run(ctx)
-
-// Shutdown
-defer consumer.Stop()
-```
-
-#### **Cenários de Uso:**
-
-- **Baixa Frequência**: Quando mensagens chegam esporadicamente
-- **Resource Constrained**: Quando recursos são limitados
-- **Batch Processing**: Quando processamento em lote é aceitável
-- **Legacy Integration**: Quando integração com sistemas legados requer polling
-
-### 3. **Comparação entre Padrões**
-
-| Aspecto            | Event-Driven Consumer            | Polling Consumer                                 |
-| ------------------ | -------------------------------- | ------------------------------------------------ |
-| **Latência**       | Baixa (processamento imediato)   | Alta (depende do intervalo)                      |
-| **Throughput**     | Alto (processamento paralelo)    | Médio (processamento sequencial)                 |
-| **Resource Usage** | Alto (processors sempre ativos)  | Baixo (processors ativos apenas durante polling) |
-| **Scalability**    | Excelente (múltiplos processors) | Limitada (processamento sequencial)              |
-| **Error Handling** | Dead Letter Channel              | Stop on Error ou Continue                        |
-| **Complexity**     | Alta (gerenciamento de filas)    | Baixa (lógica simples)                           |
-| **Use Case**       | Real-time, alta frequência       | Batch, baixa frequência                          |
-
-### 4. **Seleção do Padrão Adequado**
-
-#### **Use Event-Driven Consumer quando:**
-
-- ✅ Mensagens chegam em alta frequência
-- ✅ Latência é crítica
-- ✅ Recursos computacionais estão disponíveis
-- ✅ Processamento paralelo é necessário
-- ✅ Sistema precisa escalar horizontalmente
-
-#### **Use Polling Consumer quando:**
-
-- ✅ Mensagens chegam esporadicamente
-- ✅ Recursos são limitados
-- ✅ Latência não é crítica
-- ✅ Processamento sequencial é aceitável
-- ✅ Integração com sistemas legados
-
----
-
-## 🎨 Padrões de Integração
-
-### 1. **Enterprise Integration Patterns (EIP)**
-
-#### **Channel Adapter Pattern**
-
-- **Inbound**: Recebe mensagens de sistemas externos
-- **Outbound**: Envia mensagens para sistemas externos
-- **Message Translation**: Conversão entre formatos
-
-#### **Gateway Pattern**
-
-- **Entry Point**: Ponto de entrada para processamento
-- **Interceptors**: Execução de lógica antes/depois
-- **Routing**: Roteamento para handlers apropriados
-
-#### **Message Router Pattern**
-
-- **Content-Based Routing**: Roteamento baseado no conteúdo
-- **Recipient List**: Lista de destinatários dinâmica
-- **Message Filter**: Filtragem de mensagens
-
-### 2. **Message Channel Patterns**
-
-#### **Point-to-Point Channel**
-
-```go
-// Criação de canal ponto-a-ponto
-channel := NewPointToPointChannel("user.commands")
-
-// Envio de mensagem
-err := channel.Send(ctx, message)
-
-// Recebimento de mensagem
-msg, err := channel.Receive()
-```
-
-#### **Publish-Subscribe Channel**
-
-```go
-// Criação de canal pub/sub
-channel := NewPubSubChannel("user.events")
-
-// Publicação de evento
-err := channel.Send(ctx, event)
-
-// Inscrição para receber eventos
-channel.Subscribe(handler)
-```
-
-### 3. **Consumer Patterns**
-
-#### **Event-Driven Consumer**
-
-```go
-// Criação de consumer event-driven
-consumer := NewEventDrivenConsumerBuilder("user.consumer").
-    WithAmountOfProcessors(5).
-    WithMessageProcessingTimeout(30 * time.Second).
-    Build(container)
-
-// Inicialização
-consumer.Run()
-```
-
-#### **Polling Consumer**
-
-```go
-// Criação de consumer polling
-consumer := NewPollingConsumerBuilder("user.polling").
-    WithPollIntervalMilliseconds(1000).
-    WithProcessingDelayMilliseconds(100).
-    Build(container)
-
-// Inicialização
-consumer.Run()
-```
-
----
-
-## 🔄 Ciclo de Vida do Sistema
-
-### 1. **Inicialização (Start)**
-
-```mermaid
-graph TD
-    A[Start] --> B[Register Default Endpoints]
-    B --> C[Build Channel Connections]
-    C --> D[Build Outbound Channels]
-    D --> E[Build Inbound Channels]
-    E --> F[System Ready]
-```
-
-**Etapas:**
-
-1. **Register Default Endpoints**: Registra endpoints padrão (command/query)
-2. **Build Channel Connections**: Constrói conexões com sistemas externos
-3. **Build Outbound Channels**: Constrói canais de saída
-4. **Build Inbound Channels**: Constrói canais de entrada
-
-### 2. **Operação (Operation)**
-
-```mermaid
-graph TD
-    A[Message Received] --> B{Message Type?}
-    B -->|Command| C[Command Bus]
-    B -->|Query| D[Query Bus]
-    B -->|Event| E[Event Bus]
-    C --> F[Process Command]
-    D --> G[Process Query]
-    E --> H[Process Event]
-    F --> I[Response]
-    G --> I
-    H --> J[Event Published]
-```
-
-### 3. **Shutdown**
-
-```mermaid
-graph TD
-    A[Shutdown] --> B[Stop Event-Driven Consumers]
-    B --> C[Close Consumer Channels]
-    C --> D[Unsubscribe Subscriber Channels]
-    D --> E[Disconnect External Connections]
-    E --> F[System Shutdown Complete]
-```
-
----
-
-## 💡 Exemplos de Uso
-
-### 1. **Configuração do Sistema**
-
-```go
-// Configuração de conexão Kafka
-kafkaConnection := kafka.NewConnection("kafka.main", []string{"localhost:9092"})
-messagesystem.AddChannelConnection(kafkaConnection)
-
-// Configuração de adaptadores
-outboundAdapter := kafka.NewPublisherChannelAdapterBuilder("kafka.main", "user.events")
-messagesystem.AddPublisherChannel(outboundAdapter)
-
-inboundAdapter := kafka.NewConsumerChannelAdapterBuilder("kafka.main", "user.events", "user.consumer")
-messagesystem.AddConsumerChannel(inboundAdapter)
-
-// Registro de handlers
-messagesystem.AddActionHandler(createUserHandler)
-messagesystem.AddActionHandler(getUserHandler)
-
-// Inicialização
-messagesystem.Start()
-```
-
-### 2. **Uso de Command Bus**
-
-```go
-// Criação de comando
-createUserCommand := &CreateUserCommand{
-    Name:  "John Doe",
-    Email: "john@example.com",
-}
-
-// Envio síncrono
-user, err := messagesystem.CommandBus().Send(ctx, createUserCommand)
-if err != nil {
-    log.Error("Failed to create user", "error", err)
-    return
-}
-
-// Envio assíncrono
-err = messagesystem.CommandBus().SendAsync(ctx, createUserCommand)
-if err != nil {
-    log.Error("Failed to send command", "error", err)
-    return
-}
-```
-
-### 3. **Uso de Query Bus**
-
-```go
-// Criação de consulta
-getUserQuery := &GetUserQuery{
-    UserID: "123",
-}
-
-// Execução de consulta
-user, err := messagesystem.QueryBus().Send(ctx, getUserQuery)
-if err != nil {
-    log.Error("Failed to get user", "error", err)
-    return
-}
-```
-
-### 4. **Uso de Event Bus**
-
-```go
-// Criação de evento
-userCreatedEvent := &UserCreatedEvent{
-    UserID: "123",
-    Name:   "John Doe",
-    Email:  "john@example.com",
-}
-
-// Publicação de evento
-err := messagesystem.EventBus().Publish(ctx, userCreatedEvent)
-if err != nil {
-    log.Error("Failed to publish event", "error", err)
-    return
-}
-```
-
-### 5. **Event-Driven Consumer**
-
-```go
-// Criação de consumer com configuração avançada
-consumer, err := messagesystem.EventDrivenConsumer("user.consumer")
-if err != nil {
-    log.Error("Failed to create consumer", "error", err)
-    return
-}
-
-// Configuração de processors e timeouts
-consumer.WithAmountOfProcessors(5).
-    WithMessageProcessingTimeout(30 * time.Second)
-
-// Inicialização
-consumer.Run(ctx)
-
-// Shutdown graceful
-defer consumer.Stop()
-```
-
-### 6. **Polling Consumer**
-
-```go
-// Criação de polling consumer
-pollingConsumer := NewPollingConsumerBuilder("user.polling").
-    WithPollIntervalMilliseconds(1000).           // Verifica a cada 1 segundo
-    WithProcessingDelayMilliseconds(100).         // 100ms delay entre processamentos
-    WithProcessingTimeoutMilliseconds(30000).     // 30s timeout por processamento
-    WithStopOnError(false).                       // Continua mesmo com erros
-    Build(container)
-
-// Inicialização
-pollingConsumer.Run(ctx)
-
-// Shutdown
-defer pollingConsumer.Stop()
-```
-
-### 7. **Configuração de Dead Letter Channel**
-
-```go
-// Configuração de Dead Letter Channel para mensagens falhadas
-deadLetterChannel := NewPointToPointChannel("dead.letter.channel")
-
-// Configuração de consumer com Dead Letter Channel
-consumer := NewEventDrivenConsumerBuilder("user.consumer").
-    WithDeadLetterChannel(deadLetterChannel).
-    WithAmountOfProcessors(3).
-    Build(container)
-
-// Processamento de mensagens falhadas
-go func() {
-    for {
-        msg, err := deadLetterChannel.Receive()
-        if err != nil {
-            log.Error("Failed to receive from dead letter channel", "error", err)
-            continue
-        }
-
-        // Processamento especial para mensagens falhadas
-        log.Warn("Processing failed message", "messageId", msg.GetHeaders().CorrelationId)
-        // Lógica de retry ou notificação
+func main() {
+    // Configure conexão e canais
+    messagesystem.AddChannelConnection(
+        kafka.NewConnection("defaultConKafka", []string{"localhost:9093"}),
+    )
+
+    // Configure consumer channel com resiliência
+    topicConsumerChannel := kafka.NewConsumerChannelAdapterBuilder(
+        "defaultConKafka",
+        "messagesystem.topic",
+        "test_consumer",
+    )
+    topicConsumerChannel.WithRetryTimes(2_000, 3_000)
+    topicConsumerChannel.WithDeadLetterChannelName("messagesystem.dlq")
+
+    // Registre canais e handlers
+    messagesystem.AddConsumerChannel(topicConsumerChannel)
+    messagesystem.AddActionHandler(&CreateUserHandler{})
+
+    // Inicie o sistema
+    messagesystem.Start()
+
+    // Configure event-driven consumer
+    consumer, err := messagesystem.EventDrivenConsumer("test_consumer")
+    if err != nil {
+        panic(err)
     }
-}()
+
+    // Execute com configurações específicas
+    go consumer.WithAmountOfProcessors(1).
+        WithMessageProcessingTimeout(50000).
+        WithStopOnError(false).
+        Run(ctx)
+}
 ```
 
----
+##### Métodos do Event-Driven Consumer
 
-## 🔍 Monitoramento e Debug
+- **`WithAmountOfProcessors(count)`**: Define número de processadores paralelos
+- **`WithMessageProcessingTimeout(timeout)`**: Define timeout para processamento
+- **`WithStopOnError(stop)`**: Define se deve parar em caso de erro
+- **`Run(ctx)`**: Inicia o processamento assíncrono
 
-### 1. **Show Active Endpoints**
+#### Polling Consumer
+
+O Polling Consumer processa mensagens de forma periódica, ideal para processamento em lote e sistemas que não precisam de tempo real.
+
+##### Características
+
+- **Processamento Periódico**: Verifica mensagens em intervalos definidos
+- **Processamento em Lote**: Ideal para operações que processam múltiplas mensagens
+- **Controle de Recursos**: Menor uso de recursos do sistema
+- **Maior Latência**: Processamento não é imediato
+
+##### Exemplo de Uso
 
 ```go
-// Exibe todos os endpoints ativos
+func main() {
+    // Configure consumer polling
+    consumer := messagesystem.NewPollingConsumer("batch-consumer")
+
+    // Configure parâmetros
+    consumer.WithPollIntervalMilliseconds(5000)      // Poll a cada 5 segundos
+    consumer.WithProcessingDelayMilliseconds(1000)  // Delay de 1 segundo entre processamentos
+    consumer.WithProcessingTimeoutMilliseconds(30000) // Timeout de 30 segundos
+    consumer.WithStopOnError(false)                  // Não parar em caso de erro
+
+    // Inicie o polling
+    go consumer.Run(ctx)
+}
+```
+
+##### Métodos do Polling Consumer
+
+- **`WithPollIntervalMilliseconds(interval)`**: Define intervalo de polling
+- **`WithProcessingDelayMilliseconds(delay)`**: Define delay entre processamentos
+- **`WithProcessingTimeoutMilliseconds(timeout)`**: Define timeout para processamento
+- **`WithStopOnError(stop)`**: Define se deve parar em caso de erro
+- **`Run(ctx)`**: Inicia o polling periódico
+
+#### Comparação: Event-Driven vs Polling
+
+| Aspecto             | Event-Driven          | Polling                      |
+| ------------------- | --------------------- | ---------------------------- |
+| **Latência**        | Baixa (tempo real)    | Alta (periódica)             |
+| **Throughput**      | Alto                  | Médio                        |
+| **Uso de Recursos** | Alto                  | Baixo                        |
+| **Complexidade**    | Média                 | Baixa                        |
+| **Escalabilidade**  | Excelente             | Boa                          |
+| **Casos de Uso**    | Tempo real, streaming | Batch processing, relatórios |
+
+##### Prós e Contras
+
+**Event-Driven Consumer:**
+
+✅ **Prós:**
+
+- Processamento em tempo real
+- Alta eficiência para streaming
+- Escalabilidade horizontal
+- Baixa latência
+
+❌ **Contras:**
+
+- Maior complexidade de configuração
+- Maior uso de recursos
+- Pode causar backpressure se não configurado adequadamente
+
+**Polling Consumer:**
+
+✅ **Prós:**
+
+- Simplicidade de implementação
+- Baixo uso de recursos
+- Controle preciso sobre quando processar
+- Ideal para batch processing
+
+❌ **Contras:**
+
+- Maior latência
+- Menor throughput
+- Pode perder mensagens se o intervalo for muito longo
+
+### 🛡️ Resiliência
+
+#### Retry Pattern
+
+O padrão de retry permite que o sistema tente processar uma mensagem novamente em caso de falha temporária, aumentando a robustez do sistema.
+
+##### Como Funciona
+
+O sistema implementa um handler de retry que envolve o handler original e tenta reprocessar a mensagem em caso de erro, com intervalos configuráveis entre as tentativas.
+
+##### Diagrama de Fluxo do Retry
+
+```mermaid
+flowchart TD
+    A[Mensagem Recebida] --> B[Handler Original]
+    B --> C{Processamento OK?}
+    C -->|Sim| D[Sucesso]
+    C -->|Não| E[Incrementar Tentativa]
+    E --> F{Tentativas < Máximo?}
+    F -->|Sim| G[Aguardar Intervalo]
+    G --> H[Tentar Novamente]
+    H --> B
+    F -->|Não| I[Falha Final]
+    I --> J[Dead Letter Channel]
+```
+
+##### Diagrama de Execução do Retry
+
+```mermaid
+sequenceDiagram
+    participant M as Message
+    participant RH as RetryHandler
+    participant OH as OriginalHandler
+    participant DLC as DeadLetterChannel
+
+    M->>RH: Process Message
+    RH->>OH: Handle Message
+    OH-->>RH: Error
+
+    loop Retry Attempts
+        RH->>RH: Wait Interval
+        RH->>OH: Retry Handle
+        OH-->>RH: Error
+    end
+
+    RH->>DLC: Send to Dead Letter
+    DLC-->>RH: Acknowledged
+```
+
+##### Exemplo de Configuração
+
+```go
+// Configure retry com intervalos específicos
+topicConsumerChannel := kafka.NewConsumerChannelAdapterBuilder(
+    "defaultConKafka",
+    "messagesystem.topic",
+    "test_consumer",
+)
+
+// Configure retry: [2000ms, 3000ms] - duas tentativas com intervalos de 2s e 3s
+topicConsumerChannel.WithRetryTimes(2_000, 3_000)
+
+// Configure dead letter channel
+topicConsumerChannel.WithDeadLetterChannelName("messagesystem.dlq")
+```
+
+##### Métodos do Retry Handler
+
+- **`NewRetryHandler(attemptsTime, handler)`**: Cria handler com tentativas configuradas
+- **`Handle(ctx, msg)`**: Processa mensagem com retry automático
+- **`WithRetryTimes(intervals...)`**: Configura intervalos de retry no consumer
+
+#### Dead Letter Channel
+
+O Dead Letter Channel é um padrão que captura mensagens que falharam no processamento após todas as tentativas de retry, permitindo análise posterior e recuperação manual.
+
+##### Como Funciona
+
+Quando uma mensagem falha após todas as tentativas de retry, ela é enviada para um canal especial (Dead Letter Channel) com informações sobre o erro e o payload original.
+
+##### Diagrama de Fluxo do Dead Letter
+
+```mermaid
+flowchart TD
+    A[Mensagem Processada] --> B{Sucesso?}
+    B -->|Sim| C[Processamento Concluído]
+    B -->|Não| D[Retry Handler]
+    D --> E{Todas Tentativas Falharam?}
+    E -->|Não| F[Tentar Novamente]
+    F --> D
+    E -->|Sim| G[Dead Letter Handler]
+    G --> H[Enriquecer Mensagem]
+    H --> I[Enviar para DLQ]
+    I --> J[Log do Erro]
+    J --> K[Mensagem em DLQ]
+```
+
+##### Diagrama de Execução do Dead Letter
+
+```mermaid
+sequenceDiagram
+    participant M as Message
+    participant DLH as DeadLetterHandler
+    participant OH as OriginalHandler
+    participant DLC as DeadLetterChannel
+    participant DLQ as DeadLetterQueue
+
+    M->>DLH: Process Message
+    DLH->>OH: Handle Message
+    OH-->>DLH: Error
+
+    DLH->>DLH: Convert Payload
+    DLH->>DLH: Create DLQ Message
+    DLH->>DLC: Send to DLQ
+    DLC->>DLQ: Store Failed Message
+    DLQ-->>DLC: Acknowledged
+    DLC-->>DLH: Success
+    DLH-->>M: Error Returned
+```
+
+##### Exemplo de Configuração
+
+```go
+// 1. Configure canal de dead letter
+publisherDlqChannel := kafka.NewPublisherChannelAdapterBuilder(
+    "defaultConKafka",
+    "messagesystem.dlq",
+)
+
+// 2. Registre o canal de dead letter
+messagesystem.AddPublisherChannel(publisherDlqChannel)
+
+// 3. Configure consumer com dead letter
+topicConsumerChannel := kafka.NewConsumerChannelAdapterBuilder(
+    "defaultConKafka",
+    "messagesystem.topic",
+    "test_consumer",
+)
+topicConsumerChannel.WithDeadLetterChannelName("messagesystem.dlq")
+```
+
+##### Estrutura da Mensagem Dead Letter
+
+```go
+type DeadLetterMessage struct {
+    ReasonError string                 `json:"reason_error"`
+    Payload     any                    `json:"payload"`
+    Headers     map[string]string      `json:"headers"`
+}
+```
+
+##### Métodos do Dead Letter Handler
+
+- **`NewDeadLetter(channel, handler)`**: Cria handler com dead letter
+- **`Handle(ctx, msg)`**: Processa mensagem e envia para DLQ em caso de erro
+- **`convertMessagePayload(msg)`**: Converte payload para formato DLQ
+- **`makeDeadLetterMessage(ctx, msg, payload)`**: Cria mensagem DLQ enriquecida
+
+### 🚀 Kafka
+
+O driver Kafka implementa a integração completa com Apache Kafka, fornecendo adaptadores para publicação e consumo de mensagens com suporte a todas as funcionalidades do MessageSystem.
+
+#### Configuração da Conexão
+
+##### Exemplo de Configuração Básica
+
+```go
+// Crie uma conexão Kafka (singleton pattern)
+connection := kafka.NewConnection("defaultConKafka", []string{"localhost:9093"})
+
+// Registre a conexão no sistema
+messagesystem.AddChannelConnection(connection)
+
+// Conecte ao Kafka
+err := connection.Connect()
+if err != nil {
+    log.Fatal("Failed to connect to Kafka:", err)
+}
+```
+
+##### Configurações Avançadas
+
+```go
+// Configuração com múltiplos brokers
+connection := kafka.NewConnection(
+    "production-kafka",
+    []string{
+        "kafka1.example.com:9092",
+        "kafka2.example.com:9092",
+        "kafka3.example.com:9092",
+    },
+)
+```
+
+#### Publisher Channel (Publicação)
+
+##### Configuração do Publisher
+
+```go
+// Crie um publisher channel
+publisherChannel := kafka.NewPublisherChannelAdapterBuilder(
+    "defaultConKafka",        // Nome da conexão
+    "messagesystem.topic",     // Tópico de destino
+)
+
+// Registre o canal
+messagesystem.AddPublisherChannel(publisherChannel)
+
+// Use o canal através dos buses
+commandBus := messagesystem.CommandBusByChannel("messagesystem.topic")
+queryBus := messagesystem.QueryBusByChannel("messagesystem.topic")
+eventBus := messagesystem.EventBusByChannel("messagesystem.topic")
+```
+
+##### Tradução de Mensagens
+
+O sistema automaticamente traduz mensagens internas para o formato Kafka:
+
+```go
+// Mensagem interna
+message := message.NewMessageBuilder().
+    WithMessageType(message.Command).
+    WithPayload(CreateUserCommand{Username: "john", Password: "123"}).
+    WithHeaders(map[string]string{"correlationId": "123"}).
+    Build()
+
+// Tradução automática para Kafka
+kafkaMessage := translator.FromMessage(message)
+// Resultado: kafka.Message com headers e payload JSON
+```
+
+#### Consumer Channel (Consumo)
+
+##### Configuração do Consumer
+
+```go
+// Crie um consumer channel
+consumerChannel := kafka.NewConsumerChannelAdapterBuilder(
+    "defaultConKafka",        // Nome da conexão
+    "messagesystem.topic",    // Tópico de origem
+    "test_consumer",         // Nome do consumer group
+)
+
+// Configure resiliência
+consumerChannel.WithRetryTimes(2_000, 3_000)  // Retry com intervalos
+consumerChannel.WithDeadLetterChannelName("messagesystem.dlq")  // DLQ
+
+// Registre o canal
+messagesystem.AddConsumerChannel(consumerChannel)
+```
+
+##### Configurações do Consumer
+
+```go
+// Configurações avançadas do consumer
+consumerConfig := &kafka.ReaderConfig{
+    Brokers:  []string{"localhost:9093"},
+    Topic:    "messagesystem.topic",
+    GroupID:  "test_consumer",
+    MaxBytes: 10e6,  // 10MB por mensagem
+}
+```
+
+#### Gerenciamento de Conexões
+
+##### Singleton Pattern
+
+O driver Kafka usa singleton pattern para reutilizar conexões:
+
+```go
+// Primeira chamada cria a conexão
+conn1 := kafka.NewConnection("defaultConKafka", []string{"localhost:9093"})
+
+// Segunda chamada retorna a mesma instância
+conn2 := kafka.NewConnection("defaultConKafka", []string{"localhost:9093"})
+
+// conn1 == conn2 (mesma instância)
+```
+
+##### Métodos da Conexão
+
+- **`Connect()`**: Estabelece conexões com brokers Kafka
+- **`Producer()`**: Retorna instância do producer Kafka
+- **`Consumer(topic, groupId)`**: Cria consumer para tópico específico
+- **`Disconnect()`**: Fecha conexões e libera recursos
+- **`ReferenceName()`**: Retorna nome de referência da conexão
+
+#### Tradução de Mensagens
+
+##### FromMessage (Interna → Kafka)
+
+```go
+func (m *MessageTranslator) FromMessage(msg *message.Message) *kafka.Message {
+    // Serializa headers
+    headers := make([]kafka.Header, 0)
+    for key, value := range msg.GetHeaders().ToMap() {
+        headers = append(headers, kafka.Header{
+            Key:   key,
+            Value: []byte(value),
+        })
+    }
+
+    // Serializa payload
+    payload, _ := json.Marshal(msg.GetPayload())
+
+    return &kafka.Message{
+        Topic:   msg.GetHeaders().ChannelName,
+        Key:     []byte(msg.GetHeaders().MessageId),
+        Value:   payload,
+        Headers: headers,
+        Time:    time.Now(),
+    }
+}
+```
+
+##### ToMessage (Kafka → Interna)
+
+```go
+func (m *MessageTranslator) ToMessage(kafkaMsg *kafka.Message) *message.Message {
+    // Converte headers Kafka para headers internos
+    headers := make(map[string]string)
+    for _, header := range kafkaMsg.Headers {
+        headers[header.Key] = string(header.Value)
+    }
+
+    // Cria mensagem interna
+    return message.NewMessageBuilder().
+        WithPayload(kafkaMsg.Value).
+        WithHeaders(headers).
+        WithChannelName(kafkaMsg.Topic).
+        Build()
+}
+```
+
+#### Exemplo Completo de Uso
+
+```go
+func main() {
+    ctx, cancel := context.WithCancel(context.Background())
+    defer cancel()
+
+    // 1. Configure conexão Kafka
+    messagesystem.AddChannelConnection(
+        kafka.NewConnection("defaultConKafka", []string{"localhost:9093"}),
+    )
+
+    // 2. Configure publisher
+    publisherChannel := kafka.NewPublisherChannelAdapterBuilder(
+        "defaultConKafka",
+        "messagesystem.topic",
+    )
+    messagesystem.AddPublisherChannel(publisherChannel)
+
+    // 3. Configure DLQ publisher
+    dlqPublisherChannel := kafka.NewPublisherChannelAdapterBuilder(
+        "defaultConKafka",
+        "messagesystem.dlq",
+    )
+    messagesystem.AddPublisherChannel(dlqPublisherChannel)
+
+    // 4. Configure consumer com resiliência
+    consumerChannel := kafka.NewConsumerChannelAdapterBuilder(
+        "defaultConKafka",
+        "messagesystem.topic",
+        "test_consumer",
+    )
+    consumerChannel.WithRetryTimes(2_000, 3_000)
+    consumerChannel.WithDeadLetterChannelName("messagesystem.dlq")
+
+    messagesystem.AddConsumerChannel(consumerChannel)
+
+    // 5. Registre handlers
+    messagesystem.AddActionHandler(&CreateUserHandler{})
+
+    // 6. Inicie o sistema
+    messagesystem.Start()
+
+    // 7. Configure event-driven consumer
+    consumer, err := messagesystem.EventDrivenConsumer("test_consumer")
+    if err != nil {
+        panic(err)
+    }
+
+    // 8. Execute consumer
+    go consumer.WithAmountOfProcessors(2).
+        WithMessageProcessingTimeout(30000).
+        WithStopOnError(false).
+        Run(ctx)
+
+    // 9. Publique mensagens
+    commandBus := messagesystem.CommandBusByChannel("messagesystem.topic")
+    commandBus.SendAsync(ctx, &CreateUserCommand{
+        Username: "john_doe",
+        Password: "secure_password",
+    })
+
+    // 10. Graceful shutdown
+    <-ctx.Done()
+    messagesystem.Shutdown()
+}
+```
+
+### Considerações de Performance
+
+- **Connection Pooling**: Reutilização de conexões para melhor performance
+- **Batch Processing**: Suporte a processamento em lote
+- **Compression**: Compressão automática de mensagens grandes
+- **Partitioning**: Distribuição automática por partições
+- **Offset Management**: Gerenciamento automático de offsets
+
+### Monitoramento e Debug
+
+```go
+// Visualize conexões ativas
 messagesystem.ShowActiveEndpoints()
 
-// Output:
+// Saída exemplo:
 // ---[Message System] Active Endpoints ---
-// Endpoint Name                    | Type
+// Endpoint Name                  | Type
 // -------------------------------------------
-// default.channel.command          | [outbound] Command-Bus
-// default.channel.query            | [outbound] Query-Bus
-// user.consumer                    | [inbound] Event-Driven
-// user.polling                     | [inbound] Polling
-// dead.letter.channel              | [inbound] Point-to-Point
-// -------------------------------------------
-```
-
-### 3. **Logging e Observabilidade**
-
-O sistema utiliza `slog` para logging estruturado:
-
-```go
-// Logs de inicialização
-slog.Info("[message-system] starting...")
-
-// Logs de processamento
-slog.Info("[message-system] message processed",
-    "messageId", messageID,
-    "type", messageType,
-    "duration", processingTime)
-
-// Logs de Event-Driven Consumer
-slog.Info("[event-driven-consumer] message received",
-    "consumerName", consumerName,
-    "processorId", processorId,
-    "queueSize", queueSize)
-
-// Logs de Polling Consumer
-slog.Info("[polling-consumer] polling cycle",
-    "consumerName", consumerName,
-    "messagesFound", messageCount,
-    "processingTime", processingTime)
-
-// Logs de Dead Letter Channel
-slog.Warn("[dead-letter-channel] message failed",
-    "messageId", messageId,
-    "error", errorMessage,
-    "retryCount", retryCount)
-
-// Logs de shutdown
-slog.Info("[message-system] shutting down...")
+// messagesystem.topic            | [outbound] Command-Bus
+// messagesystem.topic            | [outbound] Query-Bus
+// messagesystem.topic            | [outbound] Event-Bus
+// messagesystem.topic            | [inbound] Event-Driven
+// messagesystem.dlq              | [outbound] Dead-Letter
 ```
 
 ---
 
-## 🚀 Considerações de Performance
-
-### 1. **Concorrência**
-
-- **Goroutines**: Processamento assíncrono com goroutines
-- **Channels**: Comunicação thread-safe entre componentes
-- **Context**: Controle de timeout e cancelamento
-
-### 2. **Escalabilidade**
-
-- **Event-Driven**: Processamento paralelo de eventos
-- **Connection Pooling**: Reutilização de conexões
-- **Message Batching**: Agrupamento de mensagens quando possível
-
-### 3. **Resiliência**
-
-- **Error Handling**: Tratamento robusto de erros
-- **Retry Logic**: Lógica de retry para operações falhadas
-- **Circuit Breaker**: Proteção contra falhas em cascata
-
----
-
-## 📚 Conclusão
-
-O MessageSystem fornece uma infraestrutura robusta e escalável para comunicação entre componentes de uma aplicação distribuída. Com suporte completo a padrões CQRS, event-driven architecture e Enterprise Integration Patterns, o sistema oferece:
-
-- **Flexibilidade**: Suporte a múltiplos padrões de comunicação e extensibilidade
-- **Escalabilidade**: Processamento paralelo, Event-Driven e Polling Consumers
-- **Confiabilidade**: Dead Letter Channel, retry policies e circuit breakers
-- **Observabilidade**: Logging estruturado e monitoramento de endpoints
-- **Performance**: Otimização de recursos e processamento paralelo eficiente
-- **Manutenibilidade**: Código bem documentado e arquitetura hexagonal limpa
-
-A arquitetura hexagonal modular permite fácil extensão e adaptação para diferentes cenários de uso, desde aplicações simples até sistemas distribuídos complexos.
-
-## 📖 Documentação Detalhada
-
-Para uma documentação completa do MessageSystem, incluindo exemplos detalhados, diagramas e considerações de arquitetura, consulte o [README do pacote messagesystem](pkg/core/infrastructure/messagesystem/README.md).
-
----
-
-> 💡 **Nota:** Este projeto é um exemplo prático de implementação de padrões EIP e CQRS em Go usando arquitetura hexagonal.
-
-Última atualização: 27 de setembro de 2025
+> 💡 **Nota**: Esta documentação é um guia completo para desenvolvedores que desejam utilizar o MessageSystem em suas aplicações. O sistema foi projetado para ser intuitivo para desenvolvedores júnior, mas poderoso o suficiente para cenários complexos de produção.

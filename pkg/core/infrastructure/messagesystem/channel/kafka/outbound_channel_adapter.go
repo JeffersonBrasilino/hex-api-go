@@ -15,25 +15,25 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/IBM/sarama"
 	"github.com/hex-api-go/pkg/core/infrastructure/messagesystem/container"
 	"github.com/hex-api-go/pkg/core/infrastructure/messagesystem/message"
 	"github.com/hex-api-go/pkg/core/infrastructure/messagesystem/message/channel/adapter"
+	"github.com/segmentio/kafka-go"
 )
 
 // publisherChannelAdapterBuilder provides a builder pattern for creating
 // Kafka outbound channel adapters with connection and topic configuration.
 type publisherChannelAdapterBuilder struct {
-	*adapter.OutboundChannelAdapterBuilder[*sarama.ProducerMessage]
+	*adapter.OutboundChannelAdapterBuilder[*kafka.Message]
 	connectionReferenceName string
 }
 
 // outboundChannelAdapter implements the PublisherChannel interface for Kafka,
 // providing message publishing capabilities through a Kafka producer.
 type outboundChannelAdapter struct {
-	producer          sarama.SyncProducer
+	producer          *kafka.Writer
 	topicName         string
-	messageTranslator adapter.OutboundChannelMessageTranslator[*sarama.ProducerMessage]
+	messageTranslator adapter.OutboundChannelMessageTranslator[*kafka.Message]
 }
 
 // NewPublisherChannelAdapterBuilder creates a new Kafka publisher channel
@@ -70,9 +70,9 @@ func NewPublisherChannelAdapterBuilder(
 // Returns:
 //   - *outboundChannelAdapter: configured outbound channel adapter
 func NewOutboundChannelAdapter(
-	producer sarama.SyncProducer,
+	producer *kafka.Writer,
 	topicName string,
-	messageTranslator adapter.OutboundChannelMessageTranslator[*sarama.ProducerMessage],
+	messageTranslator adapter.OutboundChannelMessageTranslator[*kafka.Message],
 ) *outboundChannelAdapter {
 	return &outboundChannelAdapter{
 		producer:          producer,
@@ -101,7 +101,7 @@ func (b *publisherChannelAdapterBuilder) Build(
 		)
 	}
 
-	producer := con.(*connection).GetProducer()
+	producer := con.(*connection).Producer()
 	adapter := NewOutboundChannelAdapter(producer, b.ChannelName(), b.MessageTranslator())
 
 	return b.OutboundChannelAdapterBuilder.BuildOutboundAdapter(adapter)
@@ -124,11 +124,22 @@ func (a *outboundChannelAdapter) Name() string {
 // Returns:
 //   - error: error if sending fails or context is cancelled
 func (a *outboundChannelAdapter) Send(ctx context.Context, msg *message.Message) error {
-	msgToSend := a.messageTranslator.FromMessage(msg)
-	_, _, err := a.producer.SendMessage(msgToSend)
 	select {
 	case <-ctx.Done():
-		return fmt.Errorf("[KAFKA OUTBOUND CHANNEL] Context cancelled after processing, before sending result. ")
+		return fmt.Errorf("[KAFKA OUTBOUND CHANNEL] Context cancelled after processing before sending result. ")
+	default:
+	}
+
+	msgToSend, errP := a.messageTranslator.FromMessage(msg)
+	if errP != nil {
+		return errP
+	}
+
+	err := a.producer.WriteMessages(ctx, *msgToSend)
+
+	select {
+	case <-ctx.Done():
+		return fmt.Errorf("[KAFKA OUTBOUND CHANNEL] Context cancelled after processing after sending result. ")
 	default:
 	}
 	return err

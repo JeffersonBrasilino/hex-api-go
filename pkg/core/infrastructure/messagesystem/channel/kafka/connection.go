@@ -12,18 +12,16 @@
 package kafka
 
 import (
-	"fmt"
-
-	"github.com/IBM/sarama"
+	"github.com/segmentio/kafka-go"
 )
 
 // connection manages Kafka producer and consumer connections with lifecycle
 // management capabilities.
 type connection struct {
-	name      string
-	host      []string
-	publisher sarama.SyncProducer
-	consumer  sarama.Consumer
+	name             string
+	host             []string
+	producerInstance *kafka.Writer
+	consumerConfig   *kafka.ReaderConfig
 }
 
 // conInstance holds the singleton connection instance for reuse across
@@ -56,20 +54,13 @@ func NewConnection(name string, host []string) *connection {
 // Returns:
 //   - error: error if connection establishment fails
 func (c *connection) Connect() error {
-	config := sarama.NewConfig()
-	config.Producer.Retry.Max = 3
-	config.Producer.Return.Successes = true
-	producer, err := sarama.NewSyncProducer(c.host, config)
-	if err != nil {
-		return fmt.Errorf("[kafka-connection] Error creating publisher %s", err)
+	c.producerInstance = &kafka.Writer{
+		Addr: kafka.TCP(c.host...),
 	}
-	c.publisher = producer
-
-	consumer, err := sarama.NewConsumer(c.host, config)
-	if err != nil {
-		return fmt.Errorf("[kafka-connection] Error creating consumer %s", err)
+	c.consumerConfig = &kafka.ReaderConfig{
+		Brokers:  c.host,
+		MaxBytes: 10e6,
 	}
-	c.consumer = consumer
 	return nil
 }
 
@@ -77,16 +68,19 @@ func (c *connection) Connect() error {
 //
 // Returns:
 //   - sarama.SyncProducer: the Kafka producer
-func (c *connection) GetProducer() sarama.SyncProducer {
-	return c.publisher
+func (c *connection) Producer() *kafka.Writer {
+	return c.producerInstance
 }
 
 // GetConsumer returns the Kafka consumer instance.
 //
 // Returns:
-//   - sarama.Consumer: the Kafka consumer
-func (c *connection) GetConsumer() sarama.Consumer {
-	return c.consumer
+//   - *kafka.Reader: the Kafka consumer
+func (c *connection) Consumer(topic string, groupId string) *kafka.Reader {
+	consumerConfig := *c.consumerConfig
+	consumerConfig.GroupID = groupId
+	consumerConfig.Topic = topic
+	return kafka.NewReader(consumerConfig)
 }
 
 // Disconnect closes the Kafka connections and releases associated resources.

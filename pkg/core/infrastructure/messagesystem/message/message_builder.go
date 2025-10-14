@@ -16,12 +16,15 @@ package message
 
 import (
 	"context"
+	"time"
 )
 
 // MessageBuilder provides a fluent interface for constructing messages with
 // various configurations including payload, headers, routing, and context.
 type MessageBuilder struct {
 	payload          any
+	origin           string
+	messageId        string
 	route            string
 	messageType      MessageType
 	replyChannel     PublisherChannel
@@ -29,7 +32,10 @@ type MessageBuilder struct {
 	correlationId    string
 	channelName      string
 	replyChannelName string
+	timestamp        time.Time
 	context          context.Context
+	version          string
+	rawMessage       any
 }
 
 // NewMessageBuilder creates a new message builder instance.
@@ -50,6 +56,8 @@ func NewMessageBuilder() *MessageBuilder {
 //   - *MessageBuilder: new message builder with copied properties
 func NewMessageBuilderFromMessage(msg *Message) *MessageBuilder {
 	return &MessageBuilder{
+		origin:        msg.GetHeaders().Origin,
+		messageId:     msg.GetHeaders().MessageId,
 		payload:       msg.GetPayload(),
 		route:         msg.GetHeaders().Route,
 		messageType:   msg.GetHeaders().MessageType,
@@ -57,7 +65,10 @@ func NewMessageBuilderFromMessage(msg *Message) *MessageBuilder {
 		customHeaders: msg.GetHeaders().CustomHeaders,
 		correlationId: msg.GetHeaders().CorrelationId,
 		channelName:   msg.GetHeaders().ChannelName,
+		timestamp:     msg.GetHeaders().Timestamp,
 		context:       msg.GetContext(),
+		version:       msg.GetHeaders().Version,
+		rawMessage:    msg.GetRawMessage(),
 	}
 }
 
@@ -169,6 +180,66 @@ func (b *MessageBuilder) WithContext(value context.Context) *MessageBuilder {
 	return b
 }
 
+// WithMessageId sets the message ID for the message being built.
+//
+// Parameters:
+//   - value: the unique identifier for the message
+//
+// Returns:
+//   - *MessageBuilder: builder instance for method chaining
+func (b *MessageBuilder) WithMessageId(value string) *MessageBuilder {
+	b.messageId = value
+	return b
+}
+
+// WithTimestamp sets the timestamp for the message being built.
+//
+// Parameters:
+//   - value: the timestamp to be set for the message
+//
+// Returns:
+//   - *MessageBuilder: builder instance for method chaining
+func (b *MessageBuilder) WithTimestamp(value time.Time) *MessageBuilder {
+	b.timestamp = value
+	return b
+}
+
+// WithOrigin sets the origin for the message being built.
+//
+// Parameters:
+//   - value: the origin to be set for the message
+//
+// Returns:
+//   - *MessageBuilder: builder instance for method chaining
+func (b *MessageBuilder) WithOrigin(value string) *MessageBuilder {
+	b.origin = value
+	return b
+}
+
+// WithVersion sets the version for the message being built.
+//
+// Parameters:
+//   - value: the version to be set for the message
+//
+// Returns:
+//   - *MessageBuilder: builder instance for method chaining
+func (b *MessageBuilder) WithVersion(value string) *MessageBuilder {
+	b.version = value
+	return b
+}
+
+// WithRawMessage sets raw message for the message being built.
+//
+// Parameters:
+//   - value: the raw message
+//
+// Returns:
+//   - *MessageBuilder: builder instance for method chaining
+func (b *MessageBuilder) WithRawMessage(value any) *MessageBuilder {
+	b.rawMessage = value
+	return b
+}
+
 // Build constructs a new message instance with all configured properties.
 //
 // Returns:
@@ -176,6 +247,9 @@ func (b *MessageBuilder) WithContext(value context.Context) *MessageBuilder {
 func (b *MessageBuilder) Build() *Message {
 	headers := b.buildHeaders()
 	msg := NewMessage(b.payload, headers, b.context)
+	if b.rawMessage != nil {
+		msg.SetRawMessage(b.rawMessage)
+	}
 	return msg
 }
 
@@ -185,12 +259,16 @@ func (b *MessageBuilder) Build() *Message {
 //   - *messageHeaders: the constructed message headers
 func (b *MessageBuilder) buildHeaders() *messageHeaders {
 	headers := NewMessageHeaders(
+		b.origin,
+		b.messageId,
 		b.route,
 		b.messageType,
 		b.replyChannel,
 		b.correlationId,
 		b.channelName,
 		b.replyChannelName,
+		b.timestamp,
+		b.version,
 	)
 	if b.customHeaders != nil {
 		headers.SetCustomHeaders(b.customHeaders)

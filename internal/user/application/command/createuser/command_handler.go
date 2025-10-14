@@ -2,6 +2,7 @@ package createuser
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/hex-api-go/internal/user/domain/contract"
 )
@@ -15,10 +16,9 @@ type ResultCm struct {
 }
 
 func NewComandHandler(repository contract.UserRepository) *CommandHandler {
-	return &CommandHandler{repository}
+	return &CommandHandler{repository: repository}
 }
 
-func (c *CommandHandler) Handle(ctx context.Context, data *Command) (*ResultCm, error) {
-	return &ResultCm{"MENSAGEM PROCESSADA COM SUCESSO"}, nil
-	//return nil, fmt.Errorf("DEU RUIM AQUI")
+func (c *CommandHandler) Handle(ctx context.Context, data *Command) (string, error) {
+	return "deu tudo certo", fmt.Errorf("deu ruim ao processar a mensagem")
 }

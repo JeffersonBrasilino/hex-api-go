@@ -6,7 +6,6 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/hex-api-go/internal/user/application/command/createuser"
-	"github.com/hex-api-go/internal/user/application/query/getuser"
 	"github.com/hex-api-go/internal/user/domain/contract"
 	aclcontract "github.com/hex-api-go/internal/user/infrastructure/acl/contract"
 	"github.com/hex-api-go/internal/user/infrastructure/acl/facade"
@@ -14,8 +13,7 @@ import (
 	"github.com/hex-api-go/internal/user/infrastructure/database"
 	"github.com/hex-api-go/internal/user/infrastructure/http"
 	messagesystem "github.com/hex-api-go/pkg/core/infrastructure/messagesystem"
-	"github.com/hex-api-go/pkg/core/infrastructure/messagesystem/channel/kafka"
-	"github.com/hex-api-go/pkg/core/infrastructure/messagesystem/message"
+	kafka "github.com/hex-api-go/pkg/core/infrastructure/messagesystem/channel/kafka"
 )
 
 var userModuleInstance *userModule
@@ -59,7 +57,7 @@ func (u *userModule) WithHttpProtocol(ctx context.Context, httpLib *fiber.App) *
 
 func registerActions() {
 	messagesystem.AddActionHandler(createuser.NewComandHandler(userModuleInstance.repository))
-	messagesystem.AddActionHandler(getuser.NewQueryHandler(nil))
+	//messagesystem.AddActionHandler(getuser.NewQueryHandler(nil))
 }
 
 func registerPublisher() {
@@ -71,21 +69,7 @@ func registerPublisher() {
 		"defaultConKafka",
 		"messagesystem.topic",
 	)
-	a.WithReplyChannelName("test_response_channel")
+	//a.WithReplyChannelName("test_response_channel")
 	messagesystem.AddPublisherChannel(a)
 
-}
-
-type aProcessor struct{}
-
-func (a *aProcessor) Handle(ctx context.Context, msg *message.Message) (*message.Message, error) {
-	fmt.Println("PRIMEIRO PROCESSOR", msg.GetPayload())
-	return msg, nil
-}
-
-type bProcessor struct{}
-
-func (b *bProcessor) Handle(ctx context.Context, msg *message.Message) (*message.Message, error) {
-	fmt.Println("SEGUNDO PROCESSOR", msg.GetPayload())
-	return msg, nil
 }

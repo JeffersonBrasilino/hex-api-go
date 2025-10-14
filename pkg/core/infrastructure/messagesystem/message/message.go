@@ -16,7 +16,6 @@ package message
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -48,7 +47,7 @@ type PublisherChannel interface {
 // ConsumerChannel defines the contract for channels that can consume messages.
 type ConsumerChannel interface {
 	Name() string
-	Receive() (*Message, error)
+	Receive(ctx context.Context) (*Message, error)
 	Close() error
 }
 
@@ -60,23 +59,13 @@ type SubscriberChannel interface {
 	Unsubscribe() error
 }
 
-// InboundChannelAdapter defines the contract for inbound channel adapters that
-// receive messages from external sources.
-type InboundChannelAdapter interface {
-	ReferenceName() string
-	DeadLetterChannelName() string
-	AfterProcessors() []MessageHandler
-	BeforeProcessors() []MessageHandler
-	ReceiveMessage(ctx context.Context) (*Message, error)
-	Close() error
-}
-
 // customHeaders represents a map of custom header key-value pairs.
 type CustomHeaders map[string]string
 
 // messageHeaders contains all the metadata associated with a message including
 // routing information, timestamps, and custom headers.
 type messageHeaders struct {
+	Origin           string
 	Route            string
 	MessageType      MessageType
 	Timestamp        time.Time
@@ -86,13 +75,15 @@ type messageHeaders struct {
 	ChannelName      string
 	MessageId        string
 	ReplyChannelName string
+	Version          string
 }
 
 // Message represents a message in the system with payload, headers, and context.
 type Message struct {
-	payload any
-	headers *messageHeaders
-	context context.Context
+	payload    any
+	headers    *messageHeaders
+	context    context.Context
+	rawMessage any
 }
 
 // NewMessageHeaders creates a new message headers instance with the specified
@@ -109,23 +100,41 @@ type Message struct {
 // Returns:
 //   - *messageHeaders: new message headers instance
 func NewMessageHeaders(
+	origin string,
+	messageId string,
 	route string,
 	messageType MessageType,
 	replyChannel PublisherChannel,
 	correlationId string,
 	channelName string,
 	replyChannelName string,
+	timestamp time.Time,
+	version string,
 ) *messageHeaders {
+	if messageId == "" {
+		messageId = uuid.New().String()
+	}
+	if timestamp.IsZero() {
+		timestamp = time.Now()
+	}
+	if origin == "" {
+		origin = "messageSystem"
+	}
+	if version == "" {
+		version = "1.0"
+	}
 	return &messageHeaders{
+		Origin:           origin,
+		MessageId:        messageId,
 		Route:            route,
 		MessageType:      messageType,
-		Timestamp:        time.Now(),
+		Timestamp:        timestamp,
 		ReplyChannel:     replyChannel,
 		CustomHeaders:    make(CustomHeaders),
 		CorrelationId:    correlationId,
 		ChannelName:      channelName,
-		MessageId:        uuid.New().String(),
 		ReplyChannelName: replyChannelName,
+		Version:          version,
 	}
 }
 
@@ -163,10 +172,8 @@ func (m MessageType) String() string {
 		return "Query"
 	case Event:
 		return "Event"
-	case Document:
-		return "Document"
 	}
-	return "Message"
+	return "Document"
 }
 
 // SetCustomHeaders sets the custom headers for the message.
@@ -177,15 +184,15 @@ func (m *messageHeaders) SetCustomHeaders(data CustomHeaders) {
 	m.CustomHeaders = data
 }
 
-// MarshalJSON implements the json.Marshaler interface for message headers.
+// ToMap converts the message headers to a map[string]string representation.
 //
 // Returns:
-//   - []byte: the JSON representation of the headers
-//   - error: error if marshaling fails
-func (m *messageHeaders) MarshalJSON() ([]byte, error) {
+//   - map[string]string: a map containing all header fields as strings
+//   - error: error if marshaling custom headers fails
+func (m *messageHeaders) ToMap() (map[string]string, error) {
 	chs, err := json.Marshal(m.CustomHeaders)
 	if err != nil {
-		return nil, fmt.Errorf("[custom-header] cannot marshal: %w", err)
+		return nil, err
 	}
 
 	var customHeaders string
@@ -193,25 +200,18 @@ func (m *messageHeaders) MarshalJSON() ([]byte, error) {
 		customHeaders = string(chs)
 	}
 
-	return json.Marshal(struct {
-		Route         string    `json:"route"`
-		Type          string    `json:"type"`
-		Timestamp     time.Time `json:"timestamp"`
-		ReplyChannel  string    `json:"replyChannel"`
-		CustomHeaders string    `json:"customHeaders"`
-		CorrelationId string    `json:"correlationId"`
-		ChannelName   string    `json:"channelName"`
-		MessageId     string    `json:"messageId"`
-	}{
-		m.Route,
-		m.MessageType.String(),
-		m.Timestamp,
-		m.ReplyChannelName,
-		customHeaders,
-		m.CorrelationId,
-		m.ChannelName,
-		m.MessageId,
-	})
+	return map[string]string{
+		"origin":        m.Origin,
+		"route":         m.Route,
+		"type":          m.MessageType.String(),
+		"timestamp":     m.Timestamp.Format("2006-01-02 15:04:05"),
+		"replyChannel":  m.ReplyChannelName,
+		"customHeaders": customHeaders,
+		"correlationId": m.CorrelationId,
+		"channelName":   m.ChannelName,
+		"messageId":     m.MessageId,
+		"version":       m.Version,
+	}, nil
 }
 
 // GetPayload returns the payload of the message.
@@ -256,17 +256,18 @@ func (m *Message) ReplyRequired() bool {
 	return m.headers.MessageType == Command || m.headers.MessageType == Query
 }
 
-// MarshalJSON implements the json.Marshaler interface for messages.
+// SetRawMessage sets the raw message.
+//
+// Parameters:
+//   - rawMessage: the raw message
+func (m *Message) SetRawMessage(rawMessage any) {
+	m.rawMessage = rawMessage
+}
+
+// GetRawMessage returns the raw message.
 //
 // Returns:
-//   - []byte: the JSON representation of the message
-//   - error: error if marshaling fails
-func (m *Message) MarshalJSON() ([]byte, error) {
-	return json.Marshal(struct {
-		Payload any             `json:"payload"`
-		Headers *messageHeaders `json:"headers"`
-	}{
-		m.payload,
-		m.headers,
-	})
+//   - any: the raw message
+func (m *Message) GetRawMessage() any {
+	return m.rawMessage
 }

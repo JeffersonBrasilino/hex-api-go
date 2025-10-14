@@ -15,19 +15,34 @@ services:
     mem_limit: 300m
     networks:
       - api
-  consumer:
+  event-driven-consumer:
     container_name: ${APP_NAME}-consumer
-    image: golang:1.24-alpine3.22
+    image: golang:1.25-alpine3.22
     working_dir: /app
     volumes:
       - ./:/app
     env_file:
       - .env
-    command: go run cmd/consumer/main.go
+    command: go run cmd/event_driven_consumer/main.go
+    ports:
+      - "6061:6061"
     mem_limit: 300m
     networks:
       - api
-
+  message-publisher:
+    container_name: ${APP_NAME}-publisher
+    image: golang:1.25-alpine3.22
+    working_dir: /app
+    volumes:
+      - ./:/app
+    env_file:
+      - .env
+    command: go run cmd/message_publisher/main.go
+    ports:
+      - "6061:6061"
+    mem_limit: 300m
+    networks:
+      - api
   lazydocker:
     build:
       context: https://github.com/jesseduffield/lazydocker.git
@@ -43,35 +58,30 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./config:/.config/jesseduffield/lazydocker
 
-  zookeeper:
-    image: confluentinc/cp-zookeeper:latest
-    networks:
-      - api
-    environment:
-      ZOOKEEPER_CLIENT_PORT: 2181
-      ZOOKEEPER_TICK_TIME: 2000
-
   kafka:
     container_name: kafka
     hostname: kafka
     image: confluentinc/cp-kafka:latest
     networks:
       - api
-    depends_on:
-      - zookeeper
     ports:
       - 9092:9092
+      - 9093:9093
       - 29092:29092
     environment:
-      KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_INTERNAL:PLAINTEXT
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_INTERNAL://kafka:29092
+      KAFKA_NODE_ID: 1
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_INTERNAL:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT,CONTROLLER:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_INTERNAL://kafka:29092,CONTROLLER://kafka:29093,PLAINTEXT_HOST://localhost:9093
+      #KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,PLAINTEXT_INTERNAL://0.0.0.0:29092,CONTROLLER://0.0.0.0:29093 #,PLAINTEXT_HOST://0.0.0.0:9093
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
-      #KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_AUTO_CREATE_TOPICS_ENABLED: "true"
       KAFKA_CREATE_TOPICS: "messagesystem.test:1:1"
-
+      KAFKA_PROCESS_ROLES: broker,controller
+      CLUSTER_ID: AsUeol5bRgukKBZUf8w_XQ # for generate id use: docker run --rm confluentinc/cp-kafka:latest kafka-storage random-uuid
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:29093
+      KAFKA_CONTROLLER_LISTENER_NAMES: "CONTROLLER"
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: true
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
     depends_on:
@@ -81,7 +91,6 @@ services:
     environment:
       KAFKA_CLUSTERS_0_NAME: local
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
-      KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
     networks:
       - api
 

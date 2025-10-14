@@ -14,6 +14,7 @@ package handler
 
 import (
 	"context"
+	"encoding/json"
 	"log/slog"
 
 	"github.com/hex-api-go/pkg/core/infrastructure/messagesystem/message"
@@ -24,6 +25,11 @@ import (
 type deadLetter struct {
 	channel message.PublisherChannel
 	handler message.MessageHandler
+}
+type deadLetterMessage struct {
+	ReasonError string
+	Payload     any
+	Headers     map[string]string
 }
 
 // NewDeadLetter creates a new dead letter handler instance that routes failed
@@ -60,16 +66,57 @@ func (s *deadLetter) Handle(
 	ctx context.Context,
 	msg *message.Message,
 ) (*message.Message, error) {
-
-	_, err := s.handler.Handle(ctx, msg)
-	if err != nil {
-		slog.Error("[dead-letter] Sending message to dead letter",
-			"messageId", msg.GetHeaders().MessageId,
-			"reason", err.Error(),
-		)
-
-		s.channel.Send(ctx, msg)
+	resultMessage, err := s.handler.Handle(ctx, msg)
+	if err == nil {
+		return resultMessage, err
 	}
 
-	return msg, err
+	originalPayload, errP := s.convertMessagePayload(msg)
+	if errP != nil {
+		slog.Info("[dead-letter-handler] cannot convert original payload",
+			"messageId", msg.GetHeaders().MessageId,
+			"reason", errP.Error(),
+			"dlqChannelName", s.channel.Name(),
+		)
+
+		return resultMessage, err
+	}
+
+	ctxDql := context.Background()
+	dlqMessage := s.makeDeadLetterMessage(ctxDql, msg, &deadLetterMessage{
+		ReasonError: err.Error(),
+		Payload:     originalPayload,
+	})
+	s.channel.Send(ctxDql, dlqMessage)
+	slog.Info("[dead-letter-handler] Sended message to dead letter",
+		"messageId", msg.GetHeaders().MessageId,
+		"reason", err.Error(),
+		"dlqChannelName", s.channel.Name(),
+	)
+
+	return resultMessage, err
+}
+
+func (s *deadLetter) convertMessagePayload(msg *message.Message) (any, error) {
+	originalPayload, ok := msg.GetPayload().([]byte)
+	if ok {
+		var payloadMap any
+		errU := json.Unmarshal(originalPayload, &payloadMap)
+		return payloadMap, errU
+	}
+
+	return msg.GetPayload(), nil
+}
+
+func (s *deadLetter) makeDeadLetterMessage(ctxDql context.Context, msg *message.Message, payload *deadLetterMessage) *message.Message {
+	headers, _ := msg.GetHeaders().ToMap()
+	payload.Headers = headers
+	dlqMessage := message.NewMessageBuilder()
+	dlqMessage.WithContext(ctxDql)
+	dlqMessage.WithChannelName(s.channel.Name())
+	dlqMessage.WithMessageType(message.Document)
+	dlqMessage.WithCorrelationId(msg.GetHeaders().CorrelationId)
+	dlqMessage.WithPayload(payload)
+
+	return dlqMessage.Build()
 }

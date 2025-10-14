@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"log"
+	"log/slog"
 	"os/signal"
 	"syscall"
 
@@ -11,30 +11,21 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/hex-api-go/internal/user"
 	messagesystem "github.com/hex-api-go/pkg/core/infrastructure/messagesystem"
-	"github.com/hex-api-go/pkg/core/infrastructure/messagesystem/channel/kafka"
 )
 
 func main() {
 
-	log.Printf("starting api server...")
+	slog.Info("starting api server...")
 	app := fiber.New()
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
 	user.Bootstrap().
 		WithHttpProtocol(ctx, app)
-
-	topicConsumerChannel := kafka.NewConsumerChannelAdapterBuilder(
-		"defaultConKafka",
-		"messagesystem.topic",
-		"test_consumer",
-	)
-	messagesystem.AddConsumerChannel(topicConsumerChannel)
-
 	messagesystem.Start()
 
 	go func() {
-		log.Printf("http server listening on port 3000")
+		slog.Info("http server listening on port 3000")
 		if err := app.Listen(":3000"); err != nil {
 			panic(err)
 		}
@@ -48,7 +39,7 @@ func main() {
 		var wg sync.WaitGroup
 		wg.Add(1)
 		go func() {
-			log.Printf("START CONSUMER......")
+			slog.Info("START CONSUMER......")
 			defer wg.Done()
 			a.Run(ctx)
 		}()
@@ -76,8 +67,8 @@ func main() {
 	<-ctx.Done()
 	messagesystem.Shutdown()
 	if err := app.Shutdown(); err != nil {
-		log.Printf("shutting down server error: %v\n", err)
+		slog.Info("shutting down server error")
 	}
-	log.Printf("shutdown completed")
+	slog.Info("shutdown completed")
 
 }

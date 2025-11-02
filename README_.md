@@ -1,4 +1,4 @@
-# 📦 MessageSystem - Sistema de Mensagens Hexagonal
+# 📦 gomes - Sistema de Mensagens Hexagonal
 
 ## 📋 Índice
 
@@ -19,7 +19,7 @@
 
 ## 🎯 Visão Geral
 
-O MessageSystem implementa uma arquitetura hexagonal baseada em **Enterprise Integration Patterns (EIP)** e **Command Query Responsibility Segregation (CQRS)**, fornecendo uma infraestrutura robusta e flexível para comunicação assíncrona entre componentes de uma aplicação distribuída.
+O gomes implementa uma arquitetura hexagonal baseada em **Enterprise Integration Patterns (EIP)** e **Command Query Responsibility Segregation (CQRS)**, fornecendo uma infraestrutura robusta e flexível para comunicação assíncrona entre componentes de uma aplicação distribuída.
 
 ### Características Principais
 
@@ -41,7 +41,7 @@ O MessageSystem implementa uma arquitetura hexagonal baseada em **Enterprise Int
 ### Estrutura de Pacotes
 
 ```
-messagesystem/
+gomes/
 ├── bus/                    # Buses para CQRS
 │   ├── command_bus.go     # Bus de comandos
 │   ├── query_bus.go       # Bus de consultas
@@ -56,7 +56,7 @@ messagesystem/
 ├── channel/               # Adaptadores de canal
 │   └── kafka/            # Integração com Kafka
 ├── container/             # Container de dependências
-└── messagesystem.go      # Sistema principal
+└── gomes.go      # Sistema principal
 ```
 
 ### Componentes Arquiteturais
@@ -669,21 +669,21 @@ graph TD
 ```go
 // Configuração de conexão Kafka
 kafkaConnection := kafka.NewConnection("kafka.main", []string{"localhost:9092"})
-messagesystem.AddChannelConnection(kafkaConnection)
+gomes.AddChannelConnection(kafkaConnection)
 
 // Configuração de adaptadores
 outboundAdapter := kafka.NewPublisherChannelAdapterBuilder("kafka.main", "user.events")
-messagesystem.AddPublisherChannel(outboundAdapter)
+gomes.AddPublisherChannel(outboundAdapter)
 
 inboundAdapter := kafka.NewConsumerChannelAdapterBuilder("kafka.main", "user.events", "user.consumer")
-messagesystem.AddConsumerChannel(inboundAdapter)
+gomes.AddConsumerChannel(inboundAdapter)
 
 // Registro de handlers
-messagesystem.AddActionHandler(createUserHandler)
-messagesystem.AddActionHandler(getUserHandler)
+gomes.AddActionHandler(createUserHandler)
+gomes.AddActionHandler(getUserHandler)
 
 // Inicialização
-messagesystem.Start()
+gomes.Start()
 ```
 
 ### 2. **Uso de Command Bus**
@@ -696,14 +696,14 @@ createUserCommand := &CreateUserCommand{
 }
 
 // Envio síncrono
-user, err := messagesystem.CommandBus().Send(ctx, createUserCommand)
+user, err := gomes.CommandBus().Send(ctx, createUserCommand)
 if err != nil {
     log.Error("Failed to create user", "error", err)
     return
 }
 
 // Envio assíncrono
-err = messagesystem.CommandBus().SendAsync(ctx, createUserCommand)
+err = gomes.CommandBus().SendAsync(ctx, createUserCommand)
 if err != nil {
     log.Error("Failed to send command", "error", err)
     return
@@ -719,7 +719,7 @@ getUserQuery := &GetUserQuery{
 }
 
 // Execução de consulta
-user, err := messagesystem.QueryBus().Send(ctx, getUserQuery)
+user, err := gomes.QueryBus().Send(ctx, getUserQuery)
 if err != nil {
     log.Error("Failed to get user", "error", err)
     return
@@ -737,7 +737,7 @@ userCreatedEvent := &UserCreatedEvent{
 }
 
 // Publicação de evento
-err := messagesystem.EventBus().Publish(ctx, userCreatedEvent)
+err := gomes.EventBus().Publish(ctx, userCreatedEvent)
 if err != nil {
     log.Error("Failed to publish event", "error", err)
     return
@@ -748,7 +748,7 @@ if err != nil {
 
 ```go
 // Criação de consumer com configuração avançada
-consumer, err := messagesystem.EventDrivenConsumer("user.consumer")
+consumer, err := gomes.EventDrivenConsumer("user.consumer")
 if err != nil {
     log.Error("Failed to create consumer", "error", err)
     return
@@ -819,7 +819,7 @@ go func() {
 
 ```go
 // Exibe todos os endpoints ativos
-messagesystem.ShowActiveEndpoints()
+gomes.ShowActiveEndpoints()
 
 // Output:
 // ---[Message System] Active Endpoints ---
@@ -895,7 +895,7 @@ slog.Info("[message-system] shutting down...")
 
 ## 📚 Conclusão
 
-O MessageSystem fornece uma infraestrutura robusta e escalável para comunicação entre componentes de uma aplicação distribuída. Com suporte completo a padrões CQRS, event-driven architecture e Enterprise Integration Patterns, o sistema oferece:
+O gomes fornece uma infraestrutura robusta e escalável para comunicação entre componentes de uma aplicação distribuída. Com suporte completo a padrões CQRS, event-driven architecture e Enterprise Integration Patterns, o sistema oferece:
 
 - **Flexibilidade**: Suporte a múltiplos padrões de comunicação e extensibilidade
 - **Escalabilidade**: Processamento paralelo, Event-Driven e Polling Consumers
@@ -908,7 +908,7 @@ A arquitetura hexagonal modular permite fácil extensão e adaptação para dife
 
 ## 📖 Documentação Detalhada
 
-Para uma documentação completa do MessageSystem, incluindo exemplos detalhados, diagramas e considerações de arquitetura, consulte o [README do pacote messagesystem](pkg/core/infrastructure/messagesystem/README.md).
+Para uma documentação completa do gomes, incluindo exemplos detalhados, diagramas e considerações de arquitetura, consulte o [README do pacote gomes](pkg/core/infrastructure/gomes/README.md).
 
 ---
 

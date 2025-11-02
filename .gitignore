@@ -3,3 +3,4 @@ monigo
 coverage.*
 pprof/
 anotations.md
+.DS_Store

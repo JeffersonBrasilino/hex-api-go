@@ -3,13 +3,12 @@ package main
 import (
 	"context"
 	"fmt"
-	"log/slog"
 	"os/signal"
 	"syscall"
 	"time"
 
-	"github.com/hex-api-go/pkg/core/infrastructure/messagesystem"
-	kafka "github.com/hex-api-go/pkg/core/infrastructure/messagesystem/channel/kafka"
+	"github.com/hex-api-go/pkg/core/infrastructure/rabbitmq"
+	"github.com/jeffersonbrasilino/gomes"
 )
 
 // Underneath the hood,
@@ -50,8 +49,8 @@ func NewComandHandler() *CommandHandler {
 // note that the link between the action and its handler is the type of the data parameter.
 // This indicates that this handler is responsible for this action
 func (c *CommandHandler) Handle(ctx context.Context, data *Command) (*ResultCm, error) {
-	fmt.Println("process command ok")
-	time.Sleep(time.Second * 2)
+	fmt.Println("process command ok", data.Username)
+	time.Sleep(time.Second * 20)
 	return &ResultCm{"deu tudo certo"}, nil
 }
 
@@ -59,62 +58,47 @@ func main() {
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
-	slog.Info("start message system consumer....")
+	/* ctx, cancel := context.WithCancel(context.Background())
+	go func() {
+		fmt.Println("Press Ctrl+C to exit")
+		time.Sleep(time.Second * 5)
+		cancel()
+	}() */
 
 	//create kafka connection
 	//The connection can, and is even recommended,
 	//be registered only once after registration.
 	//To use it in your channels, simply use its name in the channel reference name.
-	messagesystem.AddChannelConnection(
-		kafka.NewConnection("defaultConKafka", []string{"kafka:9092"}),
-	)
-
-	//create DLQ publisher channel
-	publisherDlqChannel := kafka.NewPublisherChannelAdapterBuilder(
-		"defaultConKafka",
-		"messagesystem.dlq",
-	)
-
-	//create publisher channel
-	publisherChannel := kafka.NewPublisherChannelAdapterBuilder(
-		"defaultConKafka",
-		"messagesystem.topic",
+	gomes.AddChannelConnection(
+		rabbitmq.NewConnection("rabbit-test", "admin:admin@rabbitmq:5672"),
 	)
 
 	//create consumer channel on message system
 	//For the consumer channel,
 	//there are two resilience approaches: the retry pattern and the dead-letter pattern.
 	//You can use both together or opt for just one of the options.
-	topicConsumerChannel := kafka.NewConsumerChannelAdapterBuilder(
-		"defaultConKafka",
-		"messagesystem.topic",
+	topicConsumerChannel := rabbitmq.NewConsumerChannelAdapterBuilder(
+		"rabbit-test",
+		"gomes-exchange",
 		"test_consumer",
 	)
-	topicConsumerChannel.WithRetryTimes(2_000, 3_000)
-	topicConsumerChannel.WithDeadLetterChannelName("messagesystem.dlq")
-
-	//register publisher channel on message system
-	messagesystem.AddPublisherChannel(publisherChannel)
-
-	//register dlq channel on message system
-	messagesystem.AddPublisherChannel(publisherDlqChannel)
-
+	/* topicConsumerChannel.WithRetryTimes(2_000, 3_000)
+	topicConsumerChannel.WithDeadLetterChannelName("gomes.dlq")
+ */
 	//register consumer channel on message system
-	messagesystem.AddConsumerChannel(topicConsumerChannel)
+	gomes.AddConsumerChannel(topicConsumerChannel)
 
 	// Register CQRS action and action handler.
-	messagesystem.AddActionHandler(NewComandHandler())
+	gomes.AddActionHandler(NewComandHandler())
 
 	//start the message system
-	messagesystem.Start()
-
-	go publishMessage()
+	gomes.Start()
 
 	//For the consumer channel endpoint,
 	//the advantage of having an abstraction between the consumer channel and the consumer endpoint
 	//is that we can have two different endpoints for the same channel (event-driven or polling).
 	//Note that the consumerName parameter of the eventDrivenConsumer method is the same as the consumer name of the consumerChannel.
-	consumer, err := messagesystem.EventDrivenConsumer("test_consumer")
+	consumer, err := gomes.EventDrivenConsumer("test_consumer")
 	if err != nil {
 		panic(err)
 	}
@@ -129,8 +113,9 @@ func main() {
 		Run(ctx)
 
 	<-ctx.Done()
+	time.Sleep(time.Second * 3)
 	//message system graceful shutdown
-	messagesystem.Shutdown()
+	gomes.Shutdown()
 }
 
 func publishMessage() {
@@ -139,7 +124,7 @@ func publishMessage() {
 		fmt.Println("publish command message...")
 		//get command bus
 		//the message type is defined by bus(command/query/event)
-		busA := messagesystem.CommandBusByChannel("messagesystem.topic")
+		busA := gomes.CommandBusByChannel("gomes.topic")
 		busA.SendAsync(context.Background(), CreateCommand("teste", "123"))
 		time.Sleep(time.Second * 3)
 	}

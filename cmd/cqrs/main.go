@@ -8,7 +8,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/hex-api-go/pkg/core/infrastructure/messagesystem"
+	"github.com/jeffersonbrasilino/gomes"
 )
 
 // command
@@ -54,23 +54,23 @@ func main() {
 	defer stop()
 	slog.Info("start message system CQRS....")
 
-	messagesystem.AddActionHandler(NewComandHandler())
+	gomes.AddActionHandler(NewComandHandler())
 
-	messagesystem.Start()
+	gomes.Start()
 
 	maxPublishMessages := 5
 	for i := 1; i <= maxPublishMessages; i++ {
 		fmt.Println("publish command message...")
-		
-		busA := messagesystem.CommandBus()
+
+		busA := gomes.CommandBus()
 		busA.Send(context.Background(), CreateAction("COMMAND", "123"))
-		
-		busB := messagesystem.QueryBus()
+
+		busB := gomes.QueryBus()
 		busB.Send(context.Background(), CreateAction("QUERY", "123"))
-		
+
 		time.Sleep(time.Second * 3)
 	}
 
 	<-ctx.Done()
-	messagesystem.Shutdown()
+	gomes.Shutdown()
 }

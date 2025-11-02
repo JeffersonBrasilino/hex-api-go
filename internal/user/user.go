@@ -12,8 +12,8 @@ import (
 	"github.com/hex-api-go/internal/user/infrastructure/acl/gateway"
 	"github.com/hex-api-go/internal/user/infrastructure/database"
 	"github.com/hex-api-go/internal/user/infrastructure/http"
-	messagesystem "github.com/hex-api-go/pkg/core/infrastructure/messagesystem"
-	kafka "github.com/hex-api-go/pkg/core/infrastructure/messagesystem/channel/kafka"
+	"github.com/hex-api-go/pkg/core/infrastructure/rabbitmq"
+	gomes "github.com/jeffersonbrasilino/gomes"
 )
 
 var userModuleInstance *userModule
@@ -56,20 +56,28 @@ func (u *userModule) WithHttpProtocol(ctx context.Context, httpLib *fiber.App) *
 }
 
 func registerActions() {
-	messagesystem.AddActionHandler(createuser.NewComandHandler(userModuleInstance.repository))
-	//messagesystem.AddActionHandler(getuser.NewQueryHandler(nil))
+	gomes.AddActionHandler(createuser.NewComandHandler(userModuleInstance.repository))
+	//gomes.AddActionHandler(getuser.NewQueryHandler(nil))
 }
 
 func registerPublisher() {
-	messagesystem.AddChannelConnection(
+	/* gomes.AddChannelConnection(
 		kafka.NewConnection("defaultConKafka", []string{"kafka:9092"}),
 	)
 
 	a := kafka.NewPublisherChannelAdapterBuilder(
 		"defaultConKafka",
-		"messagesystem.topic",
+		"gomes.topic",
 	)
 	//a.WithReplyChannelName("test_response_channel")
-	messagesystem.AddPublisherChannel(a)
+	gomes.AddPublisherChannel(a) */
 
+	gomes.AddChannelConnection(
+		rabbitmq.NewConnection("rabbit-test", "admin:admin@rabbitmq:5672"),
+	)
+	pubChan := rabbitmq.NewPublisherChannelAdapterBuilder("rabbit-test", "gomes-exchange").
+		WithChannelType(rabbitmq.ProducerQueue)
+		//WithExchangeType(rabbitmq.ExchangeFanout).
+		//WithExchangeRoutingKeys("fila-1")
+	gomes.AddPublisherChannel(pubChan)
 }

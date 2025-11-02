@@ -3,8 +3,8 @@ package main
 import (
 	"context"
 
-	"github.com/hex-api-go/pkg/core/infrastructure/messagesystem"
-	kafka "github.com/hex-api-go/pkg/core/infrastructure/messagesystem/channel/kafka"
+	"github.com/jeffersonbrasilino/gomes"
+	kafka "github.com/jeffersonbrasilino/gomes/channel/kafka"
 )
 
 type Command struct {
@@ -29,37 +29,37 @@ func main() {
 	//The connection can, and is even recommended,
 	//be registered only once after registration.
 	//To use it in your channels, simply use its name in the channel reference name.
-	messagesystem.AddChannelConnection(
+	gomes.AddChannelConnection(
 		kafka.NewConnection("defaultConKafka", []string{"localhost:9093"}),
 	)
 
 	//create publisher channel
 	publisherChannel := kafka.NewPublisherChannelAdapterBuilder(
 		"defaultConKafka",
-		"messagesystem.topic",
+		"gomes.topic",
 	)
 
 	//register publisher channel on message system
-	messagesystem.AddPublisherChannel(publisherChannel)
+	gomes.AddPublisherChannel(publisherChannel)
 
 	//start the message system
-	messagesystem.Start()
+	gomes.Start()
 
 	// //get command bus
-	// commandBus := messagesystem.CommandBusByChannel("messagesystem.topic")
+	// commandBus := gomes.CommandBusByChannel("gomes.topic")
 	// commandBus.SendAsync(context.Background(), CreateCommand("teste", "123"))
 	// commandBus.SendRawAsync(context.Background(), "SendAsyncRoute", "SendRawAsync command custom payload", map[string]string{"typeAction": "command"})
 
 	//get Query bus
-	queryBus := messagesystem.QueryBusByChannel("messagesystem.topic")
+	queryBus := gomes.QueryBusByChannel("gomes.topic")
 	queryBus.SendAsync(context.Background(), CreateCommand("teste", "123"))
 	queryBus.SendRawAsync(context.Background(), "SendAsyncRoute", "SendRawAsync query custom payload", map[string]string{"typeAction": "query"})
 
 	// //get event bus
-	// eventBus := messagesystem.EventBusByChannel("messagesystem.topic")
+	// eventBus := gomes.EventBusByChannel("gomes.topic")
 	// eventBus.Publish(context.Background(), CreateCommand("teste", "123"))
 	// eventBus.PublishRaw(context.Background(), "SendAsyncRoute", "SendRawAsync query custom payload", map[string]string{"aaaa": "uheuehuehueh"})
 
 	//message system graceful shutdown
-	messagesystem.Shutdown()
+	gomes.Shutdown()
 }

@@ -10,7 +10,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/hex-api-go/internal/user"
-	messagesystem "github.com/hex-api-go/pkg/core/infrastructure/messagesystem"
+	gomes "github.com/jeffersonbrasilino/gomes"
 )
 
 func main() {
@@ -19,10 +19,11 @@ func main() {
 	app := fiber.New()
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
+	//ctx, stop := context.WithCancel(context.Background())
 
 	user.Bootstrap().
 		WithHttpProtocol(ctx, app)
-	messagesystem.Start()
+	gomes.Start()
 
 	go func() {
 		slog.Info("http server listening on port 3000")
@@ -31,10 +32,13 @@ func main() {
 		}
 	}()
 
-	messagesystem.ShowActiveEndpoints()
+	gomes.ShowActiveEndpoints()
+
+	/* time.Sleep(time.Second * 5)
+	stop() */
 
 	/*
-		a, _ := messagesystem.EventDrivenConsumer("test_consumer")
+		a, _ := gomes.EventDrivenConsumer("test_consumer")
 
 		var wg sync.WaitGroup
 		wg.Add(1)
@@ -48,7 +52,7 @@ func main() {
 		wg.Wait() */
 	/* 	go func() {
 		time.Sleep(time.Second * 10)
-		messagesystem.Shutdown()
+		gomes.Shutdown()
 	}() */
 
 	/* monigoInstance := &monigo.Monigo{
@@ -65,7 +69,7 @@ func main() {
 	monigoInstance.Start() */
 
 	<-ctx.Done()
-	messagesystem.Shutdown()
+	gomes.Shutdown()
 	if err := app.Shutdown(); err != nil {
 		slog.Info("shutting down server error")
 	}

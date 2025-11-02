@@ -1,4 +1,4 @@
-# 📦 MessageSystem - Sistema de Mensagens para Arquitetura Hexagonal
+# 📦 gomes - Sistema de Mensagens para Arquitetura Hexagonal
 
 ## 📋 Índice
 
@@ -7,14 +7,14 @@
 - [Componentes Principais](#-componentes-principais)
 - [CQRS](#-cqrs)
 - [Processamento Assíncrono](#-async-processing)
-    - [Padrões de Publicação](#-padrões-de-publicação)
-    - [Padrões de Consumo](#-padrões-de-consumo)
-    - [Resiliência](#-resiliência)
-    - [Kafka](#-kafka)
+  - [Padrões de Publicação](#-padrões-de-publicação)
+  - [Padrões de Consumo](#-padrões-de-consumo)
+  - [Resiliência](#-resiliência)
+  - [Kafka](#-kafka)
 
 ## 🎯 Visão Geral
 
-O **MessageSystem** é um plugin robusto e flexível para sistemas de mensagens em arquitetura hexagonal, implementando padrões de Enterprise Integration Patterns (EIP) e Command Query Responsibility Segregation (CQRS). Este sistema oferece uma abstração completa para comunicação assíncrona entre componentes, facilitando a construção de aplicações distribuídas e escaláveis.
+O **gomes** é um plugin robusto e flexível para sistemas de mensagens em arquitetura hexagonal, implementando padrões de Enterprise Integration Patterns (EIP) e Command Query Responsibility Segregation (CQRS). Este sistema oferece uma abstração completa para comunicação assíncrona entre componentes, facilitando a construção de aplicações distribuídas e escaláveis.
 
 ### Características Principais
 
@@ -38,7 +38,7 @@ O **MessageSystem** é um plugin robusto e flexível para sistemas de mensagens 
 ### Estrutura de Pastas do Plugin
 
 ```
-pkg/core/infrastructure/messagesystem/
+pkg/core/infrastructure/gomes/
 ├── bus/                    # Implementações CQRS
 │   ├── command_bus.go      # Processamento de comandos
 │   ├── query_bus.go        # Processamento de queries
@@ -71,7 +71,7 @@ pkg/core/infrastructure/messagesystem/
 
 ## 🚀 Bootstrap
 
-O Bootstrap é o processo de inicialização do MessageSystem, onde todos os componentes são registrados e configurados antes do sistema começar a processar mensagens. Este processo é fundamental para garantir que o sistema funcione corretamente.
+O Bootstrap é o processo de inicialização do gomes, onde todos os componentes são registrados e configurados antes do sistema começar a processar mensagens. Este processo é fundamental para garantir que o sistema funcione corretamente.
 
 ### Exemplo
 
@@ -85,8 +85,8 @@ import (
     "syscall"
     "time"
 
-    "github.com/hex-api-go/pkg/core/infrastructure/messagesystem"
-    kafka "github.com/hex-api-go/pkg/core/infrastructure/messagesystem/channel/kafka"
+    "github.com/jeffersonbrasilino/gomes"
+    kafka "github.com/jeffersonbrasilino/gomes/channel/kafka"
 )
 
 func main() {
@@ -94,17 +94,17 @@ func main() {
     ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
     defer stop()
 
-    slog.Info("Iniciando MessageSystem...")
+    slog.Info("Iniciando gomes...")
 
     // 1. REGISTRAR HANDLERS
     // Registre todos os handlers de comandos, queries e eventos
-    messagesystem.AddActionHandler(&CreateUserHandler{})
-    messagesystem.AddActionHandler(&GetUserHandler{})
-    messagesystem.AddActionHandler(&UserCreatedEventHandler{})
+    gomes.AddActionHandler(&CreateUserHandler{})
+    gomes.AddActionHandler(&GetUserHandler{})
+    gomes.AddActionHandler(&UserCreatedEventHandler{})
 
     // 2. CONFIGURAR CONEXÕES
     // Configure conexões com sistemas de mensagens (Kafka, RabbitMQ, etc.)
-    messagesystem.AddChannelConnection(
+    gomes.AddChannelConnection(
         kafka.NewConnection("defaultConKafka", []string{"localhost:9093"}),
     )
 
@@ -112,38 +112,38 @@ func main() {
     // Configure canais para envio de mensagens
     publisherChannel := kafka.NewPublisherChannelAdapterBuilder(
         "defaultConKafka",
-        "messagesystem.topic",
+        "gomes.topic",
     )
-    messagesystem.AddPublisherChannel(publisherChannel)
+    gomes.AddPublisherChannel(publisherChannel)
 
     // Configure canal de Dead Letter Queue
     dlqPublisherChannel := kafka.NewPublisherChannelAdapterBuilder(
         "defaultConKafka",
-        "messagesystem.dlq",
+        "gomes.dlq",
     )
-    messagesystem.AddPublisherChannel(dlqPublisherChannel)
+    gomes.AddPublisherChannel(dlqPublisherChannel)
 
     // 4. CONFIGURAR CANAIS DE CONSUMO
     // Configure canais para recebimento de mensagens
     consumerChannel := kafka.NewConsumerChannelAdapterBuilder(
         "defaultConKafka",
-        "messagesystem.topic",
+        "gomes.topic",
         "test_consumer",
     )
     // Configure resiliência
     consumerChannel.WithRetryTimes(2_000, 3_000)
-    consumerChannel.WithDeadLetterChannelName("messagesystem.dlq")
+    consumerChannel.WithDeadLetterChannelName("gomes.dlq")
 
-    messagesystem.AddConsumerChannel(consumerChannel)
+    gomes.AddConsumerChannel(consumerChannel)
 
     // 5. INICIAR O SISTEMA
-    // Inicie o MessageSystem - este passo é obrigatório
-    messagesystem.Start()
-    slog.Info("MessageSystem iniciado com sucesso!")
+    // Inicie o gomes - este passo é obrigatório
+    gomes.Start()
+    slog.Info("gomes iniciado com sucesso!")
 
     // 6. CONFIGURAR CONSUMERS
     // Configure e inicie os consumers
-    consumer, err := messagesystem.EventDrivenConsumer("test_consumer")
+    consumer, err := gomes.EventDrivenConsumer("test_consumer")
     if err != nil {
         slog.Error("Erro ao criar consumer", "error", err)
         return
@@ -168,8 +168,8 @@ func main() {
     slog.Info("Iniciando shutdown gracioso...")
 
     // Encerre o sistema graciosamente
-    messagesystem.Shutdown()
-    slog.Info("MessageSystem encerrado com sucesso!")
+    gomes.Shutdown()
+    slog.Info("gomes encerrado com sucesso!")
 }
 
 func publishMessages(ctx context.Context) {
@@ -182,20 +182,20 @@ func publishMessages(ctx context.Context) {
             return
         case <-ticker.C:
             // Publique comandos
-            commandBus := messagesystem.CommandBusByChannel("messagesystem.topic")
+            commandBus := gomes.CommandBusByChannel("gomes.topic")
             commandBus.SendAsync(ctx, &CreateUserCommand{
                 Username: "user_" + time.Now().Format("20060102150405"),
                 Password: "secure_password",
             })
 
             // Publique queries
-            queryBus := messagesystem.QueryBusByChannel("messagesystem.topic")
+            queryBus := gomes.QueryBusByChannel("gomes.topic")
             queryBus.SendAsync(ctx, &GetUserQuery{
                 UserID: "123",
             })
 
             // Publique eventos
-            eventBus := messagesystem.EventBusByChannel("messagesystem.topic")
+            eventBus := gomes.EventBusByChannel("gomes.topic")
             eventBus.Publish(ctx, &UserCreatedEvent{
                 UserID:    "123",
                 Username:  "john_doe",
@@ -217,7 +217,7 @@ func publishMessages(ctx context.Context) {
 
 #### Controle do Sistema
 
-- **`Start()`**: Inicia o MessageSystem (obrigatório)
+- **`Start()`**: Inicia o gomes (obrigatório)
 - **`Shutdown()`**: Encerra o sistema graciosamente
 - **`ShowActiveEndpoints()`**: Mostra endpoints ativos para debug
 
@@ -229,14 +229,13 @@ func publishMessages(ctx context.Context) {
 4. **Error Handling**: Trate erros durante a inicialização
 5. **Logging**: Use logging adequado para monitorar o processo
 
-
 ## 🔧 Componentes Principais
 
 ### Diagrama de Fluxo
 
 ```mermaid
 flowchart TD
-    A[Cliente] -->|1. Envia Mensagem| B[MessageSystem]
+    A[Cliente] -->|1. Envia Mensagem| B[gomes]
     B -->|2. Identifica Tipo| C{Tipo de Mensagem}
     C -->|Command| D[CommandBus]
     C -->|Query| E[QueryBus]
@@ -263,7 +262,7 @@ flowchart TD
 ```mermaid
 sequenceDiagram
     participant C as Cliente
-    participant MS as MessageSystem
+    participant MS as gomes
     participant CB as CommandBus
     participant R as Router
     participant H as Handler
@@ -296,9 +295,9 @@ sequenceDiagram
 
 ## ⚡ CQRS
 
-O MessageSystem implementa o padrão **Command Query Responsibility Segregation (CQRS)** de forma nativa, separando claramente as operações de modificação (Commands) das operações de consulta (Queries), além de incluir o processamento de eventos (Events) para notificações assíncronas.
+O gomes implementa o padrão **Command Query Responsibility Segregation (CQRS)** de forma nativa, separando claramente as operações de modificação (Commands) das operações de consulta (Queries), além de incluir o processamento de eventos (Events) para notificações assíncronas.
 
-### Arquitetura CQRS no MessageSystem
+### Arquitetura CQRS no gomes
 
 ```mermaid
 flowchart TD
@@ -419,7 +418,7 @@ func (h *CreateUserHandler) Handle(ctx context.Context, cmd *CreateUserCommand) 
 
 // Uso do Command Bus
 func createUser() {
-    commandBus := messagesystem.CommandBus()
+    commandBus := gomes.CommandBus()
 
     result, err := commandBus.Send(context.Background(), &CreateUserCommand{
         Username: "john_doe",
@@ -477,7 +476,7 @@ func (h *GetUserByIDHandler) Handle(ctx context.Context, query *GetUserByIDQuery
 
 // Uso do Query Bus
 func getUser() {
-    queryBus := messagesystem.QueryBus()
+    queryBus := gomes.QueryBus()
 
     user, err := queryBus.SendAsync(context.Background(), &GetUserByIDQuery{
         UserID: "123",
@@ -559,7 +558,7 @@ func (h *UserCreatedNotificationHandler) Handle(ctx context.Context, evt *UserCr
 
 // Uso do Event Bus
 func publishUserCreated(user *User) {
-    eventBus := messagesystem.EventBus()
+    eventBus := gomes.EventBus()
 
     err := eventBus.Publish(context.Background(), &UserCreatedEvent{
         UserID:    user.ID,
@@ -601,6 +600,7 @@ func publishUserCreated(user *User) {
 - **`PublishRaw(ctx, route, payload, headers)`**: Publica evento com payload customizado e headers customizados
 
 ## ⏱ Processamento assíncrono
+
 ### 📤 Padrões de Publicação
 
 #### Comandos
@@ -632,25 +632,25 @@ func (h *CreateUserHandler) Handle(ctx context.Context, cmd *CreateUserCommand) 
 // 3. Configure e use o sistema
 func main() {
     // Configure conexão Kafka
-    messagesystem.AddChannelConnection(
+    gomes.AddChannelConnection(
         kafka.NewConnection("defaultConKafka", []string{"localhost:9093"}),
     )
 
     // Configure canal de publicação
     publisherChannel := kafka.NewPublisherChannelAdapterBuilder(
         "defaultConKafka",
-        "messagesystem.topic",
+        "gomes.topic",
     )
-    messagesystem.AddPublisherChannel(publisherChannel)
+    gomes.AddPublisherChannel(publisherChannel)
 
     // Registre o handler
-    messagesystem.AddActionHandler(&CreateUserHandler{})
+    gomes.AddActionHandler(&CreateUserHandler{})
 
     // Inicie o sistema
-    messagesystem.Start()
+    gomes.Start()
 
     // Use o command bus
-    commandBus := messagesystem.CommandBusByChannel("messagesystem.topic")
+    commandBus := gomes.CommandBusByChannel("gomes.topic")
     commandBus.SendAsync(context.Background(), &CreateUserCommand{
         Username: "teste",
         Password: "123",
@@ -691,7 +691,7 @@ func (h *GetUserHandler) Handle(ctx context.Context, query *GetUserQuery) (*User
 
 // 3. Use o query bus
 func getUser() {
-    queryBus := messagesystem.QueryBusByChannel("messagesystem.topic")
+    queryBus := gomes.QueryBusByChannel("gomes.topic")
     user, err := queryBus.SendAsync(context.Background(), &GetUserQuery{
         UserID: "123",
     })
@@ -742,7 +742,7 @@ func (h *AuditLogHandler) Handle(ctx context.Context, evt *UserCreatedEvent) err
 
 // 3. Use o event bus
 func publishUserCreated() {
-    eventBus := messagesystem.EventBusByChannel("messagesystem.topic")
+    eventBus := gomes.EventBusByChannel("gomes.topic")
     eventBus.Publish(context.Background(), &UserCreatedEvent{
         UserID:    "123",
         Username:  "john_doe",
@@ -776,28 +776,28 @@ O Event-Driven Consumer processa mensagens de forma assíncrona e em tempo real,
 ```go
 func main() {
     // Configure conexão e canais
-    messagesystem.AddChannelConnection(
+    gomes.AddChannelConnection(
         kafka.NewConnection("defaultConKafka", []string{"localhost:9093"}),
     )
 
     // Configure consumer channel com resiliência
     topicConsumerChannel := kafka.NewConsumerChannelAdapterBuilder(
         "defaultConKafka",
-        "messagesystem.topic",
+        "gomes.topic",
         "test_consumer",
     )
     topicConsumerChannel.WithRetryTimes(2_000, 3_000)
-    topicConsumerChannel.WithDeadLetterChannelName("messagesystem.dlq")
+    topicConsumerChannel.WithDeadLetterChannelName("gomes.dlq")
 
     // Registre canais e handlers
-    messagesystem.AddConsumerChannel(topicConsumerChannel)
-    messagesystem.AddActionHandler(&CreateUserHandler{})
+    gomes.AddConsumerChannel(topicConsumerChannel)
+    gomes.AddActionHandler(&CreateUserHandler{})
 
     // Inicie o sistema
-    messagesystem.Start()
+    gomes.Start()
 
     // Configure event-driven consumer
-    consumer, err := messagesystem.EventDrivenConsumer("test_consumer")
+    consumer, err := gomes.EventDrivenConsumer("test_consumer")
     if err != nil {
         panic(err)
     }
@@ -833,7 +833,7 @@ O Polling Consumer processa mensagens de forma periódica, ideal para processame
 ```go
 func main() {
     // Configure consumer polling
-    consumer := messagesystem.NewPollingConsumer("batch-consumer")
+    consumer := gomes.NewPollingConsumer("batch-consumer")
 
     // Configure parâmetros
     consumer.WithPollIntervalMilliseconds(5000)      // Poll a cada 5 segundos
@@ -952,7 +952,7 @@ sequenceDiagram
 // Configure retry com intervalos específicos
 topicConsumerChannel := kafka.NewConsumerChannelAdapterBuilder(
     "defaultConKafka",
-    "messagesystem.topic",
+    "gomes.topic",
     "test_consumer",
 )
 
@@ -960,7 +960,7 @@ topicConsumerChannel := kafka.NewConsumerChannelAdapterBuilder(
 topicConsumerChannel.WithRetryTimes(2_000, 3_000)
 
 // Configure dead letter channel
-topicConsumerChannel.WithDeadLetterChannelName("messagesystem.dlq")
+topicConsumerChannel.WithDeadLetterChannelName("gomes.dlq")
 ```
 
 ##### Métodos do Retry Handler
@@ -1023,19 +1023,19 @@ sequenceDiagram
 // 1. Configure canal de dead letter
 publisherDlqChannel := kafka.NewPublisherChannelAdapterBuilder(
     "defaultConKafka",
-    "messagesystem.dlq",
+    "gomes.dlq",
 )
 
 // 2. Registre o canal de dead letter
-messagesystem.AddPublisherChannel(publisherDlqChannel)
+gomes.AddPublisherChannel(publisherDlqChannel)
 
 // 3. Configure consumer com dead letter
 topicConsumerChannel := kafka.NewConsumerChannelAdapterBuilder(
     "defaultConKafka",
-    "messagesystem.topic",
+    "gomes.topic",
     "test_consumer",
 )
-topicConsumerChannel.WithDeadLetterChannelName("messagesystem.dlq")
+topicConsumerChannel.WithDeadLetterChannelName("gomes.dlq")
 ```
 
 ##### Estrutura da Mensagem Dead Letter
@@ -1057,7 +1057,7 @@ type DeadLetterMessage struct {
 
 ### 🚀 Kafka
 
-O driver Kafka implementa a integração completa com Apache Kafka, fornecendo adaptadores para publicação e consumo de mensagens com suporte a todas as funcionalidades do MessageSystem.
+O driver Kafka implementa a integração completa com Apache Kafka, fornecendo adaptadores para publicação e consumo de mensagens com suporte a todas as funcionalidades do gomes.
 
 #### Configuração da Conexão
 
@@ -1068,7 +1068,7 @@ O driver Kafka implementa a integração completa com Apache Kafka, fornecendo a
 connection := kafka.NewConnection("defaultConKafka", []string{"localhost:9093"})
 
 // Registre a conexão no sistema
-messagesystem.AddChannelConnection(connection)
+gomes.AddChannelConnection(connection)
 
 // Conecte ao Kafka
 err := connection.Connect()
@@ -1099,16 +1099,16 @@ connection := kafka.NewConnection(
 // Crie um publisher channel
 publisherChannel := kafka.NewPublisherChannelAdapterBuilder(
     "defaultConKafka",        // Nome da conexão
-    "messagesystem.topic",     // Tópico de destino
+    "gomes.topic",     // Tópico de destino
 )
 
 // Registre o canal
-messagesystem.AddPublisherChannel(publisherChannel)
+gomes.AddPublisherChannel(publisherChannel)
 
 // Use o canal através dos buses
-commandBus := messagesystem.CommandBusByChannel("messagesystem.topic")
-queryBus := messagesystem.QueryBusByChannel("messagesystem.topic")
-eventBus := messagesystem.EventBusByChannel("messagesystem.topic")
+commandBus := gomes.CommandBusByChannel("gomes.topic")
+queryBus := gomes.QueryBusByChannel("gomes.topic")
+eventBus := gomes.EventBusByChannel("gomes.topic")
 ```
 
 ##### Tradução de Mensagens
@@ -1136,16 +1136,16 @@ kafkaMessage := translator.FromMessage(message)
 // Crie um consumer channel
 consumerChannel := kafka.NewConsumerChannelAdapterBuilder(
     "defaultConKafka",        // Nome da conexão
-    "messagesystem.topic",    // Tópico de origem
+    "gomes.topic",    // Tópico de origem
     "test_consumer",         // Nome do consumer group
 )
 
 // Configure resiliência
 consumerChannel.WithRetryTimes(2_000, 3_000)  // Retry com intervalos
-consumerChannel.WithDeadLetterChannelName("messagesystem.dlq")  // DLQ
+consumerChannel.WithDeadLetterChannelName("gomes.dlq")  // DLQ
 
 // Registre o canal
-messagesystem.AddConsumerChannel(consumerChannel)
+gomes.AddConsumerChannel(consumerChannel)
 ```
 
 ##### Configurações do Consumer
@@ -1154,7 +1154,7 @@ messagesystem.AddConsumerChannel(consumerChannel)
 // Configurações avançadas do consumer
 consumerConfig := &kafka.ReaderConfig{
     Brokers:  []string{"localhost:9093"},
-    Topic:    "messagesystem.topic",
+    Topic:    "gomes.topic",
     GroupID:  "test_consumer",
     MaxBytes: 10e6,  // 10MB por mensagem
 }
@@ -1239,43 +1239,43 @@ func main() {
     defer cancel()
 
     // 1. Configure conexão Kafka
-    messagesystem.AddChannelConnection(
+    gomes.AddChannelConnection(
         kafka.NewConnection("defaultConKafka", []string{"localhost:9093"}),
     )
 
     // 2. Configure publisher
     publisherChannel := kafka.NewPublisherChannelAdapterBuilder(
         "defaultConKafka",
-        "messagesystem.topic",
+        "gomes.topic",
     )
-    messagesystem.AddPublisherChannel(publisherChannel)
+    gomes.AddPublisherChannel(publisherChannel)
 
     // 3. Configure DLQ publisher
     dlqPublisherChannel := kafka.NewPublisherChannelAdapterBuilder(
         "defaultConKafka",
-        "messagesystem.dlq",
+        "gomes.dlq",
     )
-    messagesystem.AddPublisherChannel(dlqPublisherChannel)
+    gomes.AddPublisherChannel(dlqPublisherChannel)
 
     // 4. Configure consumer com resiliência
     consumerChannel := kafka.NewConsumerChannelAdapterBuilder(
         "defaultConKafka",
-        "messagesystem.topic",
+        "gomes.topic",
         "test_consumer",
     )
     consumerChannel.WithRetryTimes(2_000, 3_000)
-    consumerChannel.WithDeadLetterChannelName("messagesystem.dlq")
+    consumerChannel.WithDeadLetterChannelName("gomes.dlq")
 
-    messagesystem.AddConsumerChannel(consumerChannel)
+    gomes.AddConsumerChannel(consumerChannel)
 
     // 5. Registre handlers
-    messagesystem.AddActionHandler(&CreateUserHandler{})
+    gomes.AddActionHandler(&CreateUserHandler{})
 
     // 6. Inicie o sistema
-    messagesystem.Start()
+    gomes.Start()
 
     // 7. Configure event-driven consumer
-    consumer, err := messagesystem.EventDrivenConsumer("test_consumer")
+    consumer, err := gomes.EventDrivenConsumer("test_consumer")
     if err != nil {
         panic(err)
     }
@@ -1287,7 +1287,7 @@ func main() {
         Run(ctx)
 
     // 9. Publique mensagens
-    commandBus := messagesystem.CommandBusByChannel("messagesystem.topic")
+    commandBus := gomes.CommandBusByChannel("gomes.topic")
     commandBus.SendAsync(ctx, &CreateUserCommand{
         Username: "john_doe",
         Password: "secure_password",
@@ -1295,7 +1295,7 @@ func main() {
 
     // 10. Graceful shutdown
     <-ctx.Done()
-    messagesystem.Shutdown()
+    gomes.Shutdown()
 }
 ```
 
@@ -1311,19 +1311,19 @@ func main() {
 
 ```go
 // Visualize conexões ativas
-messagesystem.ShowActiveEndpoints()
+gomes.ShowActiveEndpoints()
 
 // Saída exemplo:
 // ---[Message System] Active Endpoints ---
 // Endpoint Name                  | Type
 // -------------------------------------------
-// messagesystem.topic            | [outbound] Command-Bus
-// messagesystem.topic            | [outbound] Query-Bus
-// messagesystem.topic            | [outbound] Event-Bus
-// messagesystem.topic            | [inbound] Event-Driven
-// messagesystem.dlq              | [outbound] Dead-Letter
+// gomes.topic            | [outbound] Command-Bus
+// gomes.topic            | [outbound] Query-Bus
+// gomes.topic            | [outbound] Event-Bus
+// gomes.topic            | [inbound] Event-Driven
+// gomes.dlq              | [outbound] Dead-Letter
 ```
 
 ---
 
-> 💡 **Nota**: Esta documentação é um guia completo para desenvolvedores que desejam utilizar o MessageSystem em suas aplicações. O sistema foi projetado para ser intuitivo para desenvolvedores júnior, mas poderoso o suficiente para cenários complexos de produção.
+> 💡 **Nota**: Esta documentação é um guia completo para desenvolvedores que desejam utilizar o gomes em suas aplicações. O sistema foi projetado para ser intuitivo para desenvolvedores júnior, mas poderoso o suficiente para cenários complexos de produção.

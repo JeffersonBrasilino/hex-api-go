@@ -60,7 +60,7 @@ services:
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_INTERNAL://kafka:29092,CONTROLLER://kafka:29093,PLAINTEXT_HOST://localhost:9093
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_AUTO_CREATE_TOPICS_ENABLED: "true"
-      KAFKA_CREATE_TOPICS: "messagesystem.test:1:1"
+      KAFKA_CREATE_TOPICS: "gomes.test:1:1"
       KAFKA_PROCESS_ROLES: broker,controller
       CLUSTER_ID: AsUeol5bRgukKBZUf8w_XQ # for generate id use: docker run --rm confluentinc/cp-kafka:latest kafka-storage random-uuid
       KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:29093
@@ -78,6 +78,17 @@ services:
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
     networks:
       - api
+  rabbitmq:
+    container_name: rabbitmq
+    image: rabbitmq:3-management
+    ports:
+      - 15672:15672
+      - 5672:5672
+    networks:
+      - api
+    environment:
+      - RABBITMQ_DEFAULT_USER=admin
+      - RABBITMQ_DEFAULT_PASS=admin
 
 networks:
   api:

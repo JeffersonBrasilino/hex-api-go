@@ -7,7 +7,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/hex-api-go/internal/user/application/command/createuser"
 	"github.com/hex-api-go/internal/user/application/query/getuser"
-	messagesystem "github.com/hex-api-go/pkg/core/infrastructure/messagesystem"
+	gomes "github.com/jeffersonbrasilino/gomes"
 )
 
 type Request struct {
@@ -24,15 +24,17 @@ func CreateUser(ctx context.Context, fiberApp fiber.Router) {
 
 		//coreHttp.ValidateRequest(request)
 
-		/* bus := messagesystem.CommandBus()
+		/* bus := gomes.CommandBus()
 		res, err := bus.Send(c.Context(), createuser.CreateCommand("teste", "123")) */
 
 		//opCtx, cancel := context.WithTimeout(c.Context(), time.Second*5)
 		//defer cancel()
 
-		busA := messagesystem.CommandBusByChannel("messagesystem.topic")
-		err := busA.SendAsync(c.Context(), createuser.CreateCommand("teste", "123"))
-		fmt.Println("[controller] ASYNC COMMAND SEND ERROR ", err)
+		for i:=1;i<=10;i++{
+			busA := gomes.CommandBusByChannel("gomes-exchange")
+			err := busA.SendAsync(c.Context(), createuser.CreateCommand(fmt.Sprintf("teste ID: %v", i), "123"))
+			fmt.Println("[controller] ASYNC COMMAND SEND ERROR ", err)
+		}
 
 		//ch := map[string]string{"foi": "okokokokok"}
 		//err := busA.SendRawAsync(opCtx, "createUser", "iii rapaz DEU BOM", ch)
@@ -51,7 +53,7 @@ func CreateUser(ctx context.Context, fiberApp fiber.Router) {
 		} */
 
 		//coreHttp.ValidateRequest(request)
-		bus := messagesystem.QueryBus()
+		bus := gomes.QueryBus()
 		res, err := bus.Send(c.Context(), getuser.NewQuery())
 		//a, ok := res.(*createuser.ResultCm)
 		fmt.Println("controller", res, err)

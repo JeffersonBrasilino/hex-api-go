@@ -3,12 +3,21 @@ package main
 import (
 	"context"
 	"fmt"
-	"os/signal"
-	"syscall"
+	"log/slog"
+	"os"
 	"time"
 
-	"github.com/hex-api-go/pkg/core/infrastructure/rabbitmq"
+	_ "net/http/pprof"
+
+	"github.com/grafana/pyroscope-go"
 	"github.com/jeffersonbrasilino/gomes"
+	"github.com/jeffersonbrasilino/gomes/channel/kafka"
+	"github.com/jeffersonbrasilino/gomes/message"
+	gomesOtelTrace "github.com/jeffersonbrasilino/gomes/otel"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
+	"go.opentelemetry.io/otel/propagation"
+	"go.opentelemetry.io/otel/sdk/trace"
 )
 
 // Underneath the hood,
@@ -35,7 +44,10 @@ func (c *Command) Name() string {
 }
 
 // CQRS acton handler
-type CommandHandler struct{}
+type CommandHandler struct {
+	tracer gomesOtelTrace.OtelTrace
+	header map[string]string
+}
 
 // response structure
 type ResultCm struct {
@@ -43,56 +55,82 @@ type ResultCm struct {
 }
 
 func NewComandHandler() *CommandHandler {
-	return &CommandHandler{}
+	return &CommandHandler{
+		tracer: gomesOtelTrace.InitTrace("command-handler"),
+	}
 }
 
 // note that the link between the action and its handler is the type of the data parameter.
 // This indicates that this handler is responsible for this action
 func (c *CommandHandler) Handle(ctx context.Context, data *Command) (*ResultCm, error) {
-	fmt.Println("process command ok", data.Username)
-	time.Sleep(time.Second * 20)
-	return &ResultCm{"deu tudo certo"}, nil
+	time.Sleep(time.Second * 1)
+	ctx, span := c.tracer.Start(
+		ctx,
+		"Handle Command",
+	)
+	defer span.End()
+
+	slog.Info("processing command...",
+		"username", data.Username,
+	)
+	time.Sleep(time.Second * 5)
+	slog.Info("command processed.",
+		"username", data.Username,
+	)
+
+	return &ResultCm{Result: "DEU BOM"}, nil
+	//return nil, fmt.Errorf("DEU RUIM AO PROCESSAR A MENSAGEM")
+}
+
+func (c *CommandHandler) SetMessageHeader(header message.Header) {
+	c.header = header
 }
 
 func main() {
 
-	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	initOtelTraceProvider()
+	ctx, stop := context.WithCancel(context.Background()) //signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
-	/* ctx, cancel := context.WithCancel(context.Background())
-	go func() {
-		fmt.Println("Press Ctrl+C to exit")
-		time.Sleep(time.Second * 5)
-		cancel()
-	}() */
+	slog.Info("start message system consumer....")
 
-	//create kafka connection
-	//The connection can, and is even recommended,
-	//be registered only once after registration.
-	//To use it in your channels, simply use its name in the channel reference name.
 	gomes.AddChannelConnection(
-		rabbitmq.NewConnection("rabbit-test", "admin:admin@rabbitmq:5672"),
+		kafka.NewConnection("defaultConKafka", []string{"kafka:9092"}),
 	)
-
-	//create consumer channel on message system
-	//For the consumer channel,
-	//there are two resilience approaches: the retry pattern and the dead-letter pattern.
-	//You can use both together or opt for just one of the options.
-	topicConsumerChannel := rabbitmq.NewConsumerChannelAdapterBuilder(
-		"rabbit-test",
-		"gomes-exchange",
+	topicConsumerChannel := kafka.NewConsumerChannelAdapterBuilder(
+		"defaultConKafka",
+		"gomes.topic",
 		"test_consumer",
 	)
-	/* topicConsumerChannel.WithRetryTimes(2_000, 3_000)
-	topicConsumerChannel.WithDeadLetterChannelName("gomes.dlq")
- */
-	//register consumer channel on message system
+	//topicConsumerChannel.WithSendReplyUsingReplyTo()
+	//topicConsumerChannel.WithRetryTimes(2_000, 5_000)
+	//topicConsumerChannel.WithDeadLetterChannelName("gomes.dlq")
 	gomes.AddConsumerChannel(topicConsumerChannel)
+
+	//response channel
+	/* responseChannel := kafka.NewPublisherChannelAdapterBuilder(
+		"defaultConKafka",
+		"gomes.response",
+	)
+	gomes.AddPublisherChannel(responseChannel)
+
+	//DLQ channel
+	dlqChannel := kafka.NewPublisherChannelAdapterBuilder(
+		"defaultConKafka",
+		"gomes.dlq",
+	)
+	gomes.AddPublisherChannel(dlqChannel) */
 
 	// Register CQRS action and action handler.
 	gomes.AddActionHandler(NewComandHandler())
 
+	//enable otel trace for the message system
+	gomes.EnableOtelTrace()
+	initPyroscope()
+	
 	//start the message system
 	gomes.Start()
+
+	//go publishMessage()
 
 	//For the consumer channel endpoint,
 	//the advantage of having an abstraction between the consumer channel and the consumer endpoint
@@ -103,29 +141,86 @@ func main() {
 		panic(err)
 	}
 
-	//Run the event-driven consumer. Note that we have a few settings:
-	//- WithMessageProcessingTimeout: Sets the message processing timeout
-	//- WithAmountOfProcessors: Sets the number of parallel processing nodes
-	//- WithStopOnError: If a processing error occurs, the consumer is shut down (default is true)
-	go consumer.WithAmountOfProcessors(1).
-		WithMessageProcessingTimeout(50000).
-		WithStopOnError(false).
-		Run(ctx)
+
+	go func() {
+		err := consumer.WithAmountOfProcessors(50).
+			WithMessageProcessingTimeout(300000).
+			WithStopOnError(false).
+			Run(ctx)
+
+		fmt.Println("main.go erro no consumer", "erro", err)
+
+		if err != nil {
+			stop()
+		}
+	}()
+
+	/* time.Sleep(time.Second * 9)
+	stop() */
 
 	<-ctx.Done()
-	time.Sleep(time.Second * 3)
 	//message system graceful shutdown
 	gomes.Shutdown()
+	fmt.Println("CONSUMIDOR STOPPED COM SUCESSO...")
 }
 
 func publishMessage() {
-	maxPublishMessages := 5
+	maxPublishMessages := 10
 	for i := 1; i <= maxPublishMessages; i++ {
 		fmt.Println("publish command message...")
-		//get command bus
-		//the message type is defined by bus(command/query/event)
-		busA := gomes.CommandBusByChannel("gomes.topic")
-		busA.SendAsync(context.Background(), CreateCommand("teste", "123"))
-		time.Sleep(time.Second * 3)
+		busA, _ := gomes.CommandBusByChannel("gomes.topic")
+		busA.SendAsync(context.Background(), CreateCommand(fmt.Sprintf("message %d", i), "123"))
 	}
+}
+
+func initOtelTraceProvider() *trace.TracerProvider {
+	exporter, err := otlptracegrpc.New(context.Background())
+	if err != nil {
+		panic(fmt.Errorf("failed to create OTLP grpc exporter: %w", err))
+	}
+
+	batchSpanProcessor := trace.NewBatchSpanProcessor(exporter)
+	provider := trace.NewTracerProvider(
+		trace.WithSpanProcessor(batchSpanProcessor),
+	)
+
+	otel.SetTracerProvider(provider)
+	otel.SetTextMapPropagator(propagation.TraceContext{})
+	return provider
+}
+
+func initPyroscope() {
+	// These 2 lines are only required if you're using mutex or block profiling
+	// Read the explanation below for how to set these rates:
+	//runtime.SetMutexProfileFraction(5)
+	//runtime.SetBlockProfileRate(5)
+
+	pyroscope.Start(pyroscope.Config{
+		ApplicationName: "event-driven-consumer",
+
+		// replace this with the address of pyroscope server
+		ServerAddress: "http://pyroscope:4040",
+
+		// you can disable logging by setting this to nil
+		Logger: pyroscope.StandardLogger,
+
+		// you can provide static tags via a map:
+		Tags: map[string]string{"hostname": os.Getenv("HOSTNAME")},
+
+		ProfileTypes: []pyroscope.ProfileType{
+			// these profile types are enabled by default:
+			pyroscope.ProfileCPU,
+			pyroscope.ProfileAllocObjects,
+			pyroscope.ProfileAllocSpace,
+			pyroscope.ProfileInuseObjects,
+			pyroscope.ProfileInuseSpace,
+
+			// these profile types are optional:
+			pyroscope.ProfileGoroutines,
+			pyroscope.ProfileMutexCount,
+			pyroscope.ProfileMutexDuration,
+			pyroscope.ProfileBlockCount,
+			pyroscope.ProfileBlockDuration,
+		},
+	})
 }

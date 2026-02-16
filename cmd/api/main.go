@@ -2,15 +2,19 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"os/signal"
 	"syscall"
-
-	_ "net/http/pprof"
-
+	"os"
 	"github.com/gofiber/fiber/v2"
+	"github.com/grafana/pyroscope-go"
 	"github.com/hex-api-go/internal/user"
 	gomes "github.com/jeffersonbrasilino/gomes"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
+	"go.opentelemetry.io/otel/propagation"
+	"go.opentelemetry.io/otel/sdk/trace"
 )
 
 func main() {
@@ -19,60 +23,81 @@ func main() {
 	app := fiber.New()
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
-	//ctx, stop := context.WithCancel(context.Background())
+
+	initPyroscope()
 
 	user.Bootstrap().
 		WithHttpProtocol(ctx, app)
+
+	tp := initOtelTraceProvider()
+	gomes.EnableOtelTrace()
 	gomes.Start()
 
 	go func() {
-		slog.Info("http server listening on port 3000")
-		if err := app.Listen(":3000"); err != nil {
+		slog.Info("http server listening on port 4000")
+		if err := app.Listen(":4000"); err != nil {
 			panic(err)
 		}
 	}()
 
-	gomes.ShowActiveEndpoints()
-
-	/* time.Sleep(time.Second * 5)
-	stop() */
-
-	/*
-		a, _ := gomes.EventDrivenConsumer("test_consumer")
-
-		var wg sync.WaitGroup
-		wg.Add(1)
-		go func() {
-			slog.Info("START CONSUMER......")
-			defer wg.Done()
-			a.Run(ctx)
-		}()
-
-		a.WithAmountOfProcessors(1)
-		wg.Wait() */
-	/* 	go func() {
-		time.Sleep(time.Second * 10)
-		gomes.Shutdown()
-	}() */
-
-	/* monigoInstance := &monigo.Monigo{
-		ServiceName:             "hex-api-go", // Mandatory field
-		DashboardPort:           6060,         // Default is 8080
-		DataPointsSyncFrequency: "10s",        // Default is 5 Minutes
-		DataRetentionPeriod:     "1h",         // Default is 7 days. Supported values: "1h", "1d", "1w", "1m"
-		TimeZone:                "Local",      // Default is Local timezone. Supported values: "Local", "UTC", "Asia/Kolkata", "America/New_York" etc. (https://en.wikipedia.org/wiki/List_of_tz_database_time_zones)
-		// MaxCPUUsage:             90,         // Default is 95%
-		// MaxMemoryUsage:          90,         // Default is 95%
-		MaxGoRoutines: 100000, // Default is 100
-	}
-
-	monigoInstance.Start() */
-
 	<-ctx.Done()
 	gomes.Shutdown()
+	tp.Shutdown(ctx)
 	if err := app.Shutdown(); err != nil {
 		slog.Info("shutting down server error")
 	}
 	slog.Info("shutdown completed")
 
+}
+
+func initOtelTraceProvider() *trace.TracerProvider {
+	exporter, err := otlptracegrpc.New(context.Background())
+	if err != nil {
+		panic(fmt.Errorf("failed to create OTLP grpc exporter: %w", err))
+	}
+
+	batchSpanProcessor := trace.NewBatchSpanProcessor(exporter)
+	provider := trace.NewTracerProvider(
+		trace.WithSpanProcessor(batchSpanProcessor),
+	)
+
+	otel.SetTracerProvider(provider)
+	otel.SetTextMapPropagator(propagation.TraceContext{})
+	return provider
+}
+
+func initPyroscope() {
+	// These 2 lines are only required if you're using mutex or block profiling
+	// Read the explanation below for how to set these rates:
+	//runtime.SetMutexProfileFraction(5)
+	//runtime.SetBlockProfileRate(5)
+
+	pyroscope.Start(pyroscope.Config{
+		ApplicationName: os.Getenv("APP_NAME"),
+
+		// replace this with the address of pyroscope server
+		ServerAddress: "http://pyroscope:4040",
+
+		// you can disable logging by setting this to nil
+		Logger: pyroscope.StandardLogger,
+
+		// you can provide static tags via a map:
+		Tags: map[string]string{"hostname": os.Getenv("HOSTNAME")},
+
+		ProfileTypes: []pyroscope.ProfileType{
+			// these profile types are enabled by default:
+			pyroscope.ProfileCPU,
+			pyroscope.ProfileAllocObjects,
+			pyroscope.ProfileAllocSpace,
+			pyroscope.ProfileInuseObjects,
+			pyroscope.ProfileInuseSpace,
+
+			// these profile types are optional:
+			pyroscope.ProfileGoroutines,
+			pyroscope.ProfileMutexCount,
+			pyroscope.ProfileMutexDuration,
+			pyroscope.ProfileBlockCount,
+			pyroscope.ProfileBlockDuration,
+		},
+	})
 }

@@ -1,5 +1,7 @@
 ---
-applyTo: '**'
+description: Especialista em desenvolvimento backend - DDD, Hexagonal Architecture, Event-Driven, EIP
+globs:
+alwaysApply: true
 ---
 
 # Especialista em Desenvolvimento Backend

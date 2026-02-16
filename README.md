@@ -1,5 +1,8 @@
 # 📦 gomes - Sistema de Mensagens para Arquitetura Hexagonal
 
+# Atenção:
+## o projeto GOMES foi movido para [https://github.com/JeffersonBrasilino/gomes](https://github.com/JeffersonBrasilino/gomes)
+
 ## 📋 Índice
 
 - [Visão Geral](#-visão-geral)

@@ -1,8 +1,8 @@
 ---
+agent: agent
 description: Criar ou atualizar documentação README.md completa e estruturada
-globs:
-alwaysApply: false
 ---
+
 
 # Documentação README.md
 

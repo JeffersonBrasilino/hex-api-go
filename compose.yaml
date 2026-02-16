@@ -15,6 +15,7 @@ services:
     mem_limit: 300m
     networks:
       - api
+      - pyroscope-network
   event-driven-consumer:
     container_name: ${APP_NAME}-consumer
     image: golang:1.25-alpine3.22
@@ -24,11 +25,12 @@ services:
     env_file:
       - .env
     command: go run cmd/event_driven_consumer/main.go
-    ports:
-      - "6061:6061"
+    # ports:
+    #   - "6060:6060"
     mem_limit: 300m
     networks:
       - api
+      - pyroscope-network
   lazydocker:
     build:
       context: https://github.com/jesseduffield/lazydocker.git
@@ -42,7 +44,7 @@ services:
     tty: true
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - ./config:/.config/jesseduffield/lazydocker
+      - ./.docker/otel:/.config/jesseduffield/lazydocker
 
   kafka:
     container_name: kafka
@@ -67,6 +69,7 @@ services:
       KAFKA_CONTROLLER_LISTENER_NAMES: "CONTROLLER"
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: true
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,PLAINTEXT_INTERNAL://0.0.0.0:29092,CONTROLLER://0.0.0.0:29093,PLAINTEXT_HOST://0.0.0.0:9093
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
     depends_on:
@@ -90,6 +93,104 @@ services:
       - RABBITMQ_DEFAULT_USER=admin
       - RABBITMQ_DEFAULT_PASS=admin
 
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.144.0
+    container_name: otel-collector
+    command:
+      - --config=/etc/otelcol-contrib/config.yaml
+    volumes:
+      - ./.docker/otel/otel-collector-config.yaml:/etc/otelcol-contrib/config.yaml
+    ports:
+      - 1888:1888 # pprof extension
+      - 8888:8888 # Prometheus metrics exposed by the Collector
+      - 8889:8889 # Prometheus exporter metrics
+      - 13133:13133 # health_check extension
+      - 4317:4317 # OTLP gRPC receiver
+      - 4318:4318 # OTLP http receiver
+      - 55679:55679 # zpages extension
+    networks:
+      - api
+      - otel-network
+
+  grafana:
+    image: grafana/grafana:12.3.3
+    container_name: grafana
+    profiles: [ "app-monitoring" ]
+    volumes:
+      - ./.docker/otel/grafana_datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml
+    environment:
+      GF_SECURITY_ADMIN_USER: "admin"
+      GF_SECURITY_ADMIN_PASSWORD: "admin"
+      GF_USERS_ALLOW_SIGN_UP: "true"
+      GF_SERVER_PROTOCOL: "http"
+      GF_SERVER_HTTP_PORT: "3000"
+      GF_SERVER_DOMAIN: "grafana.local"
+      GF_FEATURE_TOGGLES_ENABLE: "traceqlEditor metricsSummary accessControlOnCall"
+      GF_INSTALL_PLUGINS: "https://storage.googleapis.com/integration-artifacts/grafana-lokiexplore-app/grafana-lokiexplore-app-latest.zip;grafana-lokiexplore-app https://storage.googleapis.com/integration-artifacts/grafana-exploretraces-app/grafana-exploretraces-app-latest.zip;grafana-traces-app"
+      GF_PLUGINS_PREINSTALL_SYNC: "grafana-pyroscope-app"
+    networks:
+      - otel-network
+      - pyroscope-network
+    ports:
+      - "3000:3000"
+
+  tempo:
+    image: grafana/tempo:2.5.0
+    command: ["-config.file=/etc/tempo.yaml"]
+    container_name: tempo`
+    profiles: [ "app-monitoring" ]
+    volumes:
+      - ./.docker/otel/tempo.yaml:/etc/tempo.yaml
+      #- ./tempo-data:/var/tempo
+    ports:
+      - "3200" # tempo
+      - "4317" # otlp grpc
+    networks:
+      - otel-network
+    depends_on:
+      - otel-collector
+      - prometheus
+
+  prometheus:
+    image: prom/prometheus:v2.50.1
+    container_name: prometheus
+    profiles: [ "app-monitoring" ]
+    ports:
+      - 9090:9090
+    volumes:
+      - ./.docker/otel/prometheus.yml:/etc/prometheus/prometheus.yml
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --web.enable-remote-write-receiver
+      - --enable-feature=exemplar-storage
+      - --enable-feature=native-histograms
+    networks:
+      - otel-network
+    depends_on:
+      - otel-collector
+
+  pyroscope:
+    image: grafana/pyroscope:latest
+    hostname: pyroscope
+    container_name: pyroscope
+    ports:
+      - "4040:4040"
+    networks:
+      - pyroscope-network
+    command:
+      - "server"
+    # volumes:
+    #   - ./.docker/otel/pyroscope-config.yaml:/etc/pyroscope/config.yaml
+    #environment:
+      #- PYROSCOPE_SERVER_ADDRESS=http://pyroscope:4040
+    #   - PYROSCOPE_AUTH_TOKEN=pyroscope-token
+    #   - PYROSCOPE_APP_NAME=hex-api-go
+
 networks:
   api:
     driver: bridge
+  otel-network:
+    driver: bridge
+  pyroscope-network:
+    driver: bridge
+    name: pyroscope-network

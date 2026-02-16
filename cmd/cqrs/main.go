@@ -62,10 +62,10 @@ func main() {
 	for i := 1; i <= maxPublishMessages; i++ {
 		fmt.Println("publish command message...")
 
-		busA := gomes.CommandBus()
+		busA,_ := gomes.CommandBus()
 		busA.Send(context.Background(), CreateAction("COMMAND", "123"))
 
-		busB := gomes.QueryBus()
+		busB,_ := gomes.QueryBus()
 		busB.Send(context.Background(), CreateAction("QUERY", "123"))
 
 		time.Sleep(time.Second * 3)

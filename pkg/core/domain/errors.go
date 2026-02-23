@@ -11,30 +11,72 @@ package domain
 import "fmt"
 
 type (
+	abstractError struct {
+		message  string
+		previous error
+	}
 	NotFoundError struct {
-		Message  string
-		Previous error
+		abstractError
 	}
 	InternalError struct {
-		Message  string
-		Previous error
+		abstractError
 	}
 	ValidationError struct {
-		Message  string
-		Previous error
+		abstractError
 	}
 	AlreadyExistsError struct {
-		Message  string
-		Previous error
+		abstractError
 	}
 	DependencyError struct {
-		Message  string
-		Previous error
+		abstractError
+	}
+	InvalidDataError struct {
+		abstractError
 	}
 )
 
+func NewDependencyError(message string) *DependencyError {
+	return &DependencyError{
+		abstractError{
+			message: message,
+		},
+	}
+}
+
+func NewNotFoundError(message string) *NotFoundError {
+	return &NotFoundError{
+		abstractError{
+			message: message,
+		},
+	}
+}
+
+func NewInternalError(message string) *InternalError {
+	return &InternalError{
+		abstractError{
+			message: message,
+		},
+	}
+}
+
+func NewAlreadyExistsError(message string) *AlreadyExistsError {
+	return &AlreadyExistsError{
+		abstractError{
+			message: message,
+		},
+	}
+}
+
+func NewInvalidDataError(message string) *InvalidDataError {
+	return &InvalidDataError{
+		abstractError{
+			message: message,
+		},
+	}
+}
+
 // retorna a mensagem e caso haja um erro anterior, concatena na mensagem atual
-func buildMessage(message string, previous error) string {
+func (e *abstractError) buildMessage(message string, previous error) string {
 	err := message
 	if previous != nil {
 		err = fmt.Sprintf("%s; previous: %v", message, previous.Error())
@@ -42,22 +84,11 @@ func buildMessage(message string, previous error) string {
 	return err
 }
 
-func (e *NotFoundError) Error() string {
-	return buildMessage(e.Message, e.Previous)
+func (e *abstractError) SetPreviousError(previous error) *abstractError {
+	e.previous = previous
+	return e
 }
 
-func (e *InternalError) Error() string {
-	return buildMessage(e.Message, e.Previous)
-}
-
-func (e *ValidationError) Error() string {
-	return buildMessage(e.Message, e.Previous)
-}
-
-func (e *AlreadyExistsError) Error() string {
-	return buildMessage(e.Message, e.Previous)
-}
-
-func (e *DependencyError) Error() string {
-	return buildMessage(e.Message, e.Previous)
+func (e *abstractError) Error() string {
+	return e.buildMessage(e.message, e.previous)
 }

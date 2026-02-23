@@ -1,9 +1,5 @@
 package domain
 
-import (
-	uuidLib "github.com/google/uuid"
-)
-
 /*
 Abstração de Entidade de Domínio.
 
@@ -27,13 +23,9 @@ type Entity struct {
 
 // cria a instancia de entidade de dominio
 func NewEntity(uuid string) *Entity {
-	entity := Entity{}
-	if uuid == "" {
-		entity.uuid = uuidLib.NewString()
-	} else {
-		entity.uuid = uuid
+	return &Entity{
+		uuid: uuid,
 	}
-	return &entity
 }
 
 func (entity *Entity) Uuid() string {

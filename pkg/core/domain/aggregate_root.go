@@ -15,31 +15,33 @@ type AggregateRoot struct {
 // cria a intancia de raiz agregada
 func NewAggregateRoot(uuid string) *AggregateRoot {
 	return &AggregateRoot{
-		Entity: NewEntity(uuid),
+		NewEntity(uuid),
+		[]domainEvent{},
 	}
 }
 
-// retorna o UUID da Entidade
-func (aggregate *AggregateRoot) Uuid() string {
-	return aggregate.Entity.Uuid()
-}
-
 // retorna os eventos de dominios criados
-func (aggregate *AggregateRoot) DomainEvents() []domainEvent {
-	return aggregate.domainEvents
+func (a *AggregateRoot) DomainEvents() []domainEvent {
+	return a.domainEvents
 }
 
 // adiciona um evento de dominio na lista de despacho de eventos
-func (aggregate *AggregateRoot) AddDomainEvent(event domainEvent) {
-	aggregate.domainEvents = append(aggregate.domainEvents, event)
+func (a *AggregateRoot) AddDomainEvent(event domainEvent) {
+	a.domainEvents = append(a.domainEvents, event)
 }
 
 // remove um evento de dominio da lista de despacho
-func (aggregate *AggregateRoot) RemoveDomainEvent(event domainEvent) {
-
+func (a *AggregateRoot) RemoveDomainEvent(event domainEvent) {
+	for i, e := range a.domainEvents {
+		if e == event {
+			a.domainEvents = append(a.domainEvents[:i], a.domainEvents[i+1:]...)
+			a.domainEvents[len(a.domainEvents)-1] = nil
+			break
+		}
+	}
 }
 
 // esvazia a lista de despacho de eventos de dominio
-func (aggregate *AggregateRoot) ClearEvents() {
-
+func (a *AggregateRoot) ClearEvents() {
+	a.domainEvents = []domainEvent{}
 }

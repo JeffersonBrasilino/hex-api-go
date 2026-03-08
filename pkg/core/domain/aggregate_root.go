@@ -1,47 +1,72 @@
+// Aggregate root and domain events for DDD-style aggregates.
+//
+// Intent: Provide a root type that holds identity and a list of domain
+// events to dispatch after persistence.
+// Objective: Support event sourcing and auditing. See:
+// https://martinfowler.com/bliki/DDD_Aggregate.html
 package domain
 
-/*
-Abstração de raiz agregada.
+import (
+	"fmt"
+	"time"
+)
 
-Um agregado DDD é um cluster de objetos de domínio que pode ser tratado como uma única unidade.
-
-[https://martinfowler.com/bliki/DDD_Aggregate.html]
-*/
-type AggregateRoot struct {
-	*Entity
-	domainEvents []domainEvent
+// DomainEvent is a single occurrence in the domain, with payload and metadata.
+//
+// Intent: Represent something that happened for dispatch and auditing.
+// Implementations must provide Payload, OcurredOn, and Uuid.
+type DomainEvent interface {
+	Payload() any
+	OcurredOn() time.Time
+	Uuid() string
 }
 
-// cria a intancia de raiz agregada
+// AggregateRoot embeds Entity and holds domain events for later dispatch.
+type AggregateRoot struct {
+	*Entity
+	domainEvents map[string]DomainEvent
+}
+
+// NewAggregateRoot creates an aggregate root with the given UUID.
+//
+// Parameters: uuid — unique identifier for the aggregate.
+// Returns: a new *AggregateRoot with an empty event list.
 func NewAggregateRoot(uuid string) *AggregateRoot {
 	return &AggregateRoot{
 		NewEntity(uuid),
-		[]domainEvent{},
+		map[string]DomainEvent{},
 	}
 }
 
-// retorna os eventos de dominios criados
-func (a *AggregateRoot) DomainEvents() []domainEvent {
+// DomainEvents returns the map of domain events to be dispatched.
+//
+// Returns: map from event UUID to DomainEvent (read-only view; do not modify).
+func (a *AggregateRoot) DomainEvents() map[string]DomainEvent {
 	return a.domainEvents
 }
 
-// adiciona um evento de dominio na lista de despacho de eventos
-func (a *AggregateRoot) AddDomainEvent(event domainEvent) {
-	a.domainEvents = append(a.domainEvents, event)
-}
-
-// remove um evento de dominio da lista de despacho
-func (a *AggregateRoot) RemoveDomainEvent(event domainEvent) {
-	for i, e := range a.domainEvents {
-		if e == event {
-			a.domainEvents = append(a.domainEvents[:i], a.domainEvents[i+1:]...)
-			a.domainEvents[len(a.domainEvents)-1] = nil
-			break
-		}
+// AddDomainEvent adds an event to the dispatch list.
+//
+// Parameters: event — the domain event (must not be nil).
+// Returns: nil on success; error if event is nil.
+// Behavior: Events are keyed by event.Uuid(); duplicate UUIDs overwrite.
+func (a *AggregateRoot) AddDomainEvent(event DomainEvent) error {
+	if event == nil {
+		return fmt.Errorf("event is nil")
 	}
+	a.domainEvents[event.Uuid()] = event
+	return nil
 }
 
-// esvazia a lista de despacho de eventos de dominio
+// RemoveDomainEvent removes the event with the given UUID from the list.
+//
+// Parameters: uuid — the UUID of the event to remove.
+// Behavior: No-op if the UUID is not present.
+func (a *AggregateRoot) RemoveDomainEvent(uuid string) {
+	delete(a.domainEvents, uuid)
+}
+
+// ClearEvents removes all domain events from the dispatch list.
 func (a *AggregateRoot) ClearEvents() {
-	a.domainEvents = []domainEvent{}
+	a.domainEvents = make(map[string]DomainEvent)
 }

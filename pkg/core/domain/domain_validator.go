@@ -1,3 +1,9 @@
+// Package domain provides domain validation, entities, and error types.
+//
+// Intent: Centralize domain building blocks (validation by struct tags,
+// entities with identity, aggregate roots, and standardized errors).
+// Objective: Enable consistent validation and error handling across
+// the application without depending on infrastructure details.
 package domain
 
 import (
@@ -81,9 +87,9 @@ func ResetDomainValidatorForTest() {
 //     returns (nil, nil).
 //
 // Returns:
-//   - map[string]validateResult: a map keyed by the dotted field path
-//     (e.g. "Address.Street") containing validation outcomes for failing
-//     fields. If the map is empty, no validation errors were found.
+//   - map[string]validateResult: map keyed by dotted field path
+//     (e.g. "Address.Street") with validation outcomes for failing fields.
+//     Empty map means no validation errors.
 //   - error: non-nil if an internal error occurred while building the schema.
 //
 // Behavior:

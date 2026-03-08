@@ -1,3 +1,9 @@
+// Validators used by the domain validator (tag-based validation).
+//
+// Intent: Provide required, gte, lte, and len checks for struct fields
+// when using the domainValidator tag.
+// Objective: Keep validation logic in one place and reusable by
+// domain_validator without exporting these helpers.
 package domain
 
 import (

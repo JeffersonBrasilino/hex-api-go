@@ -1,33 +1,37 @@
 package domain
 
-/*
-Abstração de Entidade de Domínio.
-
-Uma Entidade de Domínio é o local onde as regras de negócio residem.
-as regras implementadas na entidade devem ser totalmente agnósticas
-de detalhes de implementeções(banco de dados, integrações de terceiros e etc).
-
-ex:
-
-	type item struct{
-		*Entity
-	}
-
-	var itemInstance = &item{
-		Entity:     domain.NewEntity(""),
-	}
-*/
+// Entity is the base type for domain entities with a unique identifier.
+//
+// Intent: Provide a common abstraction where domain rules can live,
+// independent of persistence or external integrations.
+// Objective: Allow embedding Entity in concrete domain types so they
+// share identity handling and stay free of infrastructure concerns.
+//
+// Example:
+//
+//	type item struct {
+//	    *Entity
+//	}
+//	var itemInstance = &item{Entity: domain.NewEntity("")}
 type Entity struct {
 	uuid string
 }
 
-// cria a instancia de entidade de dominio
+// NewEntity builds a new domain entity with the given UUID.
+//
+// Parameters:
+//   - uuid: unique identifier for the entity (may be empty).
+//
+// Returns: a non-nil *Entity holding the given uuid.
 func NewEntity(uuid string) *Entity {
 	return &Entity{
 		uuid: uuid,
 	}
 }
 
+// Uuid returns the entity's unique identifier.
+//
+// Returns: the uuid string passed at construction (may be empty).
 func (entity *Entity) Uuid() string {
 	return entity.uuid
 }

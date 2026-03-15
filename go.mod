@@ -1,4 +1,4 @@
-module github.com/hex-api-go
+module github.com/jeffersonbrasilino/hex-api-go
 
 go 1.25.1
 
@@ -7,10 +7,11 @@ require (
 	github.com/gofiber/fiber/v2 v2.52.9
 	github.com/google/uuid v1.6.0
 	github.com/grafana/pyroscope-go v1.2.7
-	github.com/jeffersonbrasilino/gomes v0.0.0-00010101000000-000000000000
 	go.opentelemetry.io/otel v1.38.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.38.0
 	go.opentelemetry.io/otel/sdk v1.38.0
+	github.com/jeffersonbrasilino/ddgo v1.0.0
+	github.com/jeffersonbrasilino/gomes v1.0.0
 )
 
 require (
@@ -48,5 +49,3 @@ require (
 	google.golang.org/grpc v1.75.0 // indirect
 	google.golang.org/protobuf v1.36.8 // indirect
 )
-
-replace github.com/jeffersonbrasilino/gomes => ./pkg/core/infrastructure/gomes

@@ -33,6 +33,10 @@ github.com/grafana/pyroscope-go/godeltaprof v0.1.9 h1:c1Us8i6eSmkW+Ez05d3co8kasn
 github.com/grafana/pyroscope-go/godeltaprof v0.1.9/go.mod h1:2+l7K7twW49Ct4wFluZD3tZ6e0SjanjcUUBPVD/UuGU=
 github.com/grpc-ecosystem/grpc-gateway/v2 v2.27.2 h1:8Tjv8EJ+pM1xP8mK6egEbD1OgnVTyacbefKhmbLhIhU=
 github.com/grpc-ecosystem/grpc-gateway/v2 v2.27.2/go.mod h1:pkJQ2tZHJ0aFOVEEot6oZmaVEZcRme73eIFmhiVuRWs=
+github.com/jeffersonbrasilino/ddgo v1.0.0 h1:3j7cvm2oAOqOVcAAsL4jH53agJpeT7KsVecMmny42sc=
+github.com/jeffersonbrasilino/ddgo v1.0.0/go.mod h1:fjJ8/aqnd8nGSaJUYMoM792gfPe/C5bugpZNjrQQk3Y=
+github.com/jeffersonbrasilino/gomes v1.0.0 h1:tIW4IhOT4DdTwQql19vTSyMqpaU8d65P623Rf1nbaiw=
+github.com/jeffersonbrasilino/gomes v1.0.0/go.mod h1:CZELPz8gNsbdnpyPEn5+o1NC/L69ou1XinpjXvOJmYc=
 github.com/klauspost/compress v1.17.9 h1:6KIumPrER1LHsvBVuDa0r5xaG0Es51mhhB9BQB2qeMA=
 github.com/klauspost/compress v1.17.9/go.mod h1:Di0epgTjJY877eYKx5yC51cX2A2Vl2ibi7bDH9ttBbw=
 github.com/leodido/go-urn v1.4.0 h1:WT9HwE9SGECu3lg4d/dIA+jxlljEa1/ffXKmRjqdmIQ=

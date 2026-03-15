@@ -1,4 +1,4 @@
-TIMESTAMP := $(shell date +'%Y-%m-%d_%H-%M-%S')
+PACKAGES_TESTS := $(shell go list ./...)
 docker-monitor:
 	docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock -v ./config:/.config/jesseduffield/lazydocker lazyteam/lazydocker
 
@@ -15,15 +15,14 @@ start-dev:
 	docker compose up -d
 
 test:
-	go clean -testcache
-	go test -race -v ./...
+	go test -count=1 -race -v $(PACKAGES_TESTS)
 	
 coverage-terminal:
-	go clean -testcache 
-	go test -race -cover ./...
+	go test -covermode=atomic -count=1 -race -coverprofile=coverage.out $(PACKAGES_TESTS)
+	go tool cover -func=coverage.out
 
 coverage-html:
-	go test -race -coverprofile=coverage.out ./...
+	go test -count=1 -race -coverprofile=coverage.out $(PACKAGES_TESTS)
 	go tool cover -html=coverage.out -o coverage.html
 
 pprof-goroutine:

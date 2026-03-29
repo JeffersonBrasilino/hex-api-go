@@ -4,13 +4,17 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"net/http"
+	"os"
 	"os/signal"
 	"syscall"
-	"os"
-	"github.com/gofiber/fiber/v2"
+
+	"github.com/gin-gonic/gin"
 	"github.com/grafana/pyroscope-go"
-	"github.com/hex-api-go/internal/user"
 	gomes "github.com/jeffersonbrasilino/gomes"
+	"github.com/jeffersonbrasilino/hex-api-go/internal/user"
+	"github.com/jeffersonbrasilino/hex-api-go/pkg"
+	httpPkg "github.com/jeffersonbrasilino/hex-api-go/pkg/http"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"go.opentelemetry.io/otel/propagation"
@@ -20,30 +24,45 @@ import (
 func main() {
 
 	slog.Info("starting api server...")
-	app := fiber.New()
+	httpServer := gin.Default()
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	initPyroscope()
+	//middlewares
+	httpServer.Use(httpPkg.BadRequestResponseParser())
 
-	user.Bootstrap().
-		WithHttpProtocol(ctx, app)
+	//bootstrap modules 
+	modules := []pkg.Module{
+		user.NewUserModule(httpServer, nil),
+	}
 
-	tp := initOtelTraceProvider()
-	gomes.EnableOtelTrace()
+	for _, module := range modules {
+		if err := module.Register(ctx); err != nil {
+			panic(err)
+		}
+	}
+
+	//tp := initOtelTraceProvider()
+	//initPyroscope()
+	//gomes.EnableOtelTrace()
 	gomes.Start()
+
+	server := &http.Server{
+		Addr: ":4000",
+		Handler: httpServer,
+	}
 
 	go func() {
 		slog.Info("http server listening on port 4000")
-		if err := app.Listen(":4000"); err != nil {
+		if err := server.ListenAndServe(); err != nil {
 			panic(err)
 		}
 	}()
 
 	<-ctx.Done()
 	gomes.Shutdown()
-	tp.Shutdown(ctx)
-	if err := app.Shutdown(); err != nil {
+	//tp.Shutdown(ctx)
+	if err := server.Shutdown(ctx); err != nil {
 		slog.Info("shutting down server error")
 	}
 	slog.Info("shutdown completed")
@@ -79,7 +98,7 @@ func initPyroscope() {
 		ServerAddress: "http://pyroscope:4040",
 
 		// you can disable logging by setting this to nil
-		Logger: pyroscope.StandardLogger,
+		Logger: nil,
 
 		// you can provide static tags via a map:
 		Tags: map[string]string{"hostname": os.Getenv("HOSTNAME")},

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/hex-api-go/internal/user/domain"
+	"github.com/jeffersonbrasilino/hex-api-go/internal/user/domain"
 )
 
 type UserRepository struct{}

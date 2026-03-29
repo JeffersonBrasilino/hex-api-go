@@ -2,10 +2,10 @@ package createuser
 
 import (
 	"context"
-	"fmt"
 
-	"github.com/hex-api-go/internal/user/domain/contract"
 	"github.com/jeffersonbrasilino/gomes/otel"
+	"github.com/jeffersonbrasilino/hex-api-go/internal/user/domain"
+	"github.com/jeffersonbrasilino/hex-api-go/internal/user/domain/contract"
 )
 
 type CommandHandler struct {
@@ -13,7 +13,6 @@ type CommandHandler struct {
 	tracer        otel.OtelTrace
 	messageHeader map[string]string
 }
-
 type ResultCm struct {
 	Result any
 }
@@ -21,19 +20,15 @@ type ResultCm struct {
 func NewComandHandler(repository contract.UserRepository) *CommandHandler {
 	return &CommandHandler{
 		repository: repository,
-		tracer:     otel.InitTrace("command-handler"),
 	}
 }
 
 func (c *CommandHandler) Handle(ctx context.Context, data *Command) (string, error) {
-	fmt.Println("HEADER ACESSOR >>>>>>>", c.messageHeader)
-	ctx, span := c.tracer.Start(
-		ctx,
-		"Handle Command",
-		otel.WithMessagingSystemType(otel.MessageSystemTypeInternal),
-		otel.WithSpanOperation(otel.SpanOperationProcess),
-		otel.WithSpanKind(otel.SpanKindInternal),
-	)
-	defer span.End()
-	return "deu tudo certo", nil
+	props := &domain.UserProps{}
+	_, err := domain.NewUser(props)
+
+	if err != nil {
+		return "", err
+	}
+	return "okok", nil
 }

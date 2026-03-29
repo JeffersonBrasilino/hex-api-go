@@ -1,6 +1,6 @@
 package entity
 
-import "github.com/hex-api-go/pkg/core/domain"
+import domain "github.com/jeffersonbrasilino/ddgo"
 
 type Person struct {
 	*domain.Entity

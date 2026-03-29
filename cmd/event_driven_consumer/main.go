@@ -82,6 +82,8 @@ func (c *CommandHandler) Handle(ctx context.Context, data *Command) (*ResultCm, 
 	//return nil, fmt.Errorf("DEU RUIM AO PROCESSAR A MENSAGEM")
 }
 
+//when async handler and header is required for the processing.
+//Gomes message core inject the header using this method (satifying the MessageHeaderAccessor contract) before handle message.
 func (c *CommandHandler) SetMessageHeader(header message.Header) {
 	c.header = header
 }
@@ -89,31 +91,42 @@ func (c *CommandHandler) SetMessageHeader(header message.Header) {
 func main() {
 
 	initOtelTraceProvider()
-	ctx, stop := context.WithCancel(context.Background()) //signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	ctx, stop := context.WithCancel(context.Background())
 	defer stop()
 	slog.Info("start message system consumer....")
 
+	//connection channels
 	gomes.AddChannelConnection(
 		kafka.NewConnection("defaultConKafka", []string{"kafka:9092"}),
 	)
+
+	// consumer channel config 
 	topicConsumerChannel := kafka.NewConsumerChannelAdapterBuilder(
 		"defaultConKafka",
 		"gomes.topic",
 		"test_consumer",
 	)
+
+	//configure reply channel using the replyTo header of the message. This way, we can have dynamic reply channels.
 	//topicConsumerChannel.WithSendReplyUsingReplyTo()
+	
+	//configure retries
 	//topicConsumerChannel.WithRetryTimes(2_000, 5_000)
+
+	//configure dlq channel name. This way, we can have a default dlq channel for all consumer channels that don't have a specific dlq channel configured.
 	//topicConsumerChannel.WithDeadLetterChannelName("gomes.dlq")
+
+	//add consumer channel to the system
 	gomes.AddConsumerChannel(topicConsumerChannel)
 
-	//response channel
+	//response channel configuration. This channel will be used to send the response of the message processing.
 	/* responseChannel := kafka.NewPublisherChannelAdapterBuilder(
 		"defaultConKafka",
 		"gomes.response",
 	)
 	gomes.AddPublisherChannel(responseChannel)
 
-	//DLQ channel
+	//DLQ channel configuration.
 	dlqChannel := kafka.NewPublisherChannelAdapterBuilder(
 		"defaultConKafka",
 		"gomes.dlq",
@@ -124,13 +137,12 @@ func main() {
 	gomes.AddActionHandler(NewComandHandler())
 
 	//enable otel trace for the message system
-	gomes.EnableOtelTrace()
-	initPyroscope()
-	
+	//gomes.EnableOtelTrace()
+
 	//start the message system
 	gomes.Start()
 
-	//go publishMessage()
+	go publishMessage()
 
 	//For the consumer channel endpoint,
 	//the advantage of having an abstraction between the consumer channel and the consumer endpoint
@@ -141,10 +153,9 @@ func main() {
 		panic(err)
 	}
 
-
 	go func() {
-		err := consumer.WithAmountOfProcessors(50).
-			WithMessageProcessingTimeout(300000).
+		err := consumer.WithAmountOfProcessors(1).
+			WithMessageProcessingTimeout(4000).
 			WithStopOnError(false).
 			Run(ctx)
 
@@ -154,9 +165,6 @@ func main() {
 			stop()
 		}
 	}()
-
-	/* time.Sleep(time.Second * 9)
-	stop() */
 
 	<-ctx.Done()
 	//message system graceful shutdown
@@ -189,13 +197,13 @@ func initOtelTraceProvider() *trace.TracerProvider {
 	return provider
 }
 
-func initPyroscope() {
+func initPyroscope() (*pyroscope.Profiler, error) {
 	// These 2 lines are only required if you're using mutex or block profiling
 	// Read the explanation below for how to set these rates:
 	//runtime.SetMutexProfileFraction(5)
 	//runtime.SetBlockProfileRate(5)
 
-	pyroscope.Start(pyroscope.Config{
+	return pyroscope.Start(pyroscope.Config{
 		ApplicationName: "event-driven-consumer",
 
 		// replace this with the address of pyroscope server

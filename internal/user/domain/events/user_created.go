@@ -1,20 +1,23 @@
 package events
 
-import "github.com/hex-api-go/pkg/core/domain"
+import "time"
 
 type UserCreated struct {
-	domain.DomainEvent
 	UserCreatedId string
 }
 
 func NewUserCreated(userCreatedId string) *UserCreated {
-	return &UserCreated{UserCreatedId: "123456", DomainEvent: domain.NewDomainEvent()}
+	return &UserCreated{UserCreatedId: "123456"}
 }
 
 func (e *UserCreated) Payload() any {
 	return "UserCreated PAYLOAD"
 }
 
-func (e *UserCreated) Headers() any {
-	return "UserCreated HEADERS"
+func (e *UserCreated) OcurredOn() time.Time {
+	return time.Now()
+}
+
+func (e *UserCreated) Uuid() string {
+	return "hueheuhueh"
 }

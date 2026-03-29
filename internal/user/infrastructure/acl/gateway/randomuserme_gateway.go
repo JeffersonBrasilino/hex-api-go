@@ -4,8 +4,7 @@ import (
 	"encoding/json"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/hex-api-go/internal/user/infrastructure/acl/translator"
-	"github.com/hex-api-go/pkg/core/domain"
+	"github.com/jeffersonbrasilino/hex-api-go/internal/user/infrastructure/acl/translator"
 )
 
 type RandonUserMeGateway struct{}
@@ -19,7 +18,7 @@ func (a *RandonUserMeGateway) GetPersonData() (*translator.PersonDto, error) {
 	_, body, errs := request.Bytes()
 
 	if len(errs) > 0 {
-		return nil, &domain.InternalError{Message: "error"}
+		return nil, nil //&domain.InternalError{Message: "error"}
 	}
 
 	var p map[string]any
@@ -30,7 +29,7 @@ func (a *RandonUserMeGateway) GetPersonData() (*translator.PersonDto, error) {
 	name := result["name"].(map[string]any)
 
 	if err != nil {
-		return nil, &domain.InternalError{Message: "unmarshal error"}
+		return nil, nil //&domain.InternalError{Message: "unmarshal error"}
 	}
 
 	return &translator.PersonDto{

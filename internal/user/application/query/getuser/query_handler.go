@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/hex-api-go/internal/user/domain/contract"
+	"github.com/jeffersonbrasilino/hex-api-go/internal/user/domain/contract"
 )
 
 type QueryHandler struct {

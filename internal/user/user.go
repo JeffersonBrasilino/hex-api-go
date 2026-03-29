@@ -2,82 +2,55 @@ package user
 
 import (
 	"context"
-	"fmt"
+	"log/slog"
 
-	"github.com/gofiber/fiber/v2"
-	"github.com/hex-api-go/internal/user/application/command/createuser"
-	"github.com/hex-api-go/internal/user/domain/contract"
-	aclcontract "github.com/hex-api-go/internal/user/infrastructure/acl/contract"
-	"github.com/hex-api-go/internal/user/infrastructure/acl/facade"
-	"github.com/hex-api-go/internal/user/infrastructure/acl/gateway"
-	"github.com/hex-api-go/internal/user/infrastructure/database"
-	"github.com/hex-api-go/internal/user/infrastructure/http"
-	"github.com/hex-api-go/pkg/core/infrastructure/rabbitmq"
-	gomes "github.com/jeffersonbrasilino/gomes"
+	"github.com/gin-gonic/gin"
+	"github.com/jeffersonbrasilino/gomes"
+	_ "github.com/jeffersonbrasilino/gomes/channel/kafka"
+	"github.com/jeffersonbrasilino/hex-api-go/internal/user/application/command/createuser"
+	"github.com/jeffersonbrasilino/hex-api-go/internal/user/domain/contract"
+	aclcontract "github.com/jeffersonbrasilino/hex-api-go/internal/user/infrastructure/acl/contract"
+	"github.com/jeffersonbrasilino/hex-api-go/internal/user/infrastructure/acl/facade"
+	"github.com/jeffersonbrasilino/hex-api-go/internal/user/infrastructure/acl/gateway"
+	"github.com/jeffersonbrasilino/hex-api-go/internal/user/infrastructure/database"
+	"github.com/jeffersonbrasilino/hex-api-go/internal/user/infrastructure/http"
 )
 
-var userModuleInstance *userModule
-
 type userModule struct {
+	httpLib    *gin.Engine
+	db         any
 	repository contract.UserRepository
 	dataSource contract.UserDataSource
 }
 
-func Bootstrap() *userModule {
-
-	if userModuleInstance != nil {
-		return userModuleInstance
-	}
-
-	userModuleInstance = &userModule{
-		repository: database.NewUserRepository(),
-		dataSource: facade.NewUserFacade(makeAclGateways()),
-	}
-	registerActions()
-
-	return userModuleInstance
-}
-
-func makeAclGateways() map[string]aclcontract.PersonGateway {
-	return map[string]aclcontract.PersonGateway{
-		"gatewayA": gateway.NewJsonPlaceholderGateway(),
-		"gatewayB": gateway.NewRandonUserMeGateway(),
+func NewUserModule(httpLib *gin.Engine, db any) *userModule {
+	return &userModule{
+		httpLib: httpLib,
+		db:      db,
 	}
 }
 
-func (u *userModule) WithHttpProtocol(ctx context.Context, httpLib *fiber.App) *userModule {
+func (u *userModule) Register(ctx context.Context) error {
+	u.repository = database.NewUserRepository()
+	u.dataSource = facade.NewUserFacade(
+		map[string]aclcontract.PersonGateway{
+			"gatewayA": gateway.NewJsonPlaceholderGateway(),
+			"gatewayB": gateway.NewRandonUserMeGateway(),
+		},
+	)
 
-	registerPublisher()
+	u.registerActions()
+	u.WithHttpProtocol()
+	return nil
+}
 
-	router := httpLib.Group("/users")
-	http.CreateUser(ctx, router)
-	fmt.Println("User module started with http. Prefix: /users")
+func (u *userModule) WithHttpProtocol() *userModule {
+	router := u.httpLib.Group("/users")
+	http.CreateUserHandler(router)
+	slog.Info("User module started with http", "prefix", "/users")
 	return u
 }
 
-func registerActions() {
-	gomes.AddActionHandler(createuser.NewComandHandler(userModuleInstance.repository))
-	//gomes.AddActionHandler(getuser.NewQueryHandler(nil))
-}
-
-func registerPublisher() {
-	/* gomes.AddChannelConnection(
-		kafka.NewConnection("defaultConKafka", []string{"kafka:9092"}),
-	)
-
-	a := kafka.NewPublisherChannelAdapterBuilder(
-		"defaultConKafka",
-		"gomes.topic",
-	)
-	//a.WithReplyChannelName("test_response_channel")
-	gomes.AddPublisherChannel(a) */
-
-	gomes.AddChannelConnection(
-		rabbitmq.NewConnection("rabbit-test", "admin:admin@rabbitmq:5672"),
-	)
-	pubChan := rabbitmq.NewPublisherChannelAdapterBuilder("rabbit-test", "gomes-exchange").
-		WithChannelType(rabbitmq.ProducerQueue)
-		//WithExchangeType(rabbitmq.ExchangeFanout).
-		//WithExchangeRoutingKeys("fila-1")
-	gomes.AddPublisherChannel(pubChan)
+func (u *userModule) registerActions() {
+	gomes.AddActionHandler(createuser.NewComandHandler(u.repository))
 }

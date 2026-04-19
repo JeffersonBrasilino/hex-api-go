@@ -9,21 +9,19 @@ import (
 	_ "github.com/jeffersonbrasilino/gomes/channel/kafka"
 	"github.com/jeffersonbrasilino/hex-api-go/internal/user/application/command/createuser"
 	"github.com/jeffersonbrasilino/hex-api-go/internal/user/domain/contract"
-	aclcontract "github.com/jeffersonbrasilino/hex-api-go/internal/user/infrastructure/acl/contract"
-	"github.com/jeffersonbrasilino/hex-api-go/internal/user/infrastructure/acl/facade"
-	"github.com/jeffersonbrasilino/hex-api-go/internal/user/infrastructure/acl/gateway"
 	"github.com/jeffersonbrasilino/hex-api-go/internal/user/infrastructure/database"
 	"github.com/jeffersonbrasilino/hex-api-go/internal/user/infrastructure/http"
+	"gorm.io/gorm"
 )
 
 type userModule struct {
 	httpLib    *gin.Engine
-	db         any
+	db         *gorm.DB
 	repository contract.UserRepository
 	dataSource contract.UserDataSource
 }
 
-func NewUserModule(httpLib *gin.Engine, db any) *userModule {
+func NewUserModule(httpLib *gin.Engine, db *gorm.DB) *userModule {
 	return &userModule{
 		httpLib: httpLib,
 		db:      db,
@@ -31,14 +29,7 @@ func NewUserModule(httpLib *gin.Engine, db any) *userModule {
 }
 
 func (u *userModule) Register(ctx context.Context) error {
-	u.repository = database.NewUserRepository()
-	u.dataSource = facade.NewUserFacade(
-		map[string]aclcontract.PersonGateway{
-			"gatewayA": gateway.NewJsonPlaceholderGateway(),
-			"gatewayB": gateway.NewRandonUserMeGateway(),
-		},
-	)
-
+	u.repository = database.NewGormUserRepository(u.db)
 	u.registerActions()
 	u.WithHttpProtocol()
 	return nil

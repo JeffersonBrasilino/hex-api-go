@@ -14,11 +14,12 @@ import (
 	gomes "github.com/jeffersonbrasilino/gomes"
 	"github.com/jeffersonbrasilino/hex-api-go/internal/user"
 	"github.com/jeffersonbrasilino/hex-api-go/pkg"
-	httpPkg "github.com/jeffersonbrasilino/hex-api-go/pkg/http"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/trace"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 )
 
 func main() {
@@ -28,32 +29,31 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	//middlewares
-	httpServer.Use(httpPkg.BadRequestResponseParser())
-
-	//bootstrap modules 
+	dbConn := connectToDatabase()
+	//tp := initOtelTraceProvider()
+	//initPyroscope()
+	
+	//bootstrap modules
 	modules := []pkg.Module{
-		user.NewUserModule(httpServer, nil),
+		user.NewUserModule(httpServer, dbConn),
 	}
-
+	
 	for _, module := range modules {
 		if err := module.Register(ctx); err != nil {
 			panic(err)
 		}
 	}
-
-	//tp := initOtelTraceProvider()
-	//initPyroscope()
-	//gomes.EnableOtelTrace()
+	
 	gomes.Start()
+	//gomes.EnableOtelTrace()
 
 	server := &http.Server{
-		Addr: ":4000",
+		Addr:    fmt.Sprintf(":%s", os.Getenv("APP_PORT")),
 		Handler: httpServer,
 	}
 
 	go func() {
-		slog.Info("http server listening on port 4000")
+		slog.Info("http server listening", "port", os.Getenv("APP_PORT"))
 		if err := server.ListenAndServe(); err != nil {
 			panic(err)
 		}
@@ -67,6 +67,23 @@ func main() {
 	}
 	slog.Info("shutdown completed")
 
+}
+
+func connectToDatabase() *gorm.DB {
+	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s",
+		os.Getenv("POSTGRES_HOST"),
+		os.Getenv("POSTGRES_USER"),
+		os.Getenv("POSTGRES_PASS"),
+		os.Getenv("POSTGRES_DBNAME"),
+		os.Getenv("POSTGRES_PORT"))
+
+	dbConn, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+
+	if err != nil {
+		panic(fmt.Errorf("failed to connect to database: %w", err))
+	}
+
+	return dbConn
 }
 
 func initOtelTraceProvider() *trace.TracerProvider {
@@ -95,7 +112,7 @@ func initPyroscope() {
 		ApplicationName: os.Getenv("APP_NAME"),
 
 		// replace this with the address of pyroscope server
-		ServerAddress: "http://pyroscope:4040",
+		ServerAddress: os.Getenv("PYROSCOPE_SERVER_ADDRESS"),
 
 		// you can disable logging by setting this to nil
 		Logger: nil,

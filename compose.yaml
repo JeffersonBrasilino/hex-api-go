@@ -13,24 +13,12 @@ services:
       - "${APP_PORT}:${APP_PORT}"
       - "6060:6060"
     mem_limit: 1g
+    depends_on:
+      - db
     networks:
       - api
       - pyroscope-network
-  event-driven-consumer:
-    container_name: ${APP_NAME}-consumer
-    image: golang:1.25-alpine3.22
-    working_dir: /app
-    volumes:
-      - ./:/app
-    env_file:
-      - .env
-    command: go run cmd/event_driven_consumer/main.go
-    # ports:
-    #   - "6060:6060"
-    mem_limit: 1g
-    networks:
-      - api
-      - pyroscope-network
+
   lazydocker:
     build:
       context: https://github.com/jesseduffield/lazydocker.git
@@ -185,6 +173,17 @@ services:
       #- PYROSCOPE_SERVER_ADDRESS=http://pyroscope:4040
     #   - PYROSCOPE_AUTH_TOKEN=pyroscope-token
     #   - PYROSCOPE_APP_NAME=hex-api-go
+  db:
+    image: postgres
+    container_name: ${APP_NAME}-db
+    environment:
+      POSTGRES_PASSWORD: "root"
+    volumes:
+      - /var/lib/postgresql:/var/lib/postgresql
+    ports:
+      - "15432:5432"
+    networks:
+      - api
 
 networks:
   api:

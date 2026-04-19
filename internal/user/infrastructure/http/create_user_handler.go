@@ -3,17 +3,24 @@ package http
 import (
 	"fmt"
 
+	httpLib "net/http"
+
 	"github.com/gin-gonic/gin"
 	gomes "github.com/jeffersonbrasilino/gomes"
 	"github.com/jeffersonbrasilino/gomes/otel"
 	"github.com/jeffersonbrasilino/hex-api-go/internal/user/application/command/createuser"
+	"github.com/jeffersonbrasilino/hex-api-go/pkg/http"
 )
 
 var createUserTrace = otel.InitTrace("create-user-handler")
 
 type CreateUserRequest struct {
-	Username string `json:"username" binding:"required,gte=18"`
-	Password string `json:"password" binding:"required"`
+	Username   string `json:"username" binding:"required"`
+	Password   string `json:"password" binding:"required"`
+	PersonName string `json:"name" binding:"required"`
+	Document   string `json:"document" binding:"required"`
+	BirthDate  string `json:"birthDate" binding:"required"`
+	Email      string `json:"email" binding:"required"`
 }
 
 func CreateUserHandler(router *gin.RouterGroup) {
@@ -28,25 +35,25 @@ func CreateUserHandler(router *gin.RouterGroup) {
 
 		var request CreateUserRequest
 		if err := c.ShouldBindJSON(&request); err != nil {
-			c.Error(err)
-			c.AbortWithStatus(400)
+			http.ErrorWithCode(c, httpLib.StatusBadRequest, err)
 			return
 		}
 
 		bus, _ := gomes.CommandBus()
-		res, err := bus.SendRaw(
-			ctx,
-			"createUser",
-			createuser.CreateCommand(fmt.Sprintf("teste ID: %v", 1), "123"),
-			map[string]string{"header1": "val 1", "header2": "val 2"},
-		)
-		fmt.Println("result", res, err)
-		//res, err := bus.Send(ctx, createuser.CreateCommand("teste", "123"))
+		res, err := bus.Send(ctx, &createuser.Command{
+			Username:   request.Username,
+			Password:   request.Password,
+			PersonName: request.PersonName,
+			Document:   request.Document,
+			BirthDate:  request.BirthDate,
+			Email:      request.Email,
+		})
+
 		if err != nil {
-			c.JSON(500, err.Error())
+			http.Error(c, err)
 			return
 		}
 
-		c.JSON(200, gin.H{"message": "foi OK"})
+		http.Success(c, httpLib.StatusOK, res)
 	})
 }

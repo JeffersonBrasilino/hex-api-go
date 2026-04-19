@@ -1,8 +1,8 @@
 package contract
 
-import "github.com/jeffersonbrasilino/hex-api-go/internal/user/domain/entity"
+import "github.com/jeffersonbrasilino/hex-api-go/internal/user/domain"
 
 type UserDataSource interface {
-	GetPerson() (*entity.Person, error)
+	GetPerson() (*domain.Person, error)
 	WithGateway(gateway string) UserDataSource
 }

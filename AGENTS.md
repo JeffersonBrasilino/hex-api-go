@@ -15,14 +15,36 @@ This project applies hexagonal architecture, Domain-Driven Design (DDD), and Eve
 
 ### Project structure and architecture
 
-Always follow the structure and conventions defined in `docs/ARCHITECTURE.md` when:
+This project follows a strict modular monolith structure where each module under `internal/`
+has three layers: domain, application, and infrastructure. All modules must follow the same
+structure, naming conventions, and implementation patterns. When working with module
+composition, layer boundaries, or component implementation, consult the appropriate skill
+for detailed guidelines.
 
-- creating new files or folders
-- organizing code
-- naming files, folders, functions, types, etc.
-- implementing new features
-- creating new modules
-- creating new module actions
+```
+[project-name]/
+├── cmd/                                # entry points of the application
+│   └── api/
+│       └── main.go
+├── internal/                           # private code of the application
+│   ├── [module-name]/                  # module of the application
+│   │   ├── domain/                     # business rules and contracts
+│   │   ├── application/                # CQRS command/query handlers
+│   │   └── infrastructure/             # adapters (database, http, etc)
+│   └── [module-name]/[module-name].go  # module registration file
+├── pkg/                                # public/shared code
+├── docs/                               # project documentation
+├── .agents/                            # AI agent configuration
+│   └── skills/                         # agent skills (knowledge + actions)
+└── vendor/                             # vendored dependencies
+```
+
+### Principal dependencies
+
+- **Gin** (HTTP server): https://gin-gonic.com/docs/
+- **GORM** (database ORM): https://gorm.io/docs/
+- **Gomes** (CQRS/Event bus): https://github.com/JeffersonBrasilino/gomes
+- **Ddgo** (DDD primitives): https://github.com/JeffersonBrasilino/ddgo
 
 ### Safety and permissions
 
@@ -44,13 +66,6 @@ After codebase changes, execute:
 - `go vet ./...` - check for compilation errors
 - `make test` - run all tests
 - `make coverage-terminal` - run all tests with code coverage
-
-### Principal dependencies documentation
-
-- Gin: https://gin-gonic.com/docs/introduction/
-- Gorm: https://gorm.io/docs/
-- Gomes: https://github.com/JeffersonBrasilino/gomes
-- Ddgo: https://github.com/JeffersonBrasilino/ddgo
 
 ### Git conventions and commit messages
 

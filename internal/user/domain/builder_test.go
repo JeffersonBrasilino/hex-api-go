@@ -8,20 +8,17 @@ import (
 
 func validPersonProps() *domain.WithPersonProps {
 	return &domain.WithPersonProps{
-		Person: &domain.PersonProps{
-			UuId:      "person-uuid-1",
-			Name:      "John Doe",
-			BirthDate: "1990-01-01",
-		},
-		Contacts: []*domain.ContactProps{
+		UuId:      "person-uuid-1",
+		Name:      "John Doe",
+		BirthDate: "1990-01-01",
+		Document:  "123.456.789-00",
+		Contacts: []*domain.WithContactProps{
 			{
 				UuId:        "contact-uuid-1",
 				Description: "test@example.com",
-				ContactType: "email",
+				Main:        true,
+				ContactType: "contact-type-uuid-1",
 			},
-		},
-		Document: &domain.DocumentProps{
-			Value: "123.456.789-00",
 		},
 	}
 }
@@ -68,7 +65,7 @@ func TestBuilder_WithPassword(t *testing.T) {
 	t.Run("Should set password and return the same builder (fluent interface)", func(t *testing.T) {
 		t.Parallel()
 		b := domain.NewBuilder()
-		returned := b.WithPassword("s3cr3t")
+		returned := b.WithPassword("StrongP@ss123")
 		if returned == nil {
 			t.Error("WithPassword() should return a non-nil *Builder, got nil")
 		}
@@ -111,7 +108,7 @@ func TestBuilder_Build(t *testing.T) {
 		user, err := domain.NewBuilder().
 			WithUuId("user-uuid-1").
 			WithUsername("johndoe").
-			WithPassword("s3cr3t").
+			WithPassword("StrongP@ss123").
 			WithPerson(validPersonProps()).
 			Build()
 
@@ -128,7 +125,7 @@ func TestBuilder_Build(t *testing.T) {
 		user, err := domain.NewBuilder().
 			WithUuId("user-uuid-1").
 			WithUsername("johndoe").
-			WithPassword("s3cr3t").
+			WithPassword("StrongP@ss123").
 			WithPerson(&domain.WithPersonProps{}).
 			Build()
 
@@ -143,7 +140,7 @@ func TestBuilder_Build(t *testing.T) {
 	t.Run("Should fail when UserProps are invalid after Build()", func(t *testing.T) {
 		t.Parallel()
 		user, err := domain.NewBuilder().
-			WithPassword("s3cr3t").
+			WithPassword("StrongP@ss123").
 			WithPerson(validPersonProps()).
 			Build()
 
@@ -160,7 +157,7 @@ func TestBuilder_Build(t *testing.T) {
 		b := domain.NewBuilder().
 			WithUuId("u1").
 			WithUsername("jane").
-			WithPassword("p4ssw0rd").
+			WithPassword("StrongP@ss123").
 			WithPerson(validPersonProps())
 
 		if b == nil {

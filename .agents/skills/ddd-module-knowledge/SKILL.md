@@ -6,6 +6,9 @@ description: >
   for domain, application, and infrastructure layers. Use this skill when creating, modifying,
   analyzing, or reviewing DDD modules, or when any task requires understanding the module
   architecture, layer boundaries, or component patterns of this codebase.
+execution_profile:
+  tier: speed
+  strategy: plan
 ---
 
 # DDD Module Knowledge Base
@@ -152,6 +155,20 @@ sequenceDiagram
 | Module registration | `[module-name].go` | `[moduleName]Module` | `userModule` |
 | Module constructor | — | `New[ModuleName]Module` | `NewUserModule` |
 
+## Errors Handling
+
+Always use the errors from the `ddgo` package. Don't create new error types. 
+The mapping between these errors and HTTP status codes is handled automatically by the `pkg/http` package.
+
+| `ddgo` Error | Objective | When to use | HTTP Status |
+|--------------|-----------|-------------|-------------|
+| `ValidationError` | Indicate failures in payload/DTO structural validation | Use in application/infrastructure layers when incoming request data fails basic structural validation (e.g. required fields missing) | 400 Bad Request |
+| `InvalidDataError` | Indicate domain-specific business rule validation failures | Use in domain entities, value objects, and builders when business invariants or domain validations fail | 422 Unprocessable Entity |
+| `NotFoundError` | Indicate that a requested resource was not found | Use in repositories or application layers when a requested entity/aggregate root does not exist in the database | 404 Not Found |
+| `AlreadyExistsError` | Indicate a conflict due to a resource already existing | Use in application layers or repositories when trying to create an entity that violates a unique constraint (e.g. user email already registered) | 409 Conflict |
+| `DependencyError` | Indicate failures in external systems or downstream services | Use in infrastructure adapters when external APIs, message brokers, or third-party services fail to respond correctly | 502 Bad Gateway |
+| `InternalError` | Indicate unexpected systemic failures | Use when unexpected errors occur, like database connection loss, internal panics, or marshaling errors | 500 Internal Server Error |
+
 ## Gotchas
 
 - Aggregate root entity name **must** equal the module name (e.g., module `user` → entity `User`)
@@ -163,6 +180,8 @@ sequenceDiagram
 - The `validate` function in entities is package-private (unexported) — each entity has its own
 - Join table models do **not** embed `gorm.Model` — they use composite primary keys and explicit timestamp fields
 - When using many-to-many with GORM, you must call `db.SetupJoinTable()` **before** `AutoMigrate`
+- When using regex, prebuild the regex in a var (for performance)
+- for the errors always use `ddgo` error types.
 
 ## Layer Implementation Patterns
 

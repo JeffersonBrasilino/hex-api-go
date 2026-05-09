@@ -49,11 +49,13 @@ for detailed guidelines.
 ### Safety and permissions
 
 Allowed without prompt:
+
 - read files, list files
 - go fmt ./..., go vet ./...
 - make test
 
 Ask first:
+
 - package installs
 - deleting files, chmod
 - running full build or end to end suites
@@ -70,7 +72,12 @@ After codebase changes, execute:
 ### Git conventions and commit messages
 
 Always use conventional commits when:
+
 - creating new commits
 - creating new branches
 - creating new tags
 - creating new pull requests
+
+### Skills informations
+
+Whenever you need to execute a skill, state the skill name and a 1-sentence reason for choosing it. Example: 'I will execute the skill [spec-prd] because we need to define the business rules for the new User entity.'

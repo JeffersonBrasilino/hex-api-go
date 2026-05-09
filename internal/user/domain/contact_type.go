@@ -6,35 +6,29 @@ import (
 	"github.com/jeffersonbrasilino/ddgo"
 )
 
-type ContactProps struct {
-	UuId        string       `domainValidator:"required"`
-	Description string       `domainValidator:"required"`
-	ContactType *ContactType `domainValidator:"required"`
-	Main        bool
+type ContactTypeProps struct {
+	UuId        string `domainValidator:"required"`
+	Description string
 }
 
-type Contact struct {
+type ContactType struct {
 	*ddgo.Entity
 	uuId        string
 	description string
-	contactType *ContactType
-	main        bool
 }
 
-func NewContact(props *ContactProps) (*Contact, error) {
-	err := validateContact(props)
+func NewContactType(props *ContactTypeProps) (*ContactType, error) {
+	err := validateContactType(props)
 	if err != nil {
 		return nil, err
 	}
-	return &Contact{
+	return &ContactType{
 		description: props.Description,
-		contactType: props.ContactType,
 		Entity:      ddgo.NewEntity(props.UuId),
-		main:        props.Main,
 	}, nil
 }
 
-func validateContact(props *ContactProps) error {
+func validateContactType(props *ContactTypeProps) error {
 	validator := ddgo.ValidatorInstance()
 	validationErrors, faliedValidation := validator.Validate(props)
 	if faliedValidation != nil {
@@ -52,14 +46,6 @@ func validateContact(props *ContactProps) error {
 	return nil
 }
 
-func (c *Contact) Description() string {
+func (c *ContactType) Description() string {
 	return c.description
-}
-
-func (c *Contact) ContactType() *ContactType {
-	return c.contactType
-}
-
-func (c *Contact) IsMain() bool {
-	return c.main
 }

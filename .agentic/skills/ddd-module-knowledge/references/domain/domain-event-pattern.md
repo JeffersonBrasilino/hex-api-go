@@ -5,7 +5,7 @@ Domain events are objects that represent something that happened in the domain l
 Example:
 
 ```go
-package events
+package event
 
 import "time"
 

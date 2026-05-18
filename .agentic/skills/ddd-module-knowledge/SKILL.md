@@ -28,6 +28,7 @@ implementation patterns that other skills or agents consume when working with mo
 **This skill does NOT cover:**
 - Unit test generation → use `make-unit-tests` skill
 - Code formatting and GoDoc → use `adjust-go-code` skill
+- Make or adjust code
 
 ## Module Architecture Overview
 
@@ -37,7 +38,8 @@ Each module lives under `internal/[module-name]/` and follows this structure:
 internal/[module-name]/
 ├── domain/
 │   ├── contract/
-│   │   └── [aggregate]_repository.go
+│   │   └── repository.go
+│   │   └── [contract-type].go
 │   ├── event/
 │   │   └── [event_name].go
 │   ├── [entity].go
@@ -98,6 +100,7 @@ sequenceDiagram
 - Modules must be registered in `cmd/api/main.go`
 
 ### Domain Layer Rules
+
 - This layer is responsible **only** for business rules
 - Must be independent — zero dependencies on application or infrastructure layers
 - Aggregate root is the only entry point to the domain
@@ -108,6 +111,7 @@ sequenceDiagram
 - Uses the `ddgo` library for DDD primitives
 
 ### Application Layer Rules
+
 - Responsible for orchestrating domain actions (glue between domain and infrastructure)
 - Must be independent of infrastructure details (no HTTP contexts, no direct DB queries)
 - Follows CQRS pattern: Commands (state-changing) separated from Queries (read-only)
@@ -117,6 +121,7 @@ sequenceDiagram
 - Handlers map external DTOs into domain objects via the Builder
 
 ### Infrastructure Layer Rules
+
 - Responsible only for implementation details (adapters)
 - Must implement contracts defined in `domain/contract/`
 - Must not contain business rules
@@ -182,6 +187,10 @@ The mapping between these errors and HTTP status codes is handled automatically 
 - When using many-to-many with GORM, you must call `db.SetupJoinTable()` **before** `AutoMigrate`
 - When using regex, prebuild the regex in a var (for performance)
 - for the errors always use `ddgo` error types.
+- Don`t violate the SOLID principles.
+- Don`t violate the Hexagonal Architecture principles.
+- Don`t violate the DDD principles.
+- Existing domain contracts should not be altered unless the change is explicitly stated in the PRD or if the user requests the change.
 
 ## Layer Implementation Patterns
 

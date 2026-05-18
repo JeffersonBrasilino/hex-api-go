@@ -3,6 +3,10 @@ name: skill-name-here
 description: >
   [O que a skill faz] + [Quando usar]. Be specific about triggers.
   Max 1024 chars. English. Imperative phrasing ("Use when...").
+
+execution_profile:
+  tier: reasoning # [speed | reasoning]
+  strategy: agent # [plan | agent]
 ---
 
 # [Skill Title]

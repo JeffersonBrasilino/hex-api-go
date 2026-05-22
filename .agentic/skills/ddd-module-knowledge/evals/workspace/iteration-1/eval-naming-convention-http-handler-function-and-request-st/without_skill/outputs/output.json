@@ -1,0 +1,1 @@
+{ "id": 12, "answer": "The handler function should be named 'CreateProductHandler' (or structured as a method like Handle on a struct named 'CreateProductHttpHandler'). The request struct should be named 'CreateProductRequest'. Both names reflect the HTTP action and entity in PascalCase." }

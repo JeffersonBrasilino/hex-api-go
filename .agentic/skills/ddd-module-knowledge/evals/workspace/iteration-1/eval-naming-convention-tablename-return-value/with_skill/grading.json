@@ -1,0 +1,35 @@
+{
+  "assertion_results": [
+    {
+      "text": "Output specifies return value as 'hex-api-go.users'",
+      "passed": true,
+      "evidence": "Output states 'should return \\'hex-api-go.users\\''"
+    },
+    {
+      "text": "Output includes the project name prefix 'hex-api-go'",
+      "passed": true,
+      "evidence": "Output explicitly states 'The pattern is [project-name].[table_name]' and shows 'hex-api-go.users'"
+    },
+    {
+      "text": "Output uses plural table name 'users'",
+      "passed": true,
+      "evidence": "Output states 'using the plural table name' and shows 'hex-api-go.users'"
+    },
+    {
+      "text": "Output does NOT suggest returning just 'users' without the project prefix",
+      "passed": true,
+      "evidence": "Output only mentions 'hex-api-go.users'; no bare 'users' suggested as return value"
+    },
+    {
+      "text": "Output does NOT suggest returning just 'user' (singular)",
+      "passed": true,
+      "evidence": "No singular 'user' return value suggested anywhere in the output"
+    }
+  ],
+  "summary": {
+    "passed": 5,
+    "failed": 0,
+    "total": 5,
+    "pass_rate": 1.000
+  }
+}

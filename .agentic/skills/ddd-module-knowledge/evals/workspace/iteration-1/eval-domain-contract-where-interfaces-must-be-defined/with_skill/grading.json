@@ -1,0 +1,30 @@
+{
+  "assertion_results": [
+    {
+      "text": "Output specifies internal/product/domain/contract/ as the correct location",
+      "passed": true,
+      "evidence": "Output states 'internal/product/domain/contract/'"
+    },
+    {
+      "text": "Output states the interface must be owned by the domain layer",
+      "passed": true,
+      "evidence": "Output states 'The domain layer owns the contract'"
+    },
+    {
+      "text": "Output states the infrastructure layer is responsible for implementing the interface",
+      "passed": true,
+      "evidence": "Output states 'the infrastructure layer implements it'"
+    },
+    {
+      "text": "Output does NOT suggest placing the interface in the infrastructure or application layer",
+      "passed": true,
+      "evidence": "No suggestion of placing interface in infrastructure or application layer"
+    }
+  ],
+  "summary": {
+    "passed": 4,
+    "failed": 0,
+    "total": 4,
+    "pass_rate": 1.000
+  }
+}

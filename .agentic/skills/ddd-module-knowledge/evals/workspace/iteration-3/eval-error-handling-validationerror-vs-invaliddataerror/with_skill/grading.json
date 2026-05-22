@@ -1,0 +1,10 @@
+{
+  "assertion_results": [
+    {"text": "Output maps ValidationError to 400 Bad Request", "passed": true, "evidence": "Answer states 'it maps to HTTP 400 Bad Request' for ValidationError"},
+    {"text": "Output maps InvalidDataError to 422 Unprocessable Entity", "passed": true, "evidence": "Answer states 'it maps to HTTP 422 Unprocessable Entity' for InvalidDataError"},
+    {"text": "Output states ValidationError belongs in application or infrastructure layers", "passed": true, "evidence": "Answer states 'used in the application or infrastructure layers when incoming request data fails basic structural validation'"},
+    {"text": "Output states InvalidDataError belongs in domain entities, value objects, or builders", "passed": true, "evidence": "Answer states 'used in domain entities, value objects, and builders when business invariants or domain validations fail'"},
+    {"text": "Output clearly distinguishes the two errors by layer and purpose", "passed": true, "evidence": "Answer explicitly contrasts the two errors: ValidationError=structural/DTO validation in app/infra layers (400), InvalidDataError=domain business rules in domain layer (422)"}
+  ],
+  "summary": {"passed": 5, "failed": 0, "total": 5, "pass_rate": 1.000}
+}

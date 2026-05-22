@@ -1,0 +1,4 @@
+{
+  "id": 10,
+  "answer": "No. The Builder pattern is reserved for the aggregate root entity. Child entities within the same aggregate should be constructed using a simple constructor function (e.g., NewPerson(...)) rather than a full builder. Using the Builder pattern for child entities would be over-engineering and inconsistent with the pattern's intended scope."
+}

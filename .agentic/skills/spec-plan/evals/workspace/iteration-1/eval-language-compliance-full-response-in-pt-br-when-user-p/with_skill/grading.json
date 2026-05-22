@@ -1,0 +1,30 @@
+{
+  "assertion_results": [
+    {
+      "text": "The entire response is written in Brazilian Portuguese (pt-BR), not English",
+      "passed": true,
+      "evidence": "Resposta inteiramente em português: 'A resposta completa deve ser produzida em português brasileiro (pt-BR), pois essa é a língua do usuário no contexto.' — sem frases em inglês no corpo da resposta."
+    },
+    {
+      "text": "The response includes a scope summary with at least Pre-conditions and Post-conditions sections",
+      "passed": true,
+      "evidence": "'Pré-condição = existência de usuários no banco de dados' e 'Pós-condição = resposta HTTP 200 com lista paginada de usuários em formato JSON, incluindo metadados de paginação' — ambas seções presentes."
+    },
+    {
+      "text": "The scope summary mentions paginação, page, or limit as part of the scope",
+      "passed": true,
+      "evidence": "'paginação via query params `page` e `limit`' e 'metadados de paginação (total, page, limit)' — todos os três termos presentes."
+    },
+    {
+      "text": "The output does NOT generate or propose PLAN.md file content without first obtaining user approval",
+      "passed": true,
+      "evidence": "'Nenhum arquivo PLAN.md é gerado neste estágio.' — explicitamente confirma que nenhum arquivo é criado sem aprovação."
+    }
+  ],
+  "summary": {
+    "passed": 4,
+    "failed": 0,
+    "total": 4,
+    "pass_rate": 1.000
+  }
+}

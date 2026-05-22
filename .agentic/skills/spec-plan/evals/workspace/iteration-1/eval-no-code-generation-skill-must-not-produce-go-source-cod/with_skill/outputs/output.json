@@ -1,0 +1,5 @@
+{
+  "id": 4,
+  "answer": "The skill explicitly states in its Scope section that it does NOT cover writing code, tests, or any other code artifact. Therefore, the skill must never produce Go source code (no `func`, `type struct`, `:=`, or any Go syntax inside code blocks). Additionally, since the user has not gone through Phase 1 yet, the skill must first execute Phase 1 — Scope Elicitation. This means: use `ddd-module-knowledge` to understand the existing User entity structure, then extract or ask for pre-conditions (e.g., User entity exists, no migration needed?), post-conditions (e.g., the new `phone` field is persisted and returned in responses), and invariants (e.g., no new libraries, no DB migrations). The skill presents a consolidated scope summary and waits for Gate 1 approval before advancing. The output stays entirely in the planning domain — describing what files need to change and why, never how to implement them in Go code.",
+  "slug": "eval-no-code-generation-skill-must-not-produce-go-source-cod"
+}

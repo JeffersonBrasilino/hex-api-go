@@ -1,0 +1,8 @@
+{
+  "assertion_results": [
+    {"text": "Output specifies struct name as 'Account'", "passed": true, "evidence": "Answer states 'The aggregate root entity struct must be named \\'Account\\''"},
+    {"text": "Output explains that aggregate root name must match the module name", "passed": true, "evidence": "Answer states 'its name must correspond directly to the bounded context/module name'"},
+    {"text": "Output specifies PascalCase as the required casing", "passed": true, "evidence": "Answer explicitly states 'PascalCase'"}
+  ],
+  "summary": {"passed": 3, "failed": 0, "total": 3, "pass_rate": 1.000}
+}

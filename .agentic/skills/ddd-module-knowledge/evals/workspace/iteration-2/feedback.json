@@ -1,0 +1,17 @@
+{
+  "eval-module-structure-verify-correct-directory-layout-for-a": "",
+  "eval-naming-convention-command-directory-name": "",
+  "eval-naming-convention-gorm-repository-struct-and-constructo": "",
+  "eval-naming-convention-tablename-return-value": "",
+  "eval-error-handling-notfounderror-usage": "",
+  "eval-error-handling-validationerror-vs-invaliddataerror": "",
+  "eval-layer-boundary-http-handler-calling-repository-directly": "",
+  "eval-layer-boundary-application-handler-containing-sql-quer": "",
+  "eval-gotcha-domain-event-emission-by-child-entity": "",
+  "eval-gotcha-builder-pattern-usage-for-child-entity": "",
+  "eval-gotcha-aggregate-root-name-must-equal-module-name": "",
+  "eval-naming-convention-http-handler-function-and-request-str": "",
+  "eval-scope-boundary-skill-must-not-generate-unit-tests": "",
+  "eval-domain-contract-where-interfaces-must-be-defined": "",
+  "eval-mapper-visibility-rule": ""
+}

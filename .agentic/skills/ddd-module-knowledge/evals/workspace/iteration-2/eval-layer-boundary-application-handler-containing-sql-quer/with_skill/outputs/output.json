@@ -1,0 +1,4 @@
+{
+  "id": 8,
+  "answer": "No. The application layer must be independent of infrastructure details. Raw SQL queries are infrastructure concerns and must not appear inside an application command handler. The handler interacts with domain aggregates and contracts (interfaces), not direct database queries."
+}

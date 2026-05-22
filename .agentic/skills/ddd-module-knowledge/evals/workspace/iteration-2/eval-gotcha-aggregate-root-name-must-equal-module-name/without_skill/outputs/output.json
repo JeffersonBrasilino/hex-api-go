@@ -1,0 +1,4 @@
+{
+  "id": 11,
+  "answer": "The aggregate root entity struct must be named 'Account' — matching the module name exactly (PascalCase). The aggregate root's struct name must equal the module name."
+}

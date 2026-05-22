@@ -1,0 +1,4 @@
+{
+  "id": 14,
+  "answer": "The repository interface for the product module should be defined in 'internal/product/domain/contract/', in a file such as 'repository.go' or a specifically named contract file (e.g., 'product_repository.go'). Domain contracts (interfaces) must always be defined in the 'domain/contract/' directory of the respective module."
+}

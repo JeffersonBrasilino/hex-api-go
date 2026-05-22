@@ -1,0 +1,1 @@
+{ "id": 2, "answer": "The directory name for a command that creates a product should be 'create_product' (snake_case, verb + noun describing the action). In Go hexagonal/DDD projects each use case gets its own directory under the application layer, named after the action it performs." }

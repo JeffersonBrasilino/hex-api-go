@@ -20,12 +20,14 @@ implementation patterns that other skills or agents consume when working with mo
 ## Scope
 
 **This skill covers:**
+
 - Module structure and layer boundaries (domain → application → infrastructure)
 - Naming conventions per layer and component
 - Implementation patterns with boilerplates and real code references
 - Design decisions and architectural constraints
 
 **This skill does NOT cover:**
+
 - Unit test generation → use `make-unit-tests` skill
 - Code formatting and GoDoc → use `adjust-go-code` skill
 - Make or adjust code
@@ -135,48 +137,48 @@ sequenceDiagram
 
 ## Naming Conventions
 
-| Component | File Name | Struct/Type Name | Example |
-|-----------|-----------|------------------|---------|
-| Module directory | singular, lowercase | — | `user`, `pickuppoint` |
-| Aggregate root | singular, snake_case | singular, PascalCase | `user.go` → `User` |
-| Entity | singular, snake_case | singular, PascalCase | `person.go` → `Person` |
-| Value Object | singular, snake_case | singular, PascalCase | `document.go` → `Document` |
-| Builder | `builder.go` | `Builder` | — |
-| Domain Event | singular, snake_case | singular, PascalCase | `user_created.go` → `UserCreated` |
-| Domain Contract | singular, snake_case | singular, PascalCase | `user_repository.go` → `UserRepository` |
-| Command dir | singular, lowercase, no separator | — | `createuser` |
-| Command file | `command.go` | `Command` | — |
-| Handler file | `handler.go` | `Handler` | — |
-| Command `Name()` | — | camelCase string | `"createUser"` |
-| Handler constructor | — | `NewCommandHandler` | — |
-| Persistence model | `gorm_model.go` | plural, PascalCase | `Users`, `PersonContacts` |
-| `TableName()` | — | `[project-name].[table]` | `hex-api-go.users` |
-| Repository impl | `gorm_[module]_repository.go` | `Gorm[Module]Repository` | `GormUserRepository` |
-| Repository constructor | — | `NewGorm[Module]Repository` | `NewGormUserRepository` |
-| Mapper | `mapper.go` | unexported functions | `toDatabase`, `toDomain` |
-| HTTP handler file | `[action_name]_handler.go` | `[ActionName]Handler` func | `CreateUserHandler` |
-| HTTP request struct | in handler file | `[ActionName]Request` | `CreateUserRequest` |
-| HTTP trace var | in handler file | `[actionName]Trace` | `createUserTrace` |
-| Module registration | `[module-name].go` | `[moduleName]Module` | `userModule` |
-| Module constructor | — | `New[ModuleName]Module` | `NewUserModule` |
+| Component              | File Name                         | Struct/Type Name            | Example                                 |
+| ---------------------- | --------------------------------- | --------------------------- | --------------------------------------- |
+| Module directory       | singular, lowercase               | —                           | `user`, `pickuppoint`                   |
+| Aggregate root         | singular, snake_case              | singular, PascalCase        | `user.go` → `User`                      |
+| Entity                 | singular, snake_case              | singular, PascalCase        | `person.go` → `Person`                  |
+| Value Object           | singular, snake_case              | singular, PascalCase        | `document.go` → `Document`              |
+| Builder                | `builder.go`                      | `Builder`                   | —                                       |
+| Domain Event           | singular, snake_case              | singular, PascalCase        | `user_created.go` → `UserCreated`       |
+| Domain Contract        | singular, snake_case              | singular, PascalCase        | `user_repository.go` → `UserRepository` |
+| Command dir            | singular, lowercase, no separator | —                           | `createuser`                            |
+| Command file           | `command.go`                      | `Command`                   | —                                       |
+| Handler file           | `handler.go`                      | `Handler`                   | —                                       |
+| Command `Name()`       | —                                 | camelCase string            | `"createUser"`                          |
+| Handler constructor    | —                                 | `NewCommandHandler`         | —                                       |
+| Persistence model      | `gorm_model.go`                   | plural, PascalCase          | `Users`, `PersonContacts`               |
+| `TableName()`          | —                                 | `[project-name].[table]`    | `hex-api-go.users`                      |
+| Repository impl        | `gorm_[module]_repository.go`     | `Gorm[Module]Repository`    | `GormUserRepository`                    |
+| Repository constructor | —                                 | `NewGorm[Module]Repository` | `NewGormUserRepository`                 |
+| Mapper                 | `mapper.go`                       | unexported functions        | `toDatabase`, `toDomain`                |
+| HTTP handler file      | `[action_name]_handler.go`        | `[ActionName]Handler` func  | `CreateUserHandler`                     |
+| HTTP request struct    | in handler file                   | `[ActionName]Request`       | `CreateUserRequest`                     |
+| HTTP trace var         | in handler file                   | `[actionName]Trace`         | `createUserTrace`                       |
+| Module registration    | `[module-name].go`                | `[moduleName]Module`        | `userModule`                            |
+| Module constructor     | —                                 | `New[ModuleName]Module`     | `NewUserModule`                         |
 
 ## Errors Handling
 
-Always use the errors from the `ddgo` package. Don't create new error types. 
+Always use the errors from the `ddgo` package. Don't create new error types.
 The mapping between these errors and HTTP status codes is handled automatically by the `pkg/http` package.
 
-| `ddgo` Error | Objective | When to use | HTTP Status |
-|--------------|-----------|-------------|-------------|
-| `ValidationError` | Indicate failures in payload/DTO structural validation | Use in application/infrastructure layers when incoming request data fails basic structural validation (e.g. required fields missing) | 400 Bad Request |
-| `InvalidDataError` | Indicate domain-specific business rule validation failures | Use in domain entities, value objects, and builders when business invariants or domain validations fail | 422 Unprocessable Entity |
-| `NotFoundError` | Indicate that a requested resource was not found | Use in repositories or application layers when a requested entity/aggregate root does not exist in the database | 404 Not Found |
-| `AlreadyExistsError` | Indicate a conflict due to a resource already existing | Use in application layers or repositories when trying to create an entity that violates a unique constraint (e.g. user email already registered) | 409 Conflict |
-| `DependencyError` | Indicate failures in external systems or downstream services | Use in infrastructure adapters when external APIs, message brokers, or third-party services fail to respond correctly | 502 Bad Gateway |
-| `InternalError` | Indicate unexpected systemic failures | Use when unexpected errors occur, like database connection loss, internal panics, or marshaling errors | 500 Internal Server Error |
+| `ddgo` Error         | Objective                                                    | When to use                                                                                                                                      | HTTP Status               |
+| -------------------- | ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------- |
+| `ValidationError`    | Indicate failures in payload/DTO structural validation       | Use in application/infrastructure layers when incoming request data fails basic structural validation (e.g. required fields missing)             | 400 Bad Request           |
+| `InvalidDataError`   | Indicate domain-specific business rule validation failures   | Use in domain entities, value objects, and builders when business invariants or domain validations fail                                          | 422 Unprocessable Entity  |
+| `NotFoundError`      | Indicate that a requested resource was not found             | Use in repositories or application layers when a requested entity/aggregate root does not exist in the database                                  | 404 Not Found             |
+| `AlreadyExistsError` | Indicate a conflict due to a resource already existing       | Use in application layers or repositories when trying to create an entity that violates a unique constraint (e.g. user email already registered) | 409 Conflict              |
+| `DependencyError`    | Indicate failures in external systems or downstream services | Use in infrastructure adapters when external APIs, message brokers, or third-party services fail to respond correctly                            | 502 Bad Gateway           |
+| `InternalError`      | Indicate unexpected systemic failures                        | Use when unexpected errors occur, like database connection loss, internal panics, or marshaling errors                                           | 500 Internal Server Error |
 
 ## Gotchas
 
-- Aggregate root entity name **must** equal the module name (e.g., module `user` → entity `User`)
+- Aggregate root entity name **must** equal the module name in **PascalCase** (e.g., module `user` → entity `User`; module `account` → entity `Account`)
 - **Only** the aggregate root uses the Builder pattern — child entities use `New[Entity]()` directly
 - **Only** aggregate root entities emit domain events
 - `TableName()` must follow the pattern `[project-name].[table_name]` (e.g., `hex-api-go.users`)
@@ -198,22 +200,25 @@ Consult the following references for detailed boilerplates and implementation ex
 Each reference includes the pattern description, a complete boilerplate, and a link to a real implementation in the codebase.
 
 ### Domain Layer
-- Entity / Aggregate Root → see `references/domain/entity-pattern.md`
-- Aggregate Root Builder → see `references/domain/builder-pattern.md`
-- Value Objects → see `references/domain/value-object-pattern.md`
-- Domain Events → see `references/domain/domain-event-pattern.md`
-- Domain Contracts → see `references/domain/domain-contract-pattern.md`
+
+- Entity / Aggregate Root → see [reference](references/entity-pattern.md)
+- Aggregate Root Builder → see [reference](references/builder-pattern.md)
+- Value Objects → see [reference](references/value-object-pattern.md)
+- Domain Events → see [reference](references/domain-event-pattern.md)
+- Domain Contracts → see [reference](references/domain-contract-pattern.md)
 
 ### Application Layer
-- Command DTO → see `references/application/command-pattern.md`
-- Command Handler → see `references/application/command-handler-pattern.md`
+
+- Command DTO → see [reference](references/command-pattern.md)
+- Command Handler → see [reference](references/command-handler-pattern.md)
 
 ### Infrastructure Layer
-- HTTP Handler → see `references/infrastructure/http-handler-pattern.md`
-- Repository Implementation → see `references/infrastructure/repository-pattern.md`
-- Persistence Models (GORM) → see `references/infrastructure/persistence-model-pattern.md`
-- Domain-Database Mapper → see `references/infrastructure/mapper-pattern.md`
+
+- HTTP Handler → see [reference](references/http-handler-pattern.md)
+- Repository Implementation → see [reference](references/repository-pattern.md)
+- Persistence Models (GORM) → see [reference](references/persistence-model-pattern.md)
+- Domain-Database Mapper → see [reference](references/mapper-pattern.md)
 
 ### Module Bootstrap
-- Module Registration → see `references/module/module-registration-pattern.md`
 
+- Module Registration → see [reference](references/module-registration-pattern.md)

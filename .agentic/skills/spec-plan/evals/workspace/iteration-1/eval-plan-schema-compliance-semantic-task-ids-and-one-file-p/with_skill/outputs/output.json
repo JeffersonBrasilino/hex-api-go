@@ -1,0 +1,5 @@
+{
+  "id": 3,
+  "answer": "With scope already approved, the skill advances to Phase 2. Since the user stated the module is 'user' and the feature is 'Alterar senha do usuário', the target directory is `docs/user/alterar-senha-do-usuario/` (kebab-case). The plan must strictly follow the plan-schema template. Regarding schema compliance: (1) Each task must use a semantic ID following the TASK-[LAYER]-[CONCERN] pattern — e.g., TASK-DOM-PASSWORD for a domain value object or method, TASK-APP-CHANGE-PASSWORD for the command handler, TASK-INFRA-REPO for repository changes, TASK-INFRA-HTTP for the HTTP handler. (2) Each task maps to exactly one file — if multiple files are needed, they are split into separate tasks. (3) The plan includes Section 1 (Plan/Roadmap), Section 3 (Execution checklist mirroring every task), and Section 4 (Return/Summary). (4) All task and sub-task entries use markdown checkbox format `[ ]`. The plan is saved as `PLAN.md` inside the target directory and then presented to the user for review (Phase 3).",
+  "slug": "eval-plan-schema-compliance-semantic-task-ids-and-one-file-p"
+}

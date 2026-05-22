@@ -1,0 +1,9 @@
+{
+  "assertion_results": [
+    {"text": "Output specifies 'createproduct' as the directory name", "passed": true, "evidence": "Answer states: 'The directory name for a command that creates a product should be \\'createproduct\\''"},
+    {"text": "Output does NOT suggest 'create-product' (hyphenated)", "passed": true, "evidence": "No hyphenated form is mentioned in the answer"},
+    {"text": "Output does NOT suggest 'create_product' (underscored)", "passed": true, "evidence": "No underscored form is mentioned in the answer"},
+    {"text": "Output does NOT suggest 'CreateProduct' (PascalCase)", "passed": true, "evidence": "No PascalCase form is mentioned in the answer"}
+  ],
+  "summary": {"passed": 4, "failed": 0, "total": 4, "pass_rate": 1.000}
+}

@@ -1,0 +1,35 @@
+{
+  "assertion_results": [
+    {
+      "text": "Output maps ValidationError to 400 Bad Request",
+      "passed": true,
+      "evidence": "Output states 'ValidationError maps to HTTP 400 with validation details'"
+    },
+    {
+      "text": "Output maps InvalidDataError to 422 Unprocessable Entity",
+      "passed": false,
+      "evidence": "Output states 'InvalidDataError also maps to HTTP 400/422' — ambiguous, does not clearly specify 422 Unprocessable Entity"
+    },
+    {
+      "text": "Output states ValidationError belongs in application or infrastructure layers",
+      "passed": false,
+      "evidence": "Output states ValidationError is 'caught at the application or domain boundary' — 'domain boundary' is not the same as 'application or infrastructure layers' per skill definition"
+    },
+    {
+      "text": "Output states InvalidDataError belongs in domain entities, value objects, or builders",
+      "passed": false,
+      "evidence": "Output says InvalidDataError signals 'a semantic domain violation' but does not explicitly name 'domain entities, value objects, or builders' as the location of use"
+    },
+    {
+      "text": "Output clearly distinguishes the two errors by layer and purpose",
+      "passed": false,
+      "evidence": "Layer assignment is inaccurate (ValidationError at 'domain boundary', InvalidDataError HTTP code ambiguous 400/422); distinction is incomplete and partially incorrect"
+    }
+  ],
+  "summary": {
+    "passed": 1,
+    "failed": 4,
+    "total": 5,
+    "pass_rate": 0.200
+  }
+}

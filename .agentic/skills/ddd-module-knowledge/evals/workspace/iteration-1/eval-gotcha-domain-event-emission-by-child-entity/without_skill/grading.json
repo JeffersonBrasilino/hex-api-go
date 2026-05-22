@@ -1,0 +1,30 @@
+{
+  "assertion_results": [
+    {
+      "text": "Output answers NO explicitly",
+      "passed": true,
+      "evidence": "Output begins with 'No.'"
+    },
+    {
+      "text": "Output states only the aggregate root can emit domain events",
+      "passed": true,
+      "evidence": "Output states 'only the aggregate root should emit domain events'"
+    },
+    {
+      "text": "Output identifies User as the aggregate root and sole event emitter",
+      "passed": true,
+      "evidence": "Output identifies 'the aggregate root (User), which then raises the appropriate event'"
+    },
+    {
+      "text": "Output does NOT suggest any workaround that lets Person emit events",
+      "passed": true,
+      "evidence": "Workaround described ('Person should signal the change to the aggregate root') does not let Person emit events — User emits; Person remains a passive signaler only"
+    }
+  ],
+  "summary": {
+    "passed": 4,
+    "failed": 0,
+    "total": 4,
+    "pass_rate": 1.000
+  }
+}

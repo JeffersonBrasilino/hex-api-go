@@ -1,0 +1,30 @@
+{
+  "assertion_results": [
+    {
+      "text": "The response produces a Phase 1 scope summary and explicitly waits for user confirmation before advancing",
+      "passed": true,
+      "evidence": "'**Fase 1 — Elicitação de Escopo**' com 'Resumo de Escopo (rascunho)' e 'Aguardo seus esclarecimentos para consolidar o escopo e apresentar o resumo para aprovação antes de avançar para a Fase 2.' — Phase 1 executada com pedido de confirmação."
+    },
+    {
+      "text": "The response does NOT jump directly to creating a PLAN.md or an Execution Roadmap without Gate 1 approval",
+      "passed": true,
+      "evidence": "'O plano técnico só será gerado após sua aprovação explícita do escopo.' — nenhum PLAN.md ou Execution Roadmap no output."
+    },
+    {
+      "text": "The scope summary identifies at least one invariant or constraint relevant to the notification domain (e.g., integration with user creation, no external email library assumptions)",
+      "passed": false,
+      "evidence": "O 'Resumo de Escopo (rascunho)' lista '**Invariantes:** (não especificadas)' e apenas gera perguntas sobre possíveis invariantes. Nenhuma invariante concreta é identificada no resumo de escopo; as questões 1-5 são perguntas, não afirmações de invariantes."
+    },
+    {
+      "text": "The response ends with a clear request for the user to confirm, approve, or continue",
+      "passed": true,
+      "evidence": "'Aguardo seus esclarecimentos para consolidar o escopo e apresentar o resumo para aprovação antes de avançar para a Fase 2.' e '**Nota:** O plano técnico só será gerado após sua aprovação explícita do escopo.' — pedido de confirmação claro no final."
+    }
+  ],
+  "summary": {
+    "passed": 3,
+    "failed": 1,
+    "total": 4,
+    "pass_rate": 0.750
+  }
+}

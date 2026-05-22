@@ -1,0 +1,9 @@
+{
+  "assertion_results": [
+    {"text": "Output answers NO explicitly", "passed": false, "evidence": "Answer begins with 'It depends on the complexity' — not a clear NO"},
+    {"text": "Output states Builder pattern is exclusively for the aggregate root", "passed": true, "evidence": "Answer states 'the Builder pattern is reserved for the aggregate root'"},
+    {"text": "Output states child entities must use New[Entity]() constructor directly", "passed": true, "evidence": "Answer states 'Child entities are typically constructed directly via a constructor function (e.g., NewPerson(...))'"},
+    {"text": "Output does NOT suggest creating a Builder for Person", "passed": true, "evidence": "Answer says 'rather than a full Builder' and calls a Builder for child entities 'unnecessary boilerplate'"}
+  ],
+  "summary": {"passed": 3, "failed": 1, "total": 4, "pass_rate": 0.750}
+}

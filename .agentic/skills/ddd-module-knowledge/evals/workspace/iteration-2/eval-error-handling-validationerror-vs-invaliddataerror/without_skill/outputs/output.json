@@ -1,0 +1,4 @@
+{
+  "id": 6,
+  "answer": "ValidationError is used when input data fails business rule or domain invariant validation (e.g., a required field is missing or a value violates a domain constraint). It maps to HTTP 422 Unprocessable Entity. InvalidDataError (or BadRequestError) is used when the input data is malformed or cannot be parsed at all (e.g., wrong type, invalid format before even applying business rules). It maps to HTTP 400 Bad Request. ValidationError belongs in the domain layer; InvalidDataError belongs at the boundary (HTTP handler or command parsing)."
+}

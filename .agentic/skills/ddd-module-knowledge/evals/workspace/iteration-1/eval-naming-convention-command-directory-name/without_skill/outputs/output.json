@@ -1,0 +1,1 @@
+{ "id": 2, "answer": "The directory name for a command that creates a product should use snake_case matching the action and entity, e.g. 'create_product'. It lives under internal/product/application/create_product/ and typically contains a command.go and handler.go file." }

@@ -1,0 +1,4 @@
+{
+  "id": 13,
+  "answer": "The ddd-module-knowledge skill is explicitly scoped to generating and guiding DDD module structure (domain, application, infrastructure layers, patterns, conventions). It must not generate unit tests. Unit test generation is outside the skill's defined scope. You should use a separate testing-focused skill or approach for that."
+}

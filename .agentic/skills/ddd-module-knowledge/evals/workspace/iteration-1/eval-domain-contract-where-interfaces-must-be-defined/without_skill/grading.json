@@ -1,0 +1,30 @@
+{
+  "assertion_results": [
+    {
+      "text": "Output specifies internal/product/domain/contract/ as the correct location",
+      "passed": false,
+      "evidence": "Output specifies 'internal/product/domain/contracts.go or internal/product/domain/product_repository.go' — files in domain/ root, not the 'domain/contract/' subdirectory"
+    },
+    {
+      "text": "Output states the interface must be owned by the domain layer",
+      "passed": true,
+      "evidence": "Output states 'the domain layer owns the ports (interfaces)'"
+    },
+    {
+      "text": "Output states the infrastructure layer is responsible for implementing the interface",
+      "passed": true,
+      "evidence": "Output states 'the infrastructure layer provides the adapters (implementations)'"
+    },
+    {
+      "text": "Output does NOT suggest placing the interface in the infrastructure or application layer",
+      "passed": true,
+      "evidence": "No suggestion of placing interface in infrastructure or application layer"
+    }
+  ],
+  "summary": {
+    "passed": 3,
+    "failed": 1,
+    "total": 4,
+    "pass_rate": 0.750
+  }
+}

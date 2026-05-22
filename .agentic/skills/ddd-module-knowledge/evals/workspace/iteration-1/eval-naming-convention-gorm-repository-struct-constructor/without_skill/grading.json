@@ -1,0 +1,25 @@
+{
+  "assertion_results": [
+    {
+      "text": "Output specifies struct name as 'GormOrderRepository'",
+      "passed": true,
+      "evidence": "Output states 'the GORM repository struct should be named \\'GormOrderRepository\\''"
+    },
+    {
+      "text": "Output specifies constructor name as 'NewGormOrderRepository'",
+      "passed": true,
+      "evidence": "Output states 'its constructor function should be named \\'NewGormOrderRepository\\''"
+    },
+    {
+      "text": "Output specifies file name as 'gorm_order_repository.go'",
+      "passed": false,
+      "evidence": "No file name mentioned anywhere in the output; only struct and constructor names are provided"
+    }
+  ],
+  "summary": {
+    "passed": 2,
+    "failed": 1,
+    "total": 3,
+    "pass_rate": 0.667
+  }
+}

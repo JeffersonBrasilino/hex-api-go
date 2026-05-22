@@ -1,0 +1,1 @@
+{ "id": 14, "answer": "The repository interface for the product module should be defined in 'internal/product/domain/contract/repository.go', inside the 'contract' package. Domain contracts (interfaces) must be defined in 'domain/contract/' and the infrastructure layer is responsible for implementing them." }

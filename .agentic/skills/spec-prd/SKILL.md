@@ -32,7 +32,7 @@ It acts as a product owner who captures user requirements to then create a PRD f
 - You must treat this process as an informal chat, so the PRD is built naturally.
 - IMPORTANT: All your communication with the user, questions, PRD content, and notes MUST be in Portuguese (pt-BR).
 - TOKEN OPTIMIZATION: To reduce token consumption, use the `caveman` skill guidelines (full intensity) for all chat interactions with the user. Keep technical precision but eliminate articles and filler. However, maintain formal and complete Portuguese (pt-BR) when writing documentation files (`PRD.md` and `NOTES.md`) to ensure clarity for other readers.
-- The PRD template can be found at `references/prd-template.md`. Follow the template exactly.
+- The PRD template can be found at [prd-template](references/prd-template.md). Follow the template exactly.
 - Each step must be executed sequentially, except step 0.
 - Do not skip steps and wait for the user's response to execute the next step.
 - This process might involve a lot of information, and the context window might not be enough. For this, you need a notes file that will contain details and decisions made during the process.
@@ -55,7 +55,7 @@ It acts as a product owner who captures user requirements to then create a PRD f
 
 ### Step 1: Research & Elicitation (Analysis)
 
-- Analyze the provided context. If the requirement mentions existing domains, use the `ddd-module-knowledge` skill to understand the project bounds.
+<!-- - Analyze the provided context. If the requirement mentions existing domains, use the `ddd-module-knowledge` skill to understand the project bounds. -->
 - Treat this step as an interactive chat. Ask **short, direct questions**, one at a time.
 - Actively explore: business rules, edge cases, success/failure scenarios, and the **Ubiquitous Language** (specific domain terms).
 - After EACH user response, rewrite and consolidate the requirements in the `.md` notes file. Use this exact structure in the notes file:
@@ -73,7 +73,7 @@ It acts as a product owner who captures user requirements to then create a PRD f
 
 ### Step 3: PRD Creation
 
-- Based on the context window and the structured `NOTES.md` file, generate the full PRD using the template at `references/prd-template.md`.
+- Based on the context window and the structured `NOTES.md` file, generate the full PRD using the template at [prd-template](references/prd-template.md).
 - The PRD must be written in pt-BR, clearly and objectively.
 - The PRD must be saved in Markdown format.
 - The PRD must be saved as `PRD.md` inside the `docs/[module-name]/[feature-name]/` folder.

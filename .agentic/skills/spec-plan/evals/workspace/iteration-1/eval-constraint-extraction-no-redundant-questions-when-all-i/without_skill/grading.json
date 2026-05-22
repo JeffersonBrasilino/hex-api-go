@@ -1,0 +1,30 @@
+{
+  "assertion_results": [
+    {
+      "text": "The scope summary correctly includes the pre-condition about user existence in the database",
+      "passed": true,
+      "evidence": "'**Pré-condições:** O usuário com o id informado deve existir no banco de dados.' — pré-condição corretamente mapeada."
+    },
+    {
+      "text": "The scope summary correctly includes the post-condition about HTTP 200 with name, email, and avatar_url fields",
+      "passed": true,
+      "evidence": "'**Pós-condições:** Retorna HTTP 200 com JSON contendo os campos name, email e avatar_url; retorna HTTP 404 caso o usuário não seja encontrado.' — pós-condição completa com os três campos."
+    },
+    {
+      "text": "The scope summary correctly includes the invariant about no new external dependencies",
+      "passed": true,
+      "evidence": "'**Invariantes:** Sem novas dependências externas; sem migrações de banco de dados.' — ambas invariantes presentes."
+    },
+    {
+      "text": "The output does NOT ask questions about information already explicitly provided in the prompt (pre-conditions, post-conditions, and invariants are all given)",
+      "passed": true,
+      "evidence": "'Todas as informações necessárias estão presentes — não há perguntas adicionais.' — nenhuma pergunta formulada; resumo de escopo apresentado diretamente."
+    }
+  ],
+  "summary": {
+    "passed": 4,
+    "failed": 0,
+    "total": 4,
+    "pass_rate": 1.000
+  }
+}

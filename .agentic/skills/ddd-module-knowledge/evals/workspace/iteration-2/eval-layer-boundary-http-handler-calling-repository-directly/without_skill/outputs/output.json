@@ -1,0 +1,4 @@
+{
+  "id": 7,
+  "answer": "No. The HTTP handler must not call the repository directly. In hexagonal architecture, the HTTP handler is an inbound adapter that should only interact with the application layer (command handlers / use cases). The application layer orchestrates domain logic and calls the repository through its interface. Bypassing the application layer breaks the layer boundaries and leaks infrastructure concerns into the presentation layer."
+}

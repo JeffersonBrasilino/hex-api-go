@@ -1,0 +1,1 @@
+{ "id": 7, "answer": "No. HTTP handlers must never call the repository directly. They must always dispatch through the bus using gomes.CommandBus() or gomes.QueryBus(). Calling the repository directly from an HTTP handler violates the hexagonal architecture layer boundaries." }

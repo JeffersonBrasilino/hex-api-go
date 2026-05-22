@@ -1,0 +1,1 @@
+{ "id": 13, "answer": "The ddd-module-knowledge skill is out of scope for generating unit tests. That skill covers module structure, naming conventions, layer boundaries, and implementation patterns for DDD modules. Unit test generation is not within its defined scope. You should use a general-purpose code generation approach or a dedicated testing skill for that task." }

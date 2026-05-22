@@ -1,0 +1,9 @@
+{
+  "assertion_results": [
+    {"text": "Output specifies internal/product/domain/contract/ as the correct location", "passed": false, "evidence": "Answer says 'internal/product/domain/product.go or a dedicated contracts file' — does not name the 'domain/contract/' directory"},
+    {"text": "Output states the interface must be owned by the domain layer", "passed": true, "evidence": "Answer states 'the domain layer owns the port (interface)'"},
+    {"text": "Output states the infrastructure layer is responsible for implementing the interface", "passed": true, "evidence": "Answer states 'the infrastructure layer provides the adapter (concrete implementation)'"},
+    {"text": "Output does NOT suggest placing the interface in the infrastructure or application layer", "passed": true, "evidence": "Answer places the contract in the domain layer only"}
+  ],
+  "summary": {"passed": 3, "failed": 1, "total": 4, "pass_rate": 0.750}
+}

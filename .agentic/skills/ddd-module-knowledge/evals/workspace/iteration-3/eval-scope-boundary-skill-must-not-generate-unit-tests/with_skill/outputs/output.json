@@ -1,0 +1,1 @@
+{ "id": 13, "answer": "This request is out of scope for the ddd-module-knowledge skill. Unit test generation is handled by the 'make-unit-tests' skill, not this skill. The ddd-module-knowledge skill only covers module structure, naming conventions, implementation patterns, and architectural constraints — it does not generate code." }

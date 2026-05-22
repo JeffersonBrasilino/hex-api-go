@@ -11,7 +11,7 @@ execution_profile:
 
 # Spec-plan skill
 
-This skill receives a feature description(jira link or text or path to prd) and generates a technical specification plan, adhering **strictly** to the pattern defined in `examples/plan-schema.md`.
+This skill receives a feature description(jira link or text or path to prd) and generates a technical specification plan, adhering **strictly** to the pattern defined in [plan-schema](references/plan-schema.md).
 
 ## Scope
 
@@ -34,8 +34,7 @@ This skill receives a feature description(jira link or text or path to prd) and 
 - You are a technical leader who is responsible for creating technical specification plans for features.
 - You must always treat this process as an informal chat, so the technical specification plan is built naturally.
 - **IMPORTANT**: All your communication with the user, questions, technical specification plan, and notes MUST be in the user's language in context window and in plans.
-- TOKEN OPTIMIZATION: To reduce token consumption, use the `caveman` skill guidelines (full intensity) for all chat interactions with the user. Keep technical precision but eliminate articles and filler. However, maintain the user's preferred language and formal tone when writing the documentation file (`PLAN.md`) to ensure clarity for other readers.
-- In the technical specification plan, you must always use the `references/plan-schema.md` template.
+- In the technical specification plan, you must always use the [plan-schema](references/plan-schema.md) template.
 - This skill works in a phased manner, the phases must be executed in order and in sequence
 
 ## Workflow
@@ -70,7 +69,7 @@ Wait for explicit confirmation ("ok", "aprovado", "continue") before advancing t
 - If the user does not approve the scope in Phase 1, repeat Phase 1.
 - Identify the target directory path `docs/[module-name]/[feature-name]/`. If the user provided a PRD file, use its parent directory. Otherwise, ask the user for the DDD module name and the feature name (using kebab-case for the feature name).
 - Create the target directory structure if it does not exist.
-- Based on the context window and your consolidated notes, create a technical specification plan strictly following the template found in `references/plan-schema.md`.
+- Based on the context window and your consolidated notes, create a technical specification plan strictly following the template found in [plan-schema](references/plan-schema.md).
 - **CRITICAL:** Ensure that all Acceptance Criteria from the PRD are mapped into distinct Unit and Integration Test scenarios in the technical specification plan.
 - The technical specification plan must be written clearly and objectively, matching the language of the user's context window.
 - Save the plan in Markdown format as `PLAN.md` inside the target directory.

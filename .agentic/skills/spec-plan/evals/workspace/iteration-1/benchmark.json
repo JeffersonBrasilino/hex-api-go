@@ -1,0 +1,42 @@
+{
+  "run_summary": {
+    "model": "claude-sonnet-4-6",
+    "with_skill": {
+      "pass_rate": { "mean": 0.875, "stddev": 0.250 },
+      "time_seconds": { "mean": 53.264, "stddev": 0.0 },
+      "tokens": { "mean": 17466, "stddev": 0.0 },
+      "estimated_cost_usd": { "total": 0.104796, "mean_per_eval": 0.013100 }
+    },
+    "without_skill": {
+      "pass_rate": { "mean": 0.9375, "stddev": 0.108 },
+      "time_seconds": { "mean": 75.585, "stddev": 0.0 },
+      "tokens": { "mean": 19179, "stddev": 0.0 },
+      "estimated_cost_usd": { "total": 0.115074, "mean_per_eval": 0.014384 }
+    },
+    "delta": {
+      "pass_rate": -0.0625,
+      "time_seconds": -22.321,
+      "tokens": -1713,
+      "estimated_cost_usd": -0.010278
+    },
+    "value_tier": "negativo",
+    "delta_vs_prev_iteration": null
+  },
+  "pattern_analysis": {
+    "always_pass_both": [
+      "eval-language-compliance-full-response-in-pt-br-when-user-p (4/4 ambos)",
+      "eval-no-code-generation-skill-must-not-produce-go-source-cod (3/3 ambos)",
+      "eval-multi-layer-decomposition-plan-tasks-span-at-least-two (4/4 ambos)",
+      "eval-prd-file-path-skill-reads-the-file-rather-than-inventin (4/4 ambos)",
+      "eval-constraint-extraction-no-redundant-questions-when-all-i (4/4 ambos)"
+    ],
+    "skill_wins": [
+      "eval-phase-gate-enforcement-phase-2-must-not-start-without-e: with_skill=1.000 vs without_skill=0.750 — skill identificou invariante concreta de integração com UserCreated"
+    ],
+    "baseline_wins": [
+      "eval-scope-elicitation-produce-scope-summary-from-text-feat: with_skill=0.750 vs without_skill=1.000 — without_skill produziu resumo formatado; with_skill descreveu o processo sem apresentar o resumo",
+      "eval-plan-schema-compliance-semantic-task-ids-and-one-file-p: with_skill=0.250 vs without_skill=0.750 — without_skill produziu plano real com File:, [ ] e tasks; with_skill apenas descreveu regras"
+    ],
+    "gap_diagnosis": "O agente with_skill tende a descrever o que a skill FARIA em vez de executar o comportamento diretamente. Isso é um artefato do design de eval: o agente recebe a skill como conhecimento e interpreta os prompts de forma meta (descreve o processo) em vez de agir como a skill. Os evals de Fase 2 (geração de plano) expõem essa lacuna: o without_skill age como se fosse a skill, enquanto o with_skill raciocina sobre ela."
+  }
+}

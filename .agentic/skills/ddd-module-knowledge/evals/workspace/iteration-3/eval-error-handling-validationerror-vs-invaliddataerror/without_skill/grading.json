@@ -1,0 +1,10 @@
+{
+  "assertion_results": [
+    {"text": "Output maps ValidationError to 400 Bad Request", "passed": false, "evidence": "Answer maps ValidationError to HTTP 422 Unprocessable Entity — exactly the opposite of the correct mapping"},
+    {"text": "Output maps InvalidDataError to 422 Unprocessable Entity", "passed": false, "evidence": "Answer does not assign an HTTP code to InvalidDataError; it describes it as semantic/business-rule failure but gives no explicit HTTP status"},
+    {"text": "Output states ValidationError belongs in application or infrastructure layers", "passed": false, "evidence": "Answer says ValidationError 'belongs closer to the boundary/input parsing layer' — vague and not explicitly application or infrastructure"},
+    {"text": "Output states InvalidDataError belongs in domain entities, value objects, or builders", "passed": false, "evidence": "Answer says InvalidDataError 'belongs in the domain or application layer' — incorrectly includes the application layer"},
+    {"text": "Output clearly distinguishes the two errors by layer and purpose", "passed": false, "evidence": "Answer inverts HTTP codes and conflates layers for both errors; the distinction is present but the mapping is wrong"}
+  ],
+  "summary": {"passed": 0, "failed": 5, "total": 5, "pass_rate": 0.000}
+}

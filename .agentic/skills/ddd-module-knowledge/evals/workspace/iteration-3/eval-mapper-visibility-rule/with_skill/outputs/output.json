@@ -1,0 +1,1 @@
+{ "id": 15, "answer": "No. The toDatabase and toDomain mapper functions must be package-private (unexported). They reside in the 'database' package inside 'mapper.go' and must not be exported." }

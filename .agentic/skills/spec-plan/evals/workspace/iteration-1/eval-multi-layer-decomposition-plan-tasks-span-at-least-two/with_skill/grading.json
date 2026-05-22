@@ -1,0 +1,30 @@
+{
+  "assertion_results": [
+    {
+      "text": "The plan contains tasks from at least two distinct architectural layers (DOM, APP, INFRA, or MOD)",
+      "passed": true,
+      "evidence": "'Domain layer — TASK-DOM-ORDER', 'Application layer — TASK-APP-CANCEL-ORDER', 'Infrastructure layer — TASK-INFRA-HTTP-CANCEL, TASK-INFRA-REPO-ORDER' — quatro camadas distintas representadas."
+    },
+    {
+      "text": "The plan includes at least one Domain layer task (TASK-DOM-*) related to the Order entity or the CANCELLED status",
+      "passed": true,
+      "evidence": "'TASK-DOM-ORDER: update the Order entity to support CANCELLED status and a soft-delete mechanism (e.g., a Cancel() method or status transition logic)' — task de domínio explicitamente relacionada à entidade Order e status CANCELLED."
+    },
+    {
+      "text": "The plan includes at least one Infrastructure or Application layer task for the HTTP handler, repository, or command handler",
+      "passed": true,
+      "evidence": "'TASK-APP-CANCEL-ORDER' (command handler), 'TASK-INFRA-HTTP-CANCEL' (HTTP handler), 'TASK-INFRA-REPO-ORDER' (repositório) — todos três presentes."
+    },
+    {
+      "text": "The plan does NOT include any database migration task, respecting the no-migration invariant",
+      "passed": true,
+      "evidence": "'No migration task is included, respecting the stated invariant.' — confirmado explicitamente; repositório usa 'existing status/column' sem migração."
+    }
+  ],
+  "summary": {
+    "passed": 4,
+    "failed": 0,
+    "total": 4,
+    "pass_rate": 1.000
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "assertion_results": [
+    {
+      "text": "The plan contains tasks from at least two distinct architectural layers (DOM, APP, INFRA, or MOD)",
+      "passed": true,
+      "evidence": "TASK-DOM-ORDER-CANCEL (Domain), TASK-APP-CANCEL-ORDER-CMD, TASK-APP-CANCEL-ORDER-HANDLER (Application), TASK-INFRA-HTTP-CANCEL (Infrastructure), TASK-MOD-ORDER-REGISTER (Module) — cinco camadas distintas presentes."
+    },
+    {
+      "text": "The plan includes at least one Domain layer task (TASK-DOM-*) related to the Order entity or the CANCELLED status",
+      "passed": true,
+      "evidence": "'TASK-DOM-ORDER-CANCEL — Adicionar método Cancel na entidade Order' com sub-task 'Adicionar método Cancel() error na entidade Order' e regra de invariante de cancelamento duplo."
+    },
+    {
+      "text": "The plan includes at least one Infrastructure or Application layer task for the HTTP handler, repository, or command handler",
+      "passed": true,
+      "evidence": "TASK-APP-CANCEL-ORDER-CMD (command), TASK-APP-CANCEL-ORDER-HANDLER (handler), TASK-INFRA-HTTP-CANCEL (HTTP handler) — todos presentes com File: e sub-tasks."
+    },
+    {
+      "text": "The plan does NOT include any database migration task, respecting the no-migration invariant",
+      "passed": true,
+      "evidence": "Estratégia: 'Nenhuma migração de banco de dados é necessária — o campo status já deve existir'. Nenhum TASK de migração presente no plano."
+    }
+  ],
+  "summary": {
+    "passed": 4,
+    "failed": 0,
+    "total": 4,
+    "pass_rate": 1.000
+  }
+}

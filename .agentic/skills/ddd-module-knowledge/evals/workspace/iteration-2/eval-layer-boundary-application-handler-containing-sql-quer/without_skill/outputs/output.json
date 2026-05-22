@@ -1,0 +1,4 @@
+{
+  "id": 8,
+  "answer": "No. Writing raw SQL queries inside an application command handler violates hexagonal architecture layer boundaries. The application layer should only coordinate domain logic and delegate persistence operations to the repository interface (defined in the domain contract). SQL queries belong in the infrastructure layer, specifically in the repository implementation."
+}

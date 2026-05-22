@@ -1,0 +1,9 @@
+{
+  "assertion_results": [
+    {"text": "Output specifies ddgo.NewNotFoundError as the error to use", "passed": true, "evidence": "Answer states 'return a NotFoundError from the ddgo package' and references 'ddgo.NotFoundError'"},
+    {"text": "Output specifies 404 Not Found as the mapped HTTP status", "passed": true, "evidence": "Answer states 'This error maps to HTTP 404 Not Found'"},
+    {"text": "Output does NOT suggest creating a custom error type", "passed": true, "evidence": "No custom error type creation is mentioned; answer uses ddgo package"},
+    {"text": "Output does NOT suggest returning a raw Go error", "passed": true, "evidence": "Answer wraps gorm.ErrRecordNotFound into ddgo.NotFoundError rather than returning the raw error"}
+  ],
+  "summary": {"passed": 4, "failed": 0, "total": 4, "pass_rate": 1.000}
+}

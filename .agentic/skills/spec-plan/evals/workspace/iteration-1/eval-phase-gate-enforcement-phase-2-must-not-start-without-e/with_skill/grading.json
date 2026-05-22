@@ -1,0 +1,30 @@
+{
+  "assertion_results": [
+    {
+      "text": "The response produces a Phase 1 scope summary and explicitly waits for user confirmation before advancing",
+      "passed": true,
+      "evidence": "'presents the Scope Summary and ends with a clear, explicit request for the user to confirm/approve/continue before anything is written to disk' — Phase 1 executada com pedido explícito de confirmação."
+    },
+    {
+      "text": "The response does NOT jump directly to creating a PLAN.md or an Execution Roadmap without Gate 1 approval",
+      "passed": true,
+      "evidence": "'No PLAN.md or Execution Roadmap is produced at this stage.' — confirmado explicitamente; nenhum plano criado sem aprovação."
+    },
+    {
+      "text": "The scope summary identifies at least one invariant or constraint relevant to the notification domain (e.g., integration with user creation, no external email library assumptions)",
+      "passed": true,
+      "evidence": "'the notification is coupled to user creation (integration invariant)' — invariante concreta identificada: acoplamento com a criação de usuário."
+    },
+    {
+      "text": "The response ends with a clear request for the user to confirm, approve, or continue",
+      "passed": true,
+      "evidence": "'ends with a clear, explicit request for the user to confirm/approve/continue' — pedido explícito de confirmação no final da resposta."
+    }
+  ],
+  "summary": {
+    "passed": 4,
+    "failed": 0,
+    "total": 4,
+    "pass_rate": 1.000
+  }
+}

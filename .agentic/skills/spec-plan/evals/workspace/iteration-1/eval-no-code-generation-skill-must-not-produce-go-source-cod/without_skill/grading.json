@@ -1,0 +1,25 @@
+{
+  "assertion_results": [
+    {
+      "text": "The output does NOT include Go source code (no 'func ', 'type struct', or ':= ' patterns inside code blocks)",
+      "passed": true,
+      "evidence": "Nenhum bloco de código Go presente. A resposta contém apenas texto de elicitação de escopo com perguntas sobre requisitos do campo `phone` — sem qualquer trecho de código Go."
+    },
+    {
+      "text": "The response addresses Phase 1 scope elicitation before jumping to create a plan or write any file",
+      "passed": true,
+      "evidence": "'**Fase 1 — Elicitação de Escopo**' é apresentada primeiro com 'Resumo de Escopo' e perguntas — nenhum plano ou arquivo é criado antes desta etapa."
+    },
+    {
+      "text": "The response stays within the planning domain — describing what tasks need to be done, not how to implement them in code",
+      "passed": true,
+      "evidence": "Resposta inteiramente de elicitação de escopo: campos necessários, validações, migrações — descreve o QUE precisa ser feito sem especificar implementação."
+    }
+  ],
+  "summary": {
+    "passed": 3,
+    "failed": 0,
+    "total": 3,
+    "pass_rate": 1.000
+  }
+}

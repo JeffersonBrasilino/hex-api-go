@@ -1,0 +1,45 @@
+{
+  "assertion_results": [
+    {
+      "text": "Output shows internal/product/ as the module root",
+      "passed": true,
+      "evidence": "Output states 'internal/product/ as the module root'"
+    },
+    {
+      "text": "Output includes domain/contract/ subdirectory",
+      "passed": false,
+      "evidence": "Output mentions 'domain contracts/interfaces' in prose but no explicit 'domain/contract/' subdirectory; example shows 'internal/product/domain/events/' not contract/"
+    },
+    {
+      "text": "Output includes domain/event/ subdirectory",
+      "passed": false,
+      "evidence": "Output shows 'internal/product/domain/events/' (plural) not 'domain/event/' as required by the project structure"
+    },
+    {
+      "text": "Output includes application/command/ and application/query/ subdirectories",
+      "passed": true,
+      "evidence": "Output states 'application/ (containing command and query subdirectories, each with their handler)'"
+    },
+    {
+      "text": "Output includes infrastructure/database/ and infrastructure/http/ subdirectories",
+      "passed": true,
+      "evidence": "Output example shows 'internal/product/infrastructure/http/, internal/product/infrastructure/database/'"
+    },
+    {
+      "text": "Output includes product.go at the module root",
+      "passed": false,
+      "evidence": "No mention of product.go registration file at the module root anywhere in the output"
+    },
+    {
+      "text": "Output does NOT suggest importing from other modules",
+      "passed": true,
+      "evidence": "No cross-module import suggestion in the output"
+    }
+  ],
+  "summary": {
+    "passed": 4,
+    "failed": 3,
+    "total": 7,
+    "pass_rate": 0.571
+  }
+}

@@ -1,0 +1,1 @@
+{ "id": 5, "answer": "When the queried entity does not exist, you should return a NotFoundError from the ddgo package. This error maps to HTTP 404 Not Found. Typically you check if gorm.ErrRecordNotFound is returned and wrap or translate it into a ddgo.NotFoundError before returning it up the stack." }

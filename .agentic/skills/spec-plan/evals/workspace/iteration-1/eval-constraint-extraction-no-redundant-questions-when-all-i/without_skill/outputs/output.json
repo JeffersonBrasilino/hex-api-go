@@ -1,0 +1,5 @@
+{
+  "id": 7,
+  "answer": "**Fase 1 — Elicitação de Escopo**\n\nAnalisei o contexto fornecido. Todas as informações necessárias estão presentes — não há perguntas adicionais.\n\n---\n\n**Resumo de Escopo:**\n\n- **Intenção:** Criar o endpoint `GET /users/{id}/profile` que retorna os dados públicos de um usuário específico.\n- **Pré-condições:** O usuário com o `id` informado deve existir no banco de dados.\n- **Pós-condições:** Retorna HTTP 200 com JSON contendo os campos `name`, `email` e `avatar_url`; retorna HTTP 404 caso o usuário não seja encontrado.\n- **Invariantes:** Sem novas dependências externas; sem migrações de banco de dados.\n\n---\n\nEste escopo está correto? Confirme com \"ok\", \"aprovado\" ou \"continue\" para eu avançar para a Fase 2 e gerar o plano técnico.",
+  "slug": "eval-constraint-extraction-no-redundant-questions-when-all-i"
+}

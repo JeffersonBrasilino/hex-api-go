@@ -1,0 +1,30 @@
+{
+  "assertion_results": [
+    {
+      "text": "The plan uses semantic task IDs following the TASK-[LAYER]-[CONCERN] pattern (e.g., TASK-DOM-PASSWORD, TASK-APP-CHANGE-PASSWORD, TASK-INFRA-REPO)",
+      "passed": true,
+      "evidence": "IDs mencionados explicitamente: 'TASK-DOM-PASSWORD', 'TASK-APP-CHANGE-PASSWORD', 'TASK-INFRA-REPO', 'TASK-INFRA-HTTP' — todos seguem o padrão TASK-[LAYER]-[CONCERN]."
+    },
+    {
+      "text": "Each task in the plan references exactly one file in the 'File:' field — no task spans multiple files",
+      "passed": false,
+      "evidence": "O agente descreve a regra ('Each task maps to exactly one file — if multiple files are needed, they are split into separate tasks') mas não produz um plano com campos 'File:' concretos para verificar. Nenhuma evidência concreta de conformidade com o campo File: no output."
+    },
+    {
+      "text": "The plan includes an Execution section (Section 3) that mirrors every task defined in the Plan section",
+      "passed": false,
+      "evidence": "O agente afirma 'The plan includes Section 1 (Plan/Roadmap), Section 3 (Execution checklist mirroring every task)' mas não apresenta o conteúdo real da Section 3. Nenhuma seção de Execution visível no output para verificar o espelhamento."
+    },
+    {
+      "text": "The plan uses markdown checkbox format [ ] for every task and sub-task entry",
+      "passed": false,
+      "evidence": "O agente afirma 'All task and sub-task entries use markdown checkbox format [ ]' mas não produz um plano real com marcadores `[ ]`. Nenhuma ocorrência de `[ ]` no output para confirmar."
+    }
+  ],
+  "summary": {
+    "passed": 1,
+    "failed": 3,
+    "total": 4,
+    "pass_rate": 0.250
+  }
+}

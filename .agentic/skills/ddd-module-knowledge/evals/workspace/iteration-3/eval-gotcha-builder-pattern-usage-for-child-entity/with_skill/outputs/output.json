@@ -1,0 +1,1 @@
+{ "id": 10, "answer": "No. The Builder pattern is used only for the aggregate root. Child entities such as Person should be constructed directly using a New[Entity]() function (e.g., NewPerson()), not the Builder pattern." }

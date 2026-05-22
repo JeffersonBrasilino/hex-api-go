@@ -1,0 +1,30 @@
+{
+  "assertion_results": [
+    {
+      "text": "Output answers NO explicitly",
+      "passed": true,
+      "evidence": "Output begins with \"No.\""
+    },
+    {
+      "text": "Output states mapper functions must be unexported (package-private)",
+      "passed": true,
+      "evidence": "Output states: \"must be package-private (unexported, lowercase)\""
+    },
+    {
+      "text": "Output confirms toDatabase and toDomain are the correct function names",
+      "passed": true,
+      "evidence": "Output references \"The toDatabase and toDomain mapper functions\" by name"
+    },
+    {
+      "text": "Output does NOT suggest exporting mapper functions for any reason",
+      "passed": true,
+      "evidence": "Output provides an absolute prohibition on exporting — no exceptions"
+    }
+  ],
+  "summary": {
+    "passed": 4,
+    "failed": 0,
+    "total": 4,
+    "pass_rate": 1.000
+  }
+}

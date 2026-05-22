@@ -1,0 +1,4 @@
+{
+  "id": 12,
+  "answer": "The handler function should be named 'CreateProduct' (or 'HandleCreateProduct'), and the request struct should be named 'CreateProductRequest'. Both follow the PascalCase naming and mirror the use-case name."
+}

@@ -1,0 +1,1 @@
+{ "id": 15, "answer": "No. The toDatabase and toDomain mapper functions must be package-private (unexported, lowercase). They must not be exported. They are internal to the database package." }

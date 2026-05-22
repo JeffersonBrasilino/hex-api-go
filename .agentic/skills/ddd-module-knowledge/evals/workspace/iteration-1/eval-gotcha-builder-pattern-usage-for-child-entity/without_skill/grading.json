@@ -1,0 +1,30 @@
+{
+  "assertion_results": [
+    {
+      "text": "Output answers NO explicitly",
+      "passed": false,
+      "evidence": "Output begins with 'Generally, the Builder pattern is applied to the aggregate root' — hedged, no explicit NO"
+    },
+    {
+      "text": "Output states Builder pattern is exclusively for the aggregate root",
+      "passed": true,
+      "evidence": "Output states 'Builder pattern is applied to the aggregate root to encapsulate complex construction logic'"
+    },
+    {
+      "text": "Output states child entities must use New[Entity]() constructor directly",
+      "passed": false,
+      "evidence": "Output states 'a simpler factory method or constructor function is usually sufficient' — 'usually' is hedged, and no explicit 'New[Entity]()' constructor mentioned"
+    },
+    {
+      "text": "Output does NOT suggest creating a Builder for Person",
+      "passed": false,
+      "evidence": "Output states 'Using a full Builder for a child entity like Person adds unnecessary complexity unless the child entity itself has many optional fields' — explicitly entertains the possibility of a Builder for Person"
+    }
+  ],
+  "summary": {
+    "passed": 1,
+    "failed": 3,
+    "total": 4,
+    "pass_rate": 0.250
+  }
+}

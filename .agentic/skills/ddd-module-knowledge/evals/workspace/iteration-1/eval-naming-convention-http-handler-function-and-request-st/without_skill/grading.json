@@ -1,0 +1,25 @@
+{
+  "assertion_results": [
+    {
+      "text": "Output specifies handler function name as 'CreateProductHandler'",
+      "passed": true,
+      "evidence": "Output states 'handler function should be named \\'CreateProductHandler\\'' as first option"
+    },
+    {
+      "text": "Output specifies request struct name as 'CreateProductRequest'",
+      "passed": true,
+      "evidence": "Output states 'request struct should be named \\'CreateProductRequest\\''"
+    },
+    {
+      "text": "Output specifies file name as 'create_product_handler.go'",
+      "passed": false,
+      "evidence": "No file name mentioned anywhere in the output"
+    }
+  ],
+  "summary": {
+    "passed": 2,
+    "failed": 1,
+    "total": 3,
+    "pass_rate": 0.667
+  }
+}

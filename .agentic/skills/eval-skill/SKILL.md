@@ -46,6 +46,8 @@ The user must provide the **skill path** — the directory containing the target
 
 Resolve relative paths from the repository root.
 
+**Optional**: the user may specify a **model** for the subagent runs (e.g., "eval using haiku", "use opus"). If not specified, use the current conversation model. The model ID is recorded in `timing.json` and used for cost calculation.
+
 ## Workspace Layout
 
 The workspace lives **inside** the skill directory, under `evals/workspace/`. Each iteration gets its own `iteration-N/` directory:
@@ -128,12 +130,17 @@ Questions:
 {for each eval: N. [slug: {slug}] {prompt}}
 ```
 
-After each subagent completes, immediately capture `total_tokens` and `duration_ms` from the task completion notification — these are not persisted anywhere else.
+After each subagent completes, immediately capture from the task completion notification — these are not persisted anywhere else:
+- `model` — model ID string (e.g., `"claude-sonnet-4-6"`)
+- `input_tokens` and `output_tokens` — capture separately when available; fall back to `total_tokens` only if the split is absent
+- `duration_ms`
+
+Compute `estimated_cost_usd` using the pricing table in `references/pricing-table.md`. Apply fallback rules from that reference if model or token split is unknown.
 
 For each eval write:
 - `{workspace}/iteration-{N}/eval-{slug}/with_skill/outputs/output.json` → `{ "id": N, "answer": "..." }`
 - `{workspace}/iteration-{N}/eval-{slug}/without_skill/outputs/output.json` → same
-- `{workspace}/iteration-{N}/eval-{slug}/with_skill/timing.json` → `{ "total_tokens": N, "duration_ms": N }`
+- `{workspace}/iteration-{N}/eval-{slug}/with_skill/timing.json` → see [timing schema](references/grading-schema.md)
 - `{workspace}/iteration-{N}/eval-{slug}/without_skill/timing.json` → same
 
 When batching evals into one subagent, the timing values are shared across all evals in the batch. Add `"note": "batch run — timing shared across {N} evals"` to each `timing.json`.
@@ -162,9 +169,14 @@ Schema → see [reference](references/grading-schema.md).
 
 Aggregate timing and pass rates across all evals for both configurations. Compute delta.
 
-Write `{workspace}/iteration-{N}/benchmark.json` — schema → see [reference](references/benchmark-schema.md).
+**Costs**: sum `estimated_cost_usd` from each eval's `timing.json` per configuration; compute `mean_per_eval` and `delta.estimated_cost_usd`.
 
-The `delta` shows what the skill **costs** (time, tokens) and what it **buys** (pass rate improvement). A skill that adds time but improves pass rate by ≥ 0.4 is generally worth it.
+**value_tier**: classify `delta.pass_rate` using the thresholds in [benchmark-schema.md](references/benchmark-schema.md):
+- `"forte"` ≥ 0.40 · `"moderado"` 0.20–0.39 · `"fraco"` 0.05–0.19 · `"sem_valor"` 0.00–0.04 · `"negativo"` < 0.00
+
+**delta_vs_prev_iteration**: when `N > 1`, read `iteration-(N-1)/benchmark.json` and compute `pass_rate_delta_change`, `value_tier_change`, and `cost_delta_change_usd`. Set to `null` for iteration 1.
+
+Write `{workspace}/iteration-{N}/benchmark.json` — full schema → see [reference](references/benchmark-schema.md).
 
 Pattern analysis to include in the benchmark:
 - Assertions that **always pass in both configs** — these inflate the with_skill rate without measuring skill value; flag for review
@@ -201,6 +213,19 @@ Structure of `report.md`:
 | with_skill | X.XXX |
 | without_skill | X.XXX |
 | **delta** | **+X.XXX** |
+| **value_tier** | **forte / moderado / fraco / sem_valor / negativo** |
+
+_(Se N > 1)_ Comparado à iteração anterior: delta passou de X.XXX → X.XXX (`{value_tier_change}`).
+
+## Custo estimado
+
+| Configuração | Total (USD) | Média por avaliação (USD) | Modelo |
+|---|---|---|---|
+| with_skill | $X.XXXXXX | $X.XXXXXX | {model} |
+| without_skill | $X.XXXXXX | $X.XXXXXX | {model} |
+| **custo adicional da skill** | **$X.XXXXXX** | — | — |
+
+_(Se aplicável)_ Nota de precificação: `{pricing_note}`
 
 ## Por Avaliação
 
@@ -246,7 +271,10 @@ o relatório da avaliação da skill foi criado, local: {workspace}/iteration-{N
 - Always read ALL `references/` files before building the with_skill prompt — critical conventions often live in references/, not SKILL.md body
 - Eval slug must be filesystem-safe: lowercase, hyphens only, max 60 chars — truncate if needed
 - Iteration number comes from filesystem scan — never assume 1 if `{workspace}/` already exists
-- Capture `total_tokens` and `duration_ms` immediately from task completion notification — they are not available later
+- Capture `model`, `input_tokens`, `output_tokens`, and `duration_ms` immediately from task completion notification — they are not available later
+- Token split (`input_tokens` / `output_tokens`) may not always be present in the notification; apply the 75/25 fallback from pricing-table.md and record `pricing_note` — never skip cost computation
+- `value_tier` is derived solely from `delta.pass_rate` — do not adjust it based on cost or context
+- `delta_vs_prev_iteration` requires reading the previous iteration's `benchmark.json` — skip only if iteration 1
 - If subagent is denied write permissions, answers still arrive in task result — write all files yourself
 - Negative assertions are highest-signal — grade strictly, they catch regressions
 - `stddev` in benchmark is only meaningful with multiple runs per eval; with single runs, focus on raw delta
@@ -257,3 +285,4 @@ o relatório da avaliação da skill foi criado, local: {workspace}/iteration-{N
 - Grading output schema → see [reference](references/grading-schema.md)
 - Benchmark output schema → see [reference](references/benchmark-schema.md)
 - Feedback file schema → see [reference](references/feedback-schema.md)
+- Model pricing table → see [reference](references/pricing-table.md)

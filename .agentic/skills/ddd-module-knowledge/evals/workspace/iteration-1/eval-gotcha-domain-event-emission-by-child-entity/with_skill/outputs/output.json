@@ -1,0 +1,1 @@
+{ "id": 9, "answer": "No. Only aggregate roots can emit domain events. The Person entity is a child entity of the User aggregate root, so it must not emit domain events. Only the User aggregate root is allowed to emit domain events." }

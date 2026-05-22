@@ -1,0 +1,1 @@
+{ "id": 3, "answer": "For the 'order' module, the GORM repository struct should be named 'GormOrderRepository' and its constructor function should be named 'NewGormOrderRepository'. This follows the pattern: Gorm + {ModuleName} + Repository for the struct, and New + {same} for the constructor." }

@@ -1,0 +1,4 @@
+{
+  "id": 4,
+  "answer": "The TableName() method for the user module's persistence model should return 'hex-api-go.users', following the pattern '[project-name].[table_name]'."
+}

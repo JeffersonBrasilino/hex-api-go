@@ -1,0 +1,25 @@
+{
+  "assertion_results": [
+    {
+      "text": "Output answers NO explicitly",
+      "passed": true,
+      "evidence": "Output begins with \"No.\""
+    },
+    {
+      "text": "Output states HTTP handlers must dispatch through the gomes bus",
+      "passed": false,
+      "evidence": "Output says handlers should interact with \"the application layer (command handlers / use cases)\" but never mentions the 'gomes bus' specifically"
+    },
+    {
+      "text": "Output does NOT suggest any scenario where direct repository access from HTTP handler is acceptable",
+      "passed": true,
+      "evidence": "Output clearly forbids direct repository access without exceptions"
+    }
+  ],
+  "summary": {
+    "passed": 2,
+    "failed": 1,
+    "total": 3,
+    "pass_rate": 0.667
+  }
+}

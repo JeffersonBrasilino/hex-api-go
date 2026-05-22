@@ -1,0 +1,30 @@
+{
+  "assertion_results": [
+    {
+      "text": "The response mentions reading or loading the PRD file at the path docs/order/cancel-order/PRD.md",
+      "passed": true,
+      "evidence": "'Leria o arquivo docs/order/cancel-order/PRD.md para analisar seu conteúdo' e 'Posso ler o arquivo docs/order/cancel-order/PRD.md agora para iniciar a análise?' — caminho exato mencionado duas vezes."
+    },
+    {
+      "text": "The response does NOT invent or fabricate PRD content (acceptance criteria, requirements) without having read the file",
+      "passed": true,
+      "evidence": "Nenhum conteúdo do PRD (critérios de aceite, requisitos) é fabricado. A resposta apenas descreve o processo de leitura e elicitação."
+    },
+    {
+      "text": "The response describes Phase 1 scope elicitation as the first step to be executed after reading the file",
+      "passed": true,
+      "evidence": "'Extrairia diretamente do PRD as pré-condições, pós-condições e invariantes — sem fazer perguntas desnecessárias sobre informações já explícitas no documento. Apresentaria um resumo de escopo consolidado para sua confirmação antes de avançar.' — Phase 1 descrita como etapa subsequente à leitura."
+    },
+    {
+      "text": "The response does NOT produce a complete PLAN.md content without first reading the PRD and validating the scope",
+      "passed": true,
+      "evidence": "Nenhum PLAN.md proposto. Resposta termina com pergunta de confirmação para leitura do arquivo: 'Posso ler o arquivo agora?'"
+    }
+  ],
+  "summary": {
+    "passed": 4,
+    "failed": 0,
+    "total": 4,
+    "pass_rate": 1.000
+  }
+}

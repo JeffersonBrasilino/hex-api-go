@@ -1,0 +1,5 @@
+{
+  "id": 5,
+  "answer": "With scope already approved and the invariant of no database migrations explicit, the skill generates the full technical plan. The plan must span at least two DDD layers to address the feature end-to-end. Expected task decomposition across layers: Domain layer — TASK-DOM-ORDER: update the Order entity to support CANCELLED status and a soft-delete mechanism (e.g., a `Cancel()` method or status transition logic), one file per task. Application layer — TASK-APP-CANCEL-ORDER: create or update a command and command handler for the cancel-order use case, each in its own task/file. Infrastructure layer — TASK-INFRA-HTTP-CANCEL: add the HTTP handler for POST /orders/{id}/cancel; TASK-INFRA-REPO-ORDER: update the repository implementation to persist the CANCELLED status without a migration (using an existing status/column). No migration task is included, respecting the stated invariant. All tasks use semantic IDs, reference exactly one file, use `[ ]` checkbox format, and are mirrored in Section 3 (Execution checklist).",
+  "slug": "eval-multi-layer-decomposition-plan-tasks-span-at-least-two"
+}

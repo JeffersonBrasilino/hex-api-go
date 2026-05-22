@@ -1,0 +1,9 @@
+{
+  "assertion_results": [
+    {"text": "Output answers NO explicitly", "passed": true, "evidence": "Answer begins with 'No.'"},
+    {"text": "Output states only the aggregate root can emit domain events", "passed": true, "evidence": "Answer states 'only the aggregate root should emit domain events'"},
+    {"text": "Output identifies User as the aggregate root and sole event emitter", "passed": true, "evidence": "Answer states 'the aggregate root (User) is responsible for emitting that event'"},
+    {"text": "Output does NOT suggest any workaround that lets Person emit events", "passed": true, "evidence": "Answer gives no alternative for Person to emit events; User is the sole emitter"}
+  ],
+  "summary": {"passed": 4, "failed": 0, "total": 4, "pass_rate": 1.000}
+}

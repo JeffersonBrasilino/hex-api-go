@@ -1,0 +1,42 @@
+{
+  "run_summary": {
+    "model": "claude-sonnet-4-6",
+    "with_skill": {
+      "pass_rate": { "mean": 1.000, "stddev": 0.000 },
+      "time_seconds": { "mean": 22.417, "stddev": null },
+      "tokens": { "mean": 4338, "stddev": null },
+      "estimated_cost_usd": { "total": 0.104116, "mean_per_eval": 0.026029 }
+    },
+    "without_skill": {
+      "pass_rate": { "mean": 0.792, "stddev": 0.125 },
+      "time_seconds": { "mean": 13.735, "stddev": null },
+      "tokens": { "mean": 2534, "stddev": null },
+      "estimated_cost_usd": { "total": 0.060820, "mean_per_eval": 0.015205 }
+    },
+    "delta": {
+      "pass_rate": 0.208,
+      "time_seconds": 8.682,
+      "tokens": 1804,
+      "estimated_cost_usd": 0.043296
+    },
+    "value_tier": "moderado",
+    "delta_vs_prev_iteration": {
+      "pass_rate_delta_change": 0.135,
+      "value_tier_change": "fraco → moderado",
+      "cost_delta_change_usd": 0.025461
+    }
+  },
+  "pattern_analysis": {
+    "always_pass_both": [
+      "eval-phase-gate-enforcement-phase-2-must-not-start-without-e (4/4 ambos)"
+    ],
+    "skill_wins": [
+      "eval-no-code-generation-skill-must-not-produce-go-source-cod: with_skill=1.000 vs without_skill=0.667 (+0.333) — with_skill executa Fase 1 obrigatória antes de qualquer plano; without_skill pula direto para o plano por camadas sem elicitação de escopo.",
+      "eval-scope-elicitation-produce-scope-summary-from-text-feat: with_skill=1.000 vs without_skill=0.750 (+0.250) — with_skill encerra com frase canônica de Gate 1 ('Assim que responder, confirmo o escopo e avançamos para a Fase 2.') após as perguntas de elicitação; without_skill termina na última pergunta sem frase de confirmação.",
+      "eval-plan-schema-compliance-semantic-task-ids-and-one-file-p: with_skill=1.000 vs without_skill=0.750 (+0.250) — with_skill usa '- [ ] **TASK-...**' para todos os task entries e '- [ ] **Execution — TASK-...**' na Seção 3; without_skill usa '### TASK-...' (heading) para os task entries e tabela markdown na Seção 3, violando o formato de checkbox."
+    ],
+    "baseline_wins": [],
+    "always_fail_both": [],
+    "gap_diagnosis": "Iteração 4 marca a primeira vez que with_skill atinge pass_rate perfeito (1.000) em todos os 4 evals ativos. O delta subiu de +0.073 (fraco) para +0.208 (moderado) — melhora de +0.135. A instrução CRITICAL adicionada ao Gate 1 funcionou: with_skill agora encerra com frase de confirmação mesmo quando há perguntas de elicitação pendentes. Os três diferenciais de valor persistem: Gate 1 explícito, formato de checkbox nas tasks, e Fase 1 obrigatória antes de qualquer plano. O eval-phase-gate-enforcement continua como baseline confirmado (4/4 em ambas as configs). O custo adicional da skill aumentou de $0.017835 para $0.043296 — reflexo de runs com menos evals (4 vs 8 na iteração 3), elevando o custo médio por eval."
+  }
+}

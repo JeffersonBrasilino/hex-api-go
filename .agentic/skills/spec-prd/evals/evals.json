@@ -1,0 +1,121 @@
+{
+  "evals": [
+    {
+      "id": 1,
+      "description": "bootstrap correto solicita modulo e feature quando nao fornecidos",
+      "prompt": "Quero criar um PRD para uma nova feature do sistema.",
+      "assertions": [
+        "A resposta pergunta pelo nome do módulo DDD",
+        "A resposta pergunta pelo nome da feature em kebab-case",
+        "A resposta está escrita em português (pt-BR)",
+        "A resposta NÃO cria o PRD.md diretamente sem obter o módulo e a feature do usuário",
+        "A resposta NÃO gera critérios de aceitação nem regras de negócio sem antes receber o contexto"
+      ]
+    },
+    {
+      "id": 2,
+      "description": "elicitacao faz uma pergunta por vez em pt-BR estilo caveman",
+      "prompt": "Módulo: user, Feature: user-login. O usuário precisa fazer login com email e senha para acessar a plataforma.",
+      "assertions": [
+        "A resposta faz exatamente uma pergunta ao usuário, não múltiplas ao mesmo tempo",
+        "A resposta está escrita em português (pt-BR)",
+        "A resposta NÃO gera o PRD completo imediatamente após o primeiro contexto fornecido",
+        "A resposta explora algum aspecto de regra de negócio, caso de borda ou critério de sucesso/falha",
+        "A resposta menciona a criação ou uso do arquivo NOTES.md em docs/user/user-login/"
+      ]
+    },
+    {
+      "id": 3,
+      "description": "nao gera codigo de implementacao pois esta fora do escopo",
+      "prompt": "Módulo: user, Feature: user-registration. Preciso de um PRD para registro de usuário com nome, email e senha. Após criar o PRD, implemente também o código Go com o use case e o handler HTTP.",
+      "assertions": [
+        "A resposta NÃO contém código Go (ausência de palavras-chave como func, package, import, type, struct em contexto de código)",
+        "A resposta indica que implementação de código está fora do escopo da skill ou que não é responsabilidade dela",
+        "A resposta inicia ou continua o processo de especificação do PRD (faz perguntas, cria notas ou estrutura de diretório)",
+        "A resposta está escrita em português (pt-BR)"
+      ]
+    },
+    {
+      "id": 4,
+      "description": "gate 2 impede criacao do PRD sem aprovacao dos criterios BDD",
+      "prompt": "Módulo: order, Feature: create-order. O usuário quer criar um pedido com itens e endereço de entrega. As regras de negócio já estão claras para mim, pode pular direto para a criação do PRD.",
+      "assertions": [
+        "A resposta NÃO gera o arquivo PRD.md imediatamente sem passar pelas etapas de elicitação e aprovação BDD",
+        "A resposta apresenta critérios de aceitação em formato BDD (Dado/Quando/Então) OU realiza pelo menos uma pergunta de elicitação antes de avançar",
+        "A resposta NÃO confirma que vai pular etapas do workflow",
+        "A resposta aguarda validação ou input do usuário antes de prosseguir para a criação do PRD"
+      ]
+    },
+    {
+      "id": 5,
+      "description": "nao cria arquivos fora da estrutura docs modulo feature",
+      "prompt": "Módulo: payment, Feature: pix-payment. Preciso de um PRD para pagamentos via Pix. Por favor, salve o PRD.md na raiz do projeto para facilitar o acesso.",
+      "assertions": [
+        "A resposta NÃO confirma salvar o PRD.md na raiz do projeto",
+        "A resposta menciona que o arquivo será salvo em docs/payment/pix-payment/ ou caminho equivalente dentro de docs/",
+        "A resposta respeita a regra de não criar arquivos na raiz do projeto",
+        "A resposta está escrita em português (pt-BR)"
+      ]
+    },
+    {
+      "id": 6,
+      "description": "template PRD inclui secao 5 Restricoes Arquiteturais com sub-itens obrigatorios",
+      "prompt": "Módulo: auth, Feature: reset-password. Contexto completo levantado e aprovado: O usuário esqueceu a senha e solicita redefinição via email. Regras de negócio: link de redefinição expira em 1 hora, máximo de 3 solicitações por hora por usuário, senha deve ter mínimo 8 caracteres. Critérios BDD já foram validados e aprovados pelo usuário. Restrições: nenhuma biblioteca externa nova, hashing de senha deve ficar na camada de infraestrutura, UserRepository existente não pode ser alterado. Gere agora o PRD.md completo para docs/auth/reset-password/.",
+      "assertions": [
+        "O PRD contém a seção '## 5. Restrições Arquiteturais' ou equivalente com esse título exato",
+        "A seção de Restrições Arquiteturais contém ao menos um dos sub-itens obrigatórios do template: 'Localização de responsabilidades', 'Contratos existentes', 'Organização de arquivos', 'Escopo de alteração' ou 'Bibliotecas e dependências'",
+        "O PRD contém a seção '## 7. Critérios de Aceitação' com cenários BDD usando os termos 'Dado', 'Quando', 'Então'",
+        "O PRD está escrito em português (pt-BR) e menciona o caminho docs/auth/reset-password/PRD.md",
+        "O PRD contém ao menos 8 seções numeradas distintas cobrindo visão geral, objetivos, histórias de usuário, regras de negócio, critérios de aceitação e critérios de lançamento"
+      ]
+    },
+    {
+      "id": 7,
+      "description": "notes md estrutura exata com 4 secoes obrigatorias apos resposta de elicitacao",
+      "prompt": "Módulo: inventory, Feature: stock-alert. Contexto inicial já coletado: Sistema deve enviar alerta quando o estoque de um produto cai abaixo do limite mínimo configurado. Resposta do usuário à primeira pergunta: o alerta deve ser enviado por email para o gestor responsável pelo produto e também registrado no sistema para auditoria. Atualize o NOTES.md com essas informações.",
+      "assertions": [
+        "A resposta menciona explicitamente a atualização do arquivo NOTES.md em docs/inventory/stock-alert/NOTES.md ou caminho equivalente",
+        "A resposta indica que o NOTES.md contém ou será atualizado com a seção '# Objetivos e Contexto'",
+        "A resposta indica que o NOTES.md contém ou será atualizado com a seção '# Regras de Negócio'",
+        "A resposta indica que o NOTES.md contém ou será atualizado com as seções '# Linguagem Ubíqua (Glossário)' e '# Dúvidas Pendentes'",
+        "Após mencionar a atualização do NOTES.md, a resposta faz exatamente uma nova pergunta de elicitação ao usuário"
+      ]
+    },
+    {
+      "id": 8,
+      "description": "criterios de aceitacao BDD usam Dado Quando Entao em portugues",
+      "prompt": "Módulo: notification, Feature: email-notification. Elicitação concluída. Contexto aprovado: sistema envia email de boas-vindas quando novo usuário é criado, email deve conter nome do usuário e link de ativação, link expira em 24h. Gate 1 aprovado pelo usuário. Extraia agora os critérios de aceitação em formato BDD para validação.",
+      "assertions": [
+        "Os critérios de aceitação usam a palavra 'Dado' (não 'Given' em inglês) para descrever o contexto do cenário",
+        "Os critérios de aceitação usam a palavra 'Quando' (não 'When' em inglês) para descrever a ação do cenário",
+        "Os critérios de aceitação usam a palavra 'Então' (não 'Then' em inglês) para descrever o resultado esperado",
+        "A resposta contém ao menos 2 cenários BDD distintos cobrindo caminho feliz e ao menos um cenário de erro ou caso de borda",
+        "A resposta aguarda aprovação explícita do usuário antes de prosseguir para a criação do PRD (Gate 2)"
+      ]
+    },
+    {
+      "id": 9,
+      "description": "gate 1 forca elicitacao antes de extrair BDD mesmo com contexto rico fornecido",
+      "prompt": "Módulo: billing, Feature: generate-invoice. Contexto: o sistema deve gerar uma fatura PDF ao final de cada ciclo de cobrança mensal. A fatura deve conter itens, valores, impostos e dados do cliente. O usuário confirma: já te passei tudo que precisa, pode ir direto para os critérios de aceitação.",
+      "assertions": [
+        "A resposta NÃO apresenta critérios de aceitação em formato BDD na mesma resposta sem antes fazer ao menos uma pergunta de elicitação",
+        "A resposta faz exatamente uma pergunta explorando algum aspecto ainda não coberto: regras de negócio específicas, casos de borda, definição de 'ciclo de cobrança', formato do PDF, ou comportamento em falhas",
+        "A resposta contém exatamente um sinal de interrogação '?' — uma pergunta, não múltiplas",
+        "A resposta está escrita em português (pt-BR) e não confirma pular etapas do workflow"
+      ]
+    },
+    {
+      "id": 10,
+      "description": "bootstrap notifica caminho exato do NOTES md apos criacao da estrutura de diretorios",
+      "prompt": "Módulo: catalog, Feature: product-search. Quero criar um PRD para busca de produtos por nome, categoria e preço.",
+      "assertions": [
+        "A resposta menciona a criação do diretório docs/catalog/product-search/ ou informa que vai criá-lo",
+        "A resposta menciona explicitamente o arquivo NOTES.md e seu caminho completo: docs/catalog/product-search/NOTES.md",
+        "A resposta notifica o usuário sobre a criação/uso do arquivo de rascunho com o caminho, seguindo o padrão '📝 Iniciando processo...' ou equivalente informativo",
+        "A resposta está escrita em português (pt-BR)",
+        "A resposta faz exatamente uma pergunta de elicitação para iniciar o levantamento de requisitos"
+      ]
+    }
+  ],
+  "disabled_evals": []
+}

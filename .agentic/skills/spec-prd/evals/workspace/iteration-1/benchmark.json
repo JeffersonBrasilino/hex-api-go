@@ -1,0 +1,39 @@
+{
+  "run_summary": {
+    "model": "claude-sonnet-4-6",
+    "with_skill": {
+      "pass_rate": { "mean": 0.870, "stddev": 0.166 },
+      "time_seconds": { "mean": 2.536, "stddev": 0.0 },
+      "tokens": { "mean": 2490.4, "stddev": 0.0 },
+      "estimated_cost_usd": { "total": 0.074710, "mean_per_eval": 0.014942 }
+    },
+    "without_skill": {
+      "pass_rate": { "mean": 1.000, "stddev": 0.000 },
+      "time_seconds": { "mean": 4.044, "stddev": 0.0 },
+      "tokens": { "mean": 2555.4, "stddev": 0.0 },
+      "estimated_cost_usd": { "total": 0.076660, "mean_per_eval": 0.015332 }
+    },
+    "delta": {
+      "pass_rate": -0.130,
+      "time_seconds": -1.508,
+      "tokens": -65.0,
+      "estimated_cost_usd": -0.001950
+    },
+    "value_tier": "negativo",
+    "delta_vs_prev_iteration": null,
+    "pattern_analysis": {
+      "baseline_confirmed_both_pass": [
+        "eval-bootstrap-correto-solicita-modulo-e-feature-quando-nao",
+        "eval-gate-2-impede-criacao-do-prd-sem-aprovacao-dos-criterio",
+        "eval-nao-cria-arquivos-fora-da-estrutura-docs-modulo-feature"
+      ],
+      "skill_inferior_to_baseline": [
+        "eval-elicitacao-faz-uma-pergunta-por-vez-em-pt-br-estilo-cav",
+        "eval-nao-gera-codigo-de-implementacao-pois-esta-fora-do-esco"
+      ],
+      "skill_adds_clear_value": [],
+      "always_fail_both": [],
+      "notes": "O agente with_skill respondeu de forma meta-descritiva ('O skill faria X') em vez de atuar como a skill. Isso causou falhas em asserções que exigem comportamento enativo (criar NOTES.md, fazer uma pergunta). O agente without_skill simulou a skill de forma mais aderente ao workflow esperado."
+    }
+  }
+}

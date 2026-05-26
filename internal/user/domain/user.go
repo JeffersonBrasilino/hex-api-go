@@ -8,17 +8,19 @@ import (
 )
 
 type UserProps struct {
-	UuId     string  `domainValidator:"required"`
-	Username string  `domainValidator:"required,gte=1"`
-	Password string  `domainValidator:"required"`
-	Person   *Person `domainValidator:"required"`
+	UuId       string    `domainValidator:"required"`
+	Username   string    `domainValidator:"required,gte=1"`
+	Password   *Password `domainValidator:"required"`
+	Person     *Person   `domainValidator:"required"`
+	UserGroups []*UserGroup
 }
 
 type User struct {
 	*domain.AggregateRoot
-	username string
-	password string
-	person   *Person
+	username   string
+	password   *Password
+	person     *Person
+	userGroups []*UserGroup
 }
 
 func NewUser(props *UserProps) (*User, error) {
@@ -32,6 +34,7 @@ func NewUser(props *UserProps) (*User, error) {
 		username:      props.Username,
 		password:      props.Password,
 		person:        props.Person,
+		userGroups:    props.UserGroups,
 	}
 
 	return entity, nil
@@ -55,7 +58,7 @@ func validate(props *UserProps) error {
 	return nil
 }
 
-func (u *User) Password() string {
+func (u *User) Password() *Password {
 	return u.password
 }
 
@@ -63,10 +66,14 @@ func (u *User) Username() string {
 	return u.username
 }
 
-func (u *User) SetPassword(password string) {
+func (u *User) SetPassword(password *Password) {
 	u.password = password
 }
 
 func (u *User) Person() *Person {
 	return u.person
+}
+
+func (u *User) UserGroups() []*UserGroup {
+	return u.userGroups
 }

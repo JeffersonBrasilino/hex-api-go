@@ -15,23 +15,47 @@ This project applies hexagonal architecture, Domain-Driven Design (DDD), and Eve
 
 ### Project structure and architecture
 
-Always follow the structure and conventions defined in `docs/ARCHITECTURE.md` when:
+This project follows a strict modular monolith structure where each module under `internal/`
+has three layers: domain, application, and infrastructure. All modules must follow the same
+structure, naming conventions, and implementation patterns. When working with module
+composition, layer boundaries, or component implementation, consult the appropriate skill
+for detailed guidelines.
 
-- creating new files or folders
-- organizing code
-- naming files, folders, functions, types, etc.
-- implementing new features
-- creating new modules
-- creating new module actions
+```
+[project-name]/
+├── cmd/                                # entry points of the application
+│   └── api/
+│       └── main.go
+├── internal/                           # private code of the application
+│   ├── [module-name]/                  # module of the application
+│   │   ├── domain/                     # business rules and contracts
+│   │   ├── application/                # CQRS command/query handlers
+│   │   └── infrastructure/             # adapters (database, http, etc)
+│   └── [module-name]/[module-name].go  # module registration file
+├── pkg/                                # public/shared code
+├── docs/                               # project documentation
+├── .agents/                            # AI agent configuration
+│   └── skills/                         # agent skills (knowledge + actions)
+└── vendor/                             # vendored dependencies
+```
+
+### Principal dependencies
+
+- **Gin** (HTTP server): https://gin-gonic.com/docs/
+- **GORM** (database ORM): https://gorm.io/docs/
+- **Gomes** (CQRS/Event bus): https://github.com/JeffersonBrasilino/gomes
+- **Ddgo** (DDD primitives): https://github.com/JeffersonBrasilino/ddgo
 
 ### Safety and permissions
 
 Allowed without prompt:
+
 - read files, list files
 - go fmt ./..., go vet ./...
 - make test
 
 Ask first:
+
 - package installs
 - deleting files, chmod
 - running full build or end to end suites
@@ -45,17 +69,15 @@ After codebase changes, execute:
 - `make test` - run all tests
 - `make coverage-terminal` - run all tests with code coverage
 
-### Principal dependencies documentation
-
-- Gin: https://gin-gonic.com/docs/introduction/
-- Gorm: https://gorm.io/docs/
-- Gomes: https://github.com/JeffersonBrasilino/gomes
-- Ddgo: https://github.com/JeffersonBrasilino/ddgo
-
 ### Git conventions and commit messages
 
 Always use conventional commits when:
+
 - creating new commits
 - creating new branches
 - creating new tags
 - creating new pull requests
+
+### Skills informations
+
+Whenever you need to execute a skill, state the skill name and a 1-sentence reason for choosing it. Example: 'I will execute the skill [spec-prd] because we need to define the business rules for the new User entity.'

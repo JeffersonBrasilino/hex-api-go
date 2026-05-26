@@ -7,16 +7,18 @@ import (
 )
 
 type ContactProps struct {
-	UuId        string `domainValidator:"required"`
-	Description string `domainValidator:"required"`
-	ContactType string `domainValidator:"required"`
+	UuId        string       `domainValidator:"required"`
+	Description string       `domainValidator:"required"`
+	ContactType *ContactType `domainValidator:"required"`
+	Main        bool
 }
 
 type Contact struct {
 	*ddgo.Entity
 	uuId        string
 	description string
-	contactType string
+	contactType *ContactType
+	main        bool
 }
 
 func NewContact(props *ContactProps) (*Contact, error) {
@@ -28,6 +30,7 @@ func NewContact(props *ContactProps) (*Contact, error) {
 		description: props.Description,
 		contactType: props.ContactType,
 		Entity:      ddgo.NewEntity(props.UuId),
+		main:        props.Main,
 	}, nil
 }
 
@@ -53,6 +56,10 @@ func (c *Contact) Description() string {
 	return c.description
 }
 
-func (c *Contact) ContactType() string {
+func (c *Contact) ContactType() *ContactType {
 	return c.contactType
+}
+
+func (c *Contact) IsMain() bool {
+	return c.main
 }

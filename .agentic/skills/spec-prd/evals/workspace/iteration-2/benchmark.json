@@ -1,0 +1,42 @@
+{
+  "run_summary": {
+    "model": "claude-sonnet-4-6",
+    "with_skill": {
+      "pass_rate": { "mean": 1.000, "stddev": 0.000 },
+      "time_seconds": { "mean": 2.474, "stddev": 0.0 },
+      "tokens": { "mean": 2458.6, "stddev": 0.0 },
+      "estimated_cost_usd": { "total": 0.073760, "mean_per_eval": 0.014752 }
+    },
+    "without_skill": {
+      "pass_rate": { "mean": 1.000, "stddev": 0.000 },
+      "time_seconds": { "mean": 4.217, "stddev": 0.0 },
+      "tokens": { "mean": 2574.2, "stddev": 0.0 },
+      "estimated_cost_usd": { "total": 0.077225, "mean_per_eval": 0.015445 }
+    },
+    "delta": {
+      "pass_rate": 0.000,
+      "time_seconds": -1.743,
+      "tokens": -115.6,
+      "estimated_cost_usd": -0.003465
+    },
+    "value_tier": "sem_valor",
+    "delta_vs_prev_iteration": {
+      "pass_rate_delta_change": 0.130,
+      "value_tier_change": "negativo → sem_valor",
+      "cost_delta_change_usd": -0.001515
+    },
+    "pattern_analysis": {
+      "baseline_confirmed_both_pass": [
+        "eval-bootstrap-correto-solicita-modulo-e-feature-quando-nao",
+        "eval-elicitacao-faz-uma-pergunta-por-vez-em-pt-br-estilo-cav",
+        "eval-nao-gera-codigo-de-implementacao-pois-esta-fora-do-esco",
+        "eval-gate-2-impede-criacao-do-prd-sem-aprovacao-dos-criterio",
+        "eval-nao-cria-arquivos-fora-da-estrutura-docs-modulo-feature"
+      ],
+      "skill_inferior_to_baseline": [],
+      "skill_adds_clear_value": [],
+      "always_fail_both": [],
+      "notes": "Com as correções da iteração 1, o agente with_skill passou a responder de forma enativa (agindo como product owner), corrigindo os 2 evals que falhavam. Ambas as configurações atingem 1.000. O delta zero indica que os evals atuais testam comportamentos que o modelo base já domina — os evals precisam ser aprimorados para testar aspectos mais específicos da skill (ex: estrutura exata do NOTES.md, uso do template PRD, formato BDD preciso) que o modelo sem a skill não conseguiria acertar."
+    }
+  }
+}

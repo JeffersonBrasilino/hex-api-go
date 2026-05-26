@@ -32,18 +32,18 @@ func main() {
 	dbConn := connectToDatabase()
 	//tp := initOtelTraceProvider()
 	//initPyroscope()
-	
+
 	//bootstrap modules
 	modules := []pkg.Module{
 		user.NewUserModule(httpServer, dbConn),
 	}
-	
+
 	for _, module := range modules {
 		if err := module.Register(ctx); err != nil {
 			panic(err)
 		}
 	}
-	
+
 	gomes.Start()
 	//gomes.EnableOtelTrace()
 

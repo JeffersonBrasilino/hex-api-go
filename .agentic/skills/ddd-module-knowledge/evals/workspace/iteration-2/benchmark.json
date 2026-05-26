@@ -1,0 +1,75 @@
+{
+  "run_summary": {
+    "model": "claude-sonnet-4-6",
+    "with_skill": {
+      "pass_rate": { "mean": 0.983, "stddev": null },
+      "time_seconds": { "mean": 1.413, "stddev": null },
+      "tokens": { "mean": 15941, "stddev": null },
+      "estimated_cost_usd": { "total": 0.095640, "mean_per_eval": 0.006376 }
+    },
+    "without_skill": {
+      "pass_rate": { "mean": 0.694, "stddev": null },
+      "time_seconds": { "mean": 1.667, "stddev": null },
+      "tokens": { "mean": 12070, "stddev": null },
+      "estimated_cost_usd": { "total": 0.072435, "mean_per_eval": 0.004829 }
+    },
+    "delta": {
+      "pass_rate": 0.289,
+      "time_seconds": -0.254,
+      "tokens": 3871,
+      "estimated_cost_usd": 0.023205
+    },
+    "value_tier": "moderado",
+    "delta_vs_prev_iteration": {
+      "pass_rate_delta_change": 0.067,
+      "value_tier_change": "sem mudança",
+      "cost_delta_change_usd": null
+    }
+  },
+  "pattern_analysis": {
+    "baseline_confirmed_both_gte_095": [
+      "eval-error-handling-notfounderror-usage",
+      "eval-layer-boundary-application-handler-containing-sql-quer",
+      "eval-gotcha-domain-event-emission-by-child-entity",
+      "eval-gotcha-builder-pattern-usage-for-child-entity",
+      "eval-gotcha-aggregate-root-name-must-equal-module-name",
+      "eval-mapper-visibility-rule"
+    ],
+    "skill_adds_clear_value_delta_gte_040": [
+      {
+        "slug": "eval-error-handling-validationerror-vs-invaliddataerror",
+        "delta": 1.000,
+        "note": "without_skill inverts both HTTP codes and layer assignments; skill provides precise 400/422 and application-infra vs domain distinction"
+      },
+      {
+        "slug": "eval-module-structure-verify-correct-directory-layout-for-a",
+        "delta": 0.571,
+        "note": "without_skill misses domain/contract/ subdir, uses events/ (plural), collapses command/query grouping, names root file module.go instead of product.go"
+      },
+      {
+        "slug": "eval-naming-convention-http-handler-function-and-request-str",
+        "delta": 0.667,
+        "note": "without_skill omits 'Handler' suffix on function name and provides no file name; skill enforces CreateProductHandler and create_product_handler.go"
+      },
+      {
+        "slug": "eval-naming-convention-tablename-return-value",
+        "delta": 0.600,
+        "note": "without_skill returns 'users' without project prefix; skill enforces the 'hex-api-go.users' pattern"
+      },
+      {
+        "slug": "eval-naming-convention-command-directory-name",
+        "delta": 0.500,
+        "note": "without_skill suggests 'create_product' (snake_case); skill enforces 'createproduct' (no separator)"
+      }
+    ],
+    "with_skill_below_1_0": [
+      {
+        "slug": "eval-domain-contract-where-interfaces-must-be-defined",
+        "with_skill_rate": 0.750,
+        "note": "Assertion 3 fails: answer correctly identifies domain/contract/ location but does not explicitly state that the infrastructure layer is responsible for implementing the interface"
+      }
+    ],
+    "always_fail_both": [],
+    "pricing_note": "token split estimated 75/25 — actual split unavailable for both configurations"
+  }
+}

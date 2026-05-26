@@ -9,10 +9,15 @@ import (
 func TestNewContact(t *testing.T) {
 	t.Run("Should success when create contact with valid data", func(t *testing.T) {
 		t.Parallel()
+		contactType, _ := domain.NewContactType(&domain.ContactTypeProps{
+			UuId:        "1",
+			Description: "1",
+		})
+
 		props := &domain.ContactProps{
 			UuId:        "1",
 			Description: "1",
-			ContactType: "1",
+			ContactType: contactType,
 		}
 
 		contact, err := domain.NewContact(props)
@@ -30,7 +35,7 @@ func TestNewContact(t *testing.T) {
 		props := &domain.ContactProps{
 			UuId:        "",
 			Description: "",
-			ContactType: "",
+			ContactType: nil,
 		}
 
 		contact, err := domain.NewContact(props)
@@ -42,17 +47,22 @@ func TestNewContact(t *testing.T) {
 			t.Error("Should return an error, got contact")
 		}
 
-		if err.Error() != `{"ContactType":{"IsValid":false,"FailedValidators":["required"]},"Description":{"IsValid":false,"FailedValidators":["required"]},"UuId":{"IsValid":false,"FailedValidators":["required"]}}` {
+		if err.Error() != `{"Description":{"IsValid":false,"FailedValidators":["required"]},"UuId":{"IsValid":false,"FailedValidators":["required"]}}` {
 			t.Errorf("Should return an error, got: %v", err)
 		}
 	})
 }
 
 func TestContactGetProps(t *testing.T) {
+	contactType, _ := domain.NewContactType(&domain.ContactTypeProps{
+		UuId:        "1",
+		Description: "1",
+	})
+
 	props := &domain.ContactProps{
 		UuId:        "1",
 		Description: "1",
-		ContactType: "1",
+		ContactType: contactType,
 	}
 	contact, _ := domain.NewContact(props)
 	var cases = []struct {

@@ -1,0 +1,97 @@
+{
+  "evals": [
+    {
+      "id": 1,
+      "description": "Scope elicitation — produce scope summary from text feature description",
+      "prompt": "Preciso criar uma feature de autenticação via JWT para a API. Os usuários deverão fazer login com email e senha e receber um token JWT válido por 24 horas. Produza agora o resumo de escopo da Fase 1 para esta feature, com todos os elementos: Intenção, Invariantes/Restrições, Pré-condições e Pós-condições. Se houver lacunas, inclua perguntas de elicitação logo após o resumo.",
+      "assertions": [
+        "The output presents a consolidated scope summary containing all four elements: Intent, Invariants or Constraints, Pre-conditions, and Post-conditions",
+        "The output explicitly asks the user for confirmation or approval (Gate 1) before proceeding to Phase 2 or creating any file",
+        "The output does NOT create, write, or propose the content of a PLAN.md file",
+        "The scope summary references JWT or token authentication in the Intent or Post-conditions section"
+      ]
+    },
+    {
+      "id": 3,
+      "description": "Plan schema compliance — semantic task IDs and one file per task",
+      "prompt": "O escopo foi aprovado para a feature 'Alterar senha do usuário' no módulo user. Pré-condição: usuário autenticado com token JWT válido. Pós-condição: senha atualizada no banco de dados, resposta HTTP 204. Invariante: sem novas bibliotecas externas, sem migrações de banco de dados. Gere agora o plano técnico completo seguindo estritamente o schema: (1) Seção 1 — Roadmap com tasks em formato TASK-[LAYER]-[CONCERN], cada uma com campo 'File:' e sub-tasks em '[ ]'; (2) Seção 3 — Execution Checklist espelhando cada task do Roadmap com campos Agent Notes, Files Modified e Validation Status.",
+      "assertions": [
+        "The plan uses semantic task IDs following the TASK-[LAYER]-[CONCERN] pattern (e.g., TASK-DOM-PASSWORD, TASK-APP-CHANGE-PASSWORD, TASK-INFRA-REPO)",
+        "Each task in the plan references exactly one file in the 'File:' field — no task spans multiple files",
+        "The plan includes an Execution section (Section 3) that mirrors every task defined in the Plan section",
+        "The plan uses markdown checkbox format [ ] for every task and sub-task entry"
+      ]
+    },
+    {
+      "id": 4,
+      "description": "No code generation — skill must not produce Go source code",
+      "prompt": "Crie um plano técnico para adicionar um campo 'phone' na entidade User do módulo user da nossa API hexagonal em Go.",
+      "assertions": [
+        "The output does NOT include Go source code (no 'func ', 'type struct', or ':= ' patterns inside code blocks)",
+        "The response addresses Phase 1 scope elicitation before jumping to create a plan or write any file",
+        "The response stays within the planning domain — describing what tasks need to be done, not how to implement them in code"
+      ]
+    },
+    {
+      "id": 8,
+      "description": "Phase gate enforcement — Phase 2 must not start without explicit user approval",
+      "prompt": "Feature: criar um domínio de notificações com suporte a notificações por email. O sistema deve enviar um email de boas-vindas quando um novo usuário é criado. Inicie o spec-plan.",
+      "assertions": [
+        "The response produces a Phase 1 scope summary and explicitly waits for user confirmation before advancing",
+        "The response does NOT jump directly to creating a PLAN.md or an Execution Roadmap without Gate 1 approval",
+        "The scope summary identifies at least one invariant or constraint relevant to the notification domain (e.g., integration with user creation, no external email library assumptions)",
+        "The response ends with a clear request for the user to confirm, approve, or continue"
+      ]
+    }
+  ],
+  "disabled_evals": [
+    {
+      "id": 2,
+      "description": "Language compliance — full response in pt-BR when user prompt is in Portuguese",
+      "_reason_disabled": "Baseline confirmado — passa 4/4 em ambas as configs nas 3 iterações. Sem sinal diferencial.",
+      "prompt": "Quero criar um endpoint REST para listar todos os usuários com paginação (page e limit via query params). Execute a Fase 1 do spec-plan e me mostre o resumo de escopo.",
+      "assertions": [
+        "The entire response is written in Brazilian Portuguese (pt-BR), not English",
+        "The response includes a scope summary with at least Pre-conditions and Post-conditions sections",
+        "The scope summary mentions paginação, page, or limit as part of the post-conditions or constraints",
+        "The output does NOT generate or propose PLAN.md file content without first obtaining user approval"
+      ]
+    },
+    {
+      "id": 5,
+      "description": "Multi-layer decomposition — plan tasks span at least two DDD layers",
+      "_reason_disabled": "Baseline confirmado — passa 4/4 em ambas as configs nas 3 iterações. Sem sinal diferencial.",
+      "prompt": "Escopo aprovado: adicionar soft delete na entidade Order do módulo order. O usuário cancela um pedido via POST /orders/{id}/cancel, o status muda para CANCELLED. Nenhuma migração de banco de dados é permitida. Gere o plano técnico completo.",
+      "assertions": [
+        "The plan contains tasks from at least two distinct architectural layers (DOM, APP, INFRA, or MOD)",
+        "The plan includes at least one Domain layer task (TASK-DOM-*) related to the Order entity or the CANCELLED status",
+        "The plan includes at least one Infrastructure or Application layer task for the HTTP handler, repository, or command handler",
+        "The plan does NOT include any database migration task, respecting the no-migration invariant"
+      ]
+    },
+    {
+      "id": 6,
+      "description": "PRD file path — skill reads the file rather than inventing its content",
+      "_reason_disabled": "Baseline confirmado — passa 4/4 em ambas as configs nas 3 iterações. Sem sinal diferencial.",
+      "prompt": "Tenho um PRD localizado em docs/order/cancel-order/PRD.md. Como você iniciaria o processo de spec-plan para esta feature?",
+      "assertions": [
+        "The response mentions reading or loading the PRD file at the path docs/order/cancel-order/PRD.md",
+        "The response does NOT invent or fabricate PRD content (acceptance criteria, requirements) without having read the file",
+        "The response describes Phase 1 scope elicitation as the first step to be executed after reading the file",
+        "The response does NOT produce a complete PLAN.md content without first reading the PRD and validating the scope"
+      ]
+    },
+    {
+      "id": 7,
+      "description": "Constraint extraction — no redundant questions when all info is already in the prompt",
+      "_reason_disabled": "Baseline confirmado — passa 4/4 em ambas as configs nas 3 iterações. Sem sinal diferencial.",
+      "prompt": "Feature: endpoint GET /users/{id}/profile que retorna dados públicos do usuário. Pré-condição: o usuário deve existir no banco de dados. Pós-condição: retorna HTTP 200 com JSON contendo os campos name, email e avatar_url. Invariante: sem novas dependências externas e sem migrações de banco de dados. Produza o resumo de escopo da Fase 1.",
+      "assertions": [
+        "The scope summary correctly includes the pre-condition about user existence in the database",
+        "The scope summary correctly includes the post-condition about HTTP 200 with name, email, and avatar_url fields",
+        "The scope summary correctly includes the invariant about no new external dependencies and no database migrations",
+        "The output does NOT ask questions about information already explicitly provided in the prompt (pre-conditions, post-conditions, and invariants are all given)"
+      ]
+    }
+  ]
+}

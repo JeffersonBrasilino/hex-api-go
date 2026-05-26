@@ -1,1 +1,0 @@
-{ "id": 8, "answer": "No. The application layer must be independent of infrastructure details — no direct DB queries or raw SQL. SQL belongs in the infrastructure layer (repository implementations). The application command handler orchestrates domain actions and interacts with domain contracts (interfaces), not with database specifics." }

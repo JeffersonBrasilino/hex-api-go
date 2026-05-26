@@ -1,4 +1,0 @@
-{
-  "id": 10,
-  "answer": "No. The Builder pattern is used only for the aggregate root. Child entities like Person must use a direct constructor: NewPerson() — not the Builder pattern."
-}

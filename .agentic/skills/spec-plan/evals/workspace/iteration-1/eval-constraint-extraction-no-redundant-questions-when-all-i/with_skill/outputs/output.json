@@ -1,5 +1,0 @@
-{
-  "id": 7,
-  "answer": "The skill rule in Step 1.2 states: 'Only ask the user questions if there are missing details, ambiguities, or contradictions. Do not ask questions about information already explicitly stated in the context.' In this prompt, all four scope elements are fully and explicitly provided: Pre-condition (user must exist in the database), Post-condition (HTTP 200 with JSON containing name, email, avatar_url), and Invariants (no new external dependencies, no database migrations). The Intent is also clear from the endpoint description. Therefore, the skill must NOT ask any redundant questions. It should produce the consolidated Scope Summary directly, incorporating all the provided information verbatim and precisely: Intent = expose a GET /users/{id}/profile endpoint returning public user data; Pre-condition = user exists in the database; Post-condition = HTTP 200 with JSON body containing name, email, and avatar_url; Invariants = no new external dependencies, no database migrations. It then presents the summary and waits for Gate 1 confirmation.",
-  "slug": "eval-constraint-extraction-no-redundant-questions-when-all-i"
-}

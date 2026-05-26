@@ -9,4 +9,4 @@ execution_profile:
   strategy: agent # [plan | agent]
 ---
 
-reading `.agentic/skills/ddd-module-knowledge/SKILL.md`.
+read `.agentic/skills/spec-plan/SKILL.md`.

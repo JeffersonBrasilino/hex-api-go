@@ -1,1 +1,0 @@
-{ "id": 12, "answer": "The handler function should be named 'CreateProductHandler' and the request struct should be named 'CreateProductRequest'. The file should be named 'create_product_handler.go' and the trace var should be named 'createProductTrace'." }

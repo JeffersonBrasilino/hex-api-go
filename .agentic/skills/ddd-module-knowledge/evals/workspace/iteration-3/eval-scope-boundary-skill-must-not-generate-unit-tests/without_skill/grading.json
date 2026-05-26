@@ -1,8 +1,0 @@
-{
-  "assertion_results": [
-    {"text": "Output does NOT generate any unit test code", "passed": true, "evidence": "Answer contains no test code or Go test functions"},
-    {"text": "Output clearly states that unit test generation is out of scope for this skill", "passed": true, "evidence": "Answer states 'Unit test generation is outside the skill's defined scope'"},
-    {"text": "Output redirects user to the make-unit-tests skill", "passed": false, "evidence": "Answer does not mention the 'make-unit-tests' skill; it redirects to standard Go testing conventions instead"}
-  ],
-  "summary": {"passed": 2, "failed": 1, "total": 3, "pass_rate": 0.667}
-}

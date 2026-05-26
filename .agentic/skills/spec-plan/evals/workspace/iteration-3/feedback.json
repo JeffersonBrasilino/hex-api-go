@@ -1,0 +1,10 @@
+{
+  "eval-scope-elicitation-produce-scope-summary-from-text-feat": "",
+  "eval-language-compliance-full-response-in-pt-br-when-user-p": "",
+  "eval-plan-schema-compliance-semantic-task-ids-and-one-file-p": "",
+  "eval-no-code-generation-skill-must-not-produce-go-source-cod": "",
+  "eval-multi-layer-decomposition-plan-tasks-span-at-least-two": "",
+  "eval-prd-file-path-skill-reads-the-file-rather-than-inventin": "",
+  "eval-constraint-extraction-no-redundant-questions-when-all-i": "",
+  "eval-phase-gate-enforcement-phase-2-must-not-start-without-e": ""
+}

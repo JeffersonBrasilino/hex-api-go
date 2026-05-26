@@ -1,1 +1,0 @@
-{ "id": 14, "answer": "The repository interface for the product module must be defined in the domain/contract/ directory, specifically at internal/product/domain/contract/. The domain layer owns the contract; the infrastructure layer implements it." }

@@ -1,4 +1,0 @@
-{
-  "id": 5,
-  "answer": "You should return a 'NotFoundError' from the ddgo package. It maps to HTTP status 404 Not Found."
-}

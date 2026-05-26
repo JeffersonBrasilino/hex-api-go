@@ -1,5 +1,0 @@
-{
-  "id": 2,
-  "answer": "A resposta completa deve ser produzida em português brasileiro (pt-BR), pois essa é a língua do usuário no contexto. A Fase 1 exige que o skill use o `ddd-module-knowledge` para pesquisar a base de conhecimento da aplicação e, em seguida, extraia do prompt as pré-condições, pós-condições e invariantes. Do prompt fornecido é possível inferir: Intenção = criar um endpoint REST para listar usuários com paginação via query params `page` e `limit`; Pós-condição = resposta HTTP 200 com lista paginada de usuários; Pré-condição = existência de usuários no banco de dados. Pontos que podem precisar de esclarecimento: autenticação necessária? estrutura exata do payload de resposta? valores padrão/máximos de `limit`? O skill consolida tudo em uma única mensagem, pergunta somente sobre lacunas reais e apresenta o resumo de escopo (Intenção, Invariantes/Restrições, Pré-condições, Pós-condições). Ao final, aguarda confirmação explícita do usuário (Portão 1) antes de avançar para a Fase 2. Nenhum arquivo PLAN.md é gerado neste estágio.",
-  "slug": "eval-language-compliance-full-response-in-pt-br-when-user-p"
-}

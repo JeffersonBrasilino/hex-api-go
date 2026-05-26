@@ -1,4 +1,0 @@
-{
-  "id": 13,
-  "answer": "The ddd-module-knowledge skill does not cover unit test generation. For generating unit tests, you should use the 'make-unit-tests' skill instead."
-}

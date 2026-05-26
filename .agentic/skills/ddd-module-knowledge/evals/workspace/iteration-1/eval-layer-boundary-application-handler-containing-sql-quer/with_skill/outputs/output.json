@@ -1,1 +1,0 @@
-{ "id": 8, "answer": "No. The application command handler must be independent of infrastructure details and must not contain direct database queries or raw SQL. Raw SQL belongs in the infrastructure layer (repository implementation). The handler orchestrates domain actions through injected domain contracts (interfaces), not through direct DB access." }

@@ -1,4 +1,0 @@
-{
-  "id": 7,
-  "answer": "No. HTTP handlers must never call the domain or repository directly. They must always dispatch through the gomes bus."
-}

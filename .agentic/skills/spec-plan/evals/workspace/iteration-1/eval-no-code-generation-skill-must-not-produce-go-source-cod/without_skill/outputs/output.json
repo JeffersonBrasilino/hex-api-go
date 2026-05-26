@@ -1,5 +1,0 @@
-{
-  "id": 4,
-  "answer": "**Fase 1 — Elicitação de Escopo**\n\nAnalisei sua descrição e vou usar o `ddd-module-knowledge` para entender a estrutura atual da entidade User.\n\n---\n\n**Resumo de Escopo:**\n\n- **Intenção:** Adicionar um campo `phone` (telefone) na entidade `User` do módulo `user` da API hexagonal.\n- **Pré-condições:** A entidade `User` já existe no módulo `user`.\n- **Pós-condições:** O campo `phone` estará disponível na entidade de domínio, no modelo de persistência e exposto nas respostas HTTP relevantes.\n- **Invariantes:** (não especificadas)\n\nAntes de prosseguir, preciso esclarecer:\n1. O campo `phone` é obrigatório ou opcional?\n2. Há validação de formato esperada (ex: E.164)?\n3. Será necessária uma migração de banco de dados?\n4. O campo deve aparecer em quais endpoints existentes (GET /users, GET /users/{id})?\n5. Há restrições sobre novas bibliotecas externas?\n\nAguardo confirmação ou esclarecimentos para consolidar o escopo e avançar.",
-  "slug": "eval-no-code-generation-skill-must-not-produce-go-source-cod"
-}

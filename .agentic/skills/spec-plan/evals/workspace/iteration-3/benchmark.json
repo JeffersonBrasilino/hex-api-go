@@ -1,0 +1,47 @@
+{
+  "run_summary": {
+    "model": "claude-sonnet-4-6",
+    "with_skill": {
+      "pass_rate": { "mean": 0.969, "stddev": 0.083 },
+      "time_seconds": { "mean": 9.774, "stddev": null },
+      "tokens": { "mean": 2310, "stddev": null },
+      "estimated_cost_usd": { "total": 0.110880, "mean_per_eval": 0.013860 }
+    },
+    "without_skill": {
+      "pass_rate": { "mean": 0.896, "stddev": 0.137 },
+      "time_seconds": { "mean": 9.142, "stddev": null },
+      "tokens": { "mean": 1938, "stddev": null },
+      "estimated_cost_usd": { "total": 0.093045, "mean_per_eval": 0.011631 }
+    },
+    "delta": {
+      "pass_rate": 0.073,
+      "time_seconds": 0.632,
+      "tokens": 372,
+      "estimated_cost_usd": 0.017835
+    },
+    "value_tier": "fraco",
+    "delta_vs_prev_iteration": {
+      "pass_rate_delta_change": 0.167,
+      "value_tier_change": "negativo → fraco",
+      "cost_delta_change_usd": null
+    }
+  },
+  "pattern_analysis": {
+    "always_pass_both": [
+      "eval-language-compliance-full-response-in-pt-br-when-user-p (4/4 ambos)",
+      "eval-multi-layer-decomposition-plan-tasks-span-at-least-two (4/4 ambos)",
+      "eval-prd-file-path-skill-reads-the-file-rather-than-inventin (4/4 ambos)",
+      "eval-constraint-extraction-no-redundant-questions-when-all-i (4/4 ambos)",
+      "eval-phase-gate-enforcement-phase-2-must-not-start-without-e (4/4 ambos — novo nesta iteração)"
+    ],
+    "skill_wins": [
+      "eval-plan-schema-compliance-semantic-task-ids-and-one-file-p: with_skill=1.000 vs without_skill=0.750 (+0.250) — with_skill corretamente separou command.go e handler.go em tasks distintas; without_skill usou '### TASK-...' headings sem '- [ ]' e tabela em Seção 3 sem formato de checkbox correto.",
+      "eval-no-code-generation-skill-must-not-produce-go-source-cod: with_skill=1.000 vs without_skill=0.667 (+0.333) — with_skill recusou gerar plano sem Fase 1 e redirecionou ao processo correto; without_skill pulou diretamente para Seção 1 + Seção 3."
+    ],
+    "baseline_wins": [],
+    "always_fail_both": [
+      "eval-scope-elicitation-produce-scope-summary-from-text-feat (asserção 2 — Gate 1 explícito): ambas as configs produziram resumo de escopo completo mas não encerraram com frase explícita de confirmação ('Você confirma este escopo?')."
+    ],
+    "gap_diagnosis": "Iteração 3 mostra recuperação clara: delta passou de -0.094 para +0.073 (melhora de +0.167). Os dois problemas críticos da iteração anterior (violação de um-arquivo-por-task e ausência de resumo parcial antes de perguntas) foram corrigidos. Agora with_skill supera without_skill em dois evals. A única lacuna remanescente é o Gate 1 explícito em eval-scope-elicitation: ambas as configs produzem o resumo com perguntas de elicitação mas não encerram com a frase canônica de confirmação. O eval-phase-gate-enforcement passou com 4/4 — a instrução de 'Aguarde confirmação ou respostas' funcionou quando o contexto remete a notificações, mas o eval-scope-elicitation usa um cenário de JWT onde o agente termina com perguntas abertas em vez de fechar com Gate 1."
+  }
+}

@@ -1,4 +1,0 @@
-{
-  "id": 4,
-  "answer": "The TableName() method for the 'user' module persistence model should return 'users' (plural, snake_case of the module name)."
-}

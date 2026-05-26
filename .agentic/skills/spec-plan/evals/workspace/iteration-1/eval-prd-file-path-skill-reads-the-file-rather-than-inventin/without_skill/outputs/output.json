@@ -1,5 +1,0 @@
-{
-  "id": 6,
-  "answer": "Para iniciar o spec-plan com um PRD localizado em `docs/order/cancel-order/PRD.md`, o processo seria:\n\n**Fase 1 — Elicitação de Escopo**\n\n1. Leria o arquivo `docs/order/cancel-order/PRD.md` para analisar seu conteúdo como contexto da feature.\n2. Usaria o skill `ddd-module-knowledge` para entender a estrutura atual do módulo `order` na aplicação.\n3. Extrairia diretamente do PRD as pré-condições, pós-condições e invariantes — sem fazer perguntas desnecessárias sobre informações já explícitas no documento.\n4. Apresentaria um resumo de escopo consolidado para sua confirmação antes de avançar.\n\n**Sobre o diretório do plano:** Como o PRD já está em `docs/order/cancel-order/`, o `PLAN.md` seria salvo nesse mesmo diretório: `docs/order/cancel-order/PLAN.md`.\n\nPosso ler o arquivo `docs/order/cancel-order/PRD.md` agora para iniciar a análise?",
-  "slug": "eval-prd-file-path-skill-reads-the-file-rather-than-inventin"
-}

@@ -1,1 +1,0 @@
-{ "id": 11, "answer": "The aggregate root entity struct must be named 'Account' — matching the module name exactly, using PascalCase. In DDD hexagonal architecture, the aggregate root struct name must correspond to the module name. So for a module named 'account', the aggregate root is 'Account'." }

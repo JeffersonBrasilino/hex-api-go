@@ -1,5 +1,0 @@
-{
-  "id": 2,
-  "answer": "**Fase 1 — Elicitação de Escopo**\n\nAnalisei a descrição fornecida e consultei o `ddd-module-knowledge` para entender a estrutura da aplicação.\n\n---\n\n**Resumo de Escopo:**\n\n- **Intenção:** Criar um endpoint REST `GET /users` que lista todos os usuários com suporte a paginação via query params `page` e `limit`.\n- **Pré-condições:** Nenhuma autenticação especificada; coleção de usuários deve existir no banco de dados.\n- **Pós-condições:** Retorna HTTP 200 com lista paginada de usuários em formato JSON, incluindo metadados de paginação (total, page, limit).\n- **Invariantes:** (não especificadas — há restrições sobre novas dependências ou migrações?)\n\nAntes de prosseguir para a Fase 2, tenho algumas perguntas:\n1. O endpoint requer autenticação?\n2. Há valores padrão para `page` e `limit` caso não sejam fornecidos?\n3. Há restrições sobre novas bibliotecas externas ou migrações de banco de dados?\n4. Qual a estrutura do payload de resposta esperado?\n\nAguardo sua confirmação ou aprovação do escopo para avançar.",
-  "slug": "eval-language-compliance-full-response-in-pt-br-when-user-p"
-}

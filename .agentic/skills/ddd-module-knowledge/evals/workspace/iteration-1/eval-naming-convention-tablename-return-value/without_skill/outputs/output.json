@@ -1,1 +1,0 @@
-{ "id": 4, "answer": "The TableName() method for the persistence model of the 'user' module should return 'users' — the plural, snake_case form of the entity name. GORM uses this method to determine the database table name." }

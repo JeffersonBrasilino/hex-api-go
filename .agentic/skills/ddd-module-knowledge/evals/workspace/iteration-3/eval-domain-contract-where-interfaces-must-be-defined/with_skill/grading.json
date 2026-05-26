@@ -1,9 +1,0 @@
-{
-  "assertion_results": [
-    {"text": "Output specifies internal/product/domain/contract/ as the correct location", "passed": true, "evidence": "Answer states 'should be defined in \\'internal/product/domain/contract/repository.go\\', inside the \\'contract\\' package'"},
-    {"text": "Output states the interface must be owned by the domain layer", "passed": true, "evidence": "Answer states 'Domain contracts (interfaces) must be defined in \\'domain/contract/\\''"},
-    {"text": "Output states the infrastructure layer is responsible for implementing the interface", "passed": true, "evidence": "Answer states 'the infrastructure layer is responsible for implementing them'"},
-    {"text": "Output does NOT suggest placing the interface in the infrastructure or application layer", "passed": true, "evidence": "Answer clearly places the contract in the domain layer; no infrastructure or application placement is suggested"}
-  ],
-  "summary": {"passed": 4, "failed": 0, "total": 4, "pass_rate": 1.000}
-}

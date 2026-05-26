@@ -1,0 +1,48 @@
+{
+  "run_summary": {
+    "model": "claude-sonnet-4-6",
+    "with_skill": {
+      "pass_rate": { "mean": 0.833, "stddev": 0.182 },
+      "time_seconds": { "mean": 12.344, "stddev": null },
+      "tokens": { "mean": 21883, "stddev": null },
+      "estimated_cost_usd": { "total": 0.131298, "mean_per_eval": 0.016412 }
+    },
+    "without_skill": {
+      "pass_rate": { "mean": 0.927, "stddev": 0.128 },
+      "time_seconds": { "mean": null, "stddev": null },
+      "tokens": { "mean": null, "stddev": null },
+      "estimated_cost_usd": { "total": null, "mean_per_eval": null }
+    },
+    "delta": {
+      "pass_rate": -0.094,
+      "time_seconds": null,
+      "tokens": null,
+      "estimated_cost_usd": null
+    },
+    "value_tier": "negativo",
+    "delta_vs_prev_iteration": {
+      "pass_rate_delta_change": -0.032,
+      "value_tier_change": "sem mudança",
+      "cost_delta_change_usd": null
+    }
+  },
+  "pattern_analysis": {
+    "always_pass_both": [
+      "eval-language-compliance-full-response-in-pt-br-when-user-p (4/4 ambos)",
+      "eval-multi-layer-decomposition-plan-tasks-span-at-least-two (4/4 ambos)",
+      "eval-prd-file-path-skill-reads-the-file-rather-than-inventin (4/4 ambos)",
+      "eval-constraint-extraction-no-redundant-questions-when-all-i (4/4 ambos)"
+    ],
+    "skill_wins": [],
+    "baseline_wins": [
+      "eval-plan-schema-compliance-semantic-task-ids-and-one-file-p: with_skill=0.750 vs without_skill=1.000 — with_skill violou a regra 'um arquivo por task' em TASK-APP-CHANGE-PASSWORD (dois arquivos listados); without_skill cumpriu a regra em todos os tasks.",
+      "eval-phase-gate-enforcement-phase-2-must-not-start-without-e: with_skill=0.500 vs without_skill=1.000 — with_skill perguntou mas não produziu o resumo de escopo da Fase 1; without_skill produziu o resumo completo E identificou invariante concreta E aguardou confirmação.",
+      "eval-scope-elicitation-produce-scope-summary-from-text-feat: with_skill=0.750 vs without_skill=0.750 — empate; ambos falharam no Gate 1 (ausência de solicitação explícita de confirmação)."
+    ],
+    "always_fail_both": [
+      "eval-scope-elicitation (asserção 2 — Gate 1): ambas as configs falharam em solicitar explicitamente confirmação Gate 1 para avançar à Fase 2.",
+      "eval-no-code-generation (asserção 2 — Fase 1 antes do plano): ambas as configs pularam ou não executaram a elicitação de escopo da Fase 1."
+    ],
+    "gap_diagnosis": "O padrão de iteração 1 persiste: o agente with_skill continua executando elicitação de perguntas (correto) mas frequentemente omite o resumo de escopo formatado no mesmo turno. Em eval-phase-gate, o without_skill apresentou comportamento mais completo (resumo + invariante + gate 1) do que o with_skill. O problema central é que a skill instrui a extrair informações antes de perguntar, mas o agente with_skill inverte a ordem — pergunta primeiro, apresenta o resumo depois — o que faz falhar asserções que esperam o resumo imediato. Além disso, em eval-plan-schema, with_skill violou a regra de um-arquivo-por-task ao listar command.go e handler.go na mesma task."
+  }
+}

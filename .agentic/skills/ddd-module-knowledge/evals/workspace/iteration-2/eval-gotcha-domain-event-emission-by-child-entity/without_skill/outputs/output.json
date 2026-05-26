@@ -1,4 +1,0 @@
-{
-  "id": 9,
-  "answer": "No. In DDD, only the aggregate root is responsible for emitting domain events. Child entities (like Person inside a User aggregate) must not emit events directly. Instead, the child entity can return results or mutate state, and the aggregate root (User) is responsible for raising any resulting domain events."
-}

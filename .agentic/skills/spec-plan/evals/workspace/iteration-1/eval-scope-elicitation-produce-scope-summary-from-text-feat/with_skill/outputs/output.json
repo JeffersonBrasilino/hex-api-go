@@ -1,5 +1,0 @@
-{
-  "id": 1,
-  "answer": "The skill must execute Phase 1 — Scope Elicitation. It first uses the `ddd-module-knowledge` skill to research the application knowledge base (Step 1.1). Then, it attempts to extract pre-conditions, post-conditions, and invariants directly from the user's prompt (Step 1.2). From the provided text it can infer: Intent = authenticate users via JWT using email and password; Post-condition = return a valid JWT token with 24-hour expiry. However, some details are ambiguous or missing (e.g., what constitutes valid credentials, whether an existing User entity exists, required HTTP status codes, error handling for invalid credentials). The skill consolidates everything into a single message and asks only about gaps. After filling gaps, it presents a short consolidated Scope Summary (Intent, Invariants/Constraints, Pre-conditions, Post-conditions) and explicitly waits for user confirmation ('ok', 'aprovado', 'continue') at Gate 1 before advancing to Phase 2. No file is created at this stage.",
-  "slug": "eval-scope-elicitation-produce-scope-summary-from-text-feat"
-}

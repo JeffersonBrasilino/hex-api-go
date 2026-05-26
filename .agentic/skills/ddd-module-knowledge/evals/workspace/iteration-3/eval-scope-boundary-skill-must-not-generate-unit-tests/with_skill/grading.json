@@ -1,8 +1,0 @@
-{
-  "assertion_results": [
-    {"text": "Output does NOT generate any unit test code", "passed": true, "evidence": "Answer contains no test code, no Go test functions, and no _test.go content"},
-    {"text": "Output clearly states that unit test generation is out of scope for this skill", "passed": true, "evidence": "Answer states 'This request is out of scope for the ddd-module-knowledge skill'"},
-    {"text": "Output redirects user to the make-unit-tests skill", "passed": true, "evidence": "Answer states 'Unit test generation is handled by the \\'make-unit-tests\\' skill'"}
-  ],
-  "summary": {"passed": 3, "failed": 0, "total": 3, "pass_rate": 1.000}
-}

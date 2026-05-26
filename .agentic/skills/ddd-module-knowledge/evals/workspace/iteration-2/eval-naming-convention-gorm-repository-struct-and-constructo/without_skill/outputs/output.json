@@ -1,4 +1,0 @@
-{
-  "id": 3,
-  "answer": "For the 'order' module, the GORM repository struct should be named 'GormOrderRepository' and its constructor should be named 'NewGormOrderRepository'."
-}

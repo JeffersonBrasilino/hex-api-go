@@ -1,4 +1,0 @@
-{
-  "id": 14,
-  "answer": "The repository interface for the product module should be defined in the domain layer, typically in a contracts or ports file such as internal/product/domain/contracts.go (or repository.go within domain). This follows the Dependency Inversion Principle — the domain defines what it needs, and the infrastructure layer implements it."
-}

@@ -1,5 +1,0 @@
-{
-  "id": 6,
-  "answer": "The skill's Step 1.1 explicitly states: 'If the user provides a path to a PRD file, read the file and analyze it; this will be the context for the technical specification plan.' Therefore, the first concrete action is to read the file at `docs/order/cancel-order/PRD.md` using the Read tool. The skill must NOT invent or fabricate PRD content (acceptance criteria, requirements, constraints) without having actually read the file. After reading, the skill executes Phase 1 — Scope Elicitation: it extracts pre-conditions, post-conditions, and invariants directly from the PRD content, asks only about genuine gaps or ambiguities, presents a consolidated scope summary, and waits for Gate 1 user confirmation before advancing. The target directory for the plan is the PRD's parent directory: `docs/order/cancel-order/`, per the skill rule 'If the user provided a PRD file, use its parent directory.'",
-  "slug": "eval-prd-file-path-skill-reads-the-file-rather-than-inventin"
-}

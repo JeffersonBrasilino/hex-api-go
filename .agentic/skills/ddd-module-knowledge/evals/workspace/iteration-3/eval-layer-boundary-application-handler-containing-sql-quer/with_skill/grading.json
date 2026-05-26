@@ -1,9 +1,0 @@
-{
-  "assertion_results": [
-    {"text": "Output answers NO explicitly", "passed": true, "evidence": "Answer begins with 'No.'"},
-    {"text": "Output states the application layer must be independent of infrastructure details", "passed": true, "evidence": "Answer states 'The application layer must be independent of infrastructure details — no direct DB queries or raw SQL'"},
-    {"text": "Output states SQL belongs in infrastructure/database layer", "passed": true, "evidence": "Answer states 'SQL belongs in the infrastructure layer (repository implementations)'"},
-    {"text": "Output mentions domain contract (interface) as the correct abstraction boundary", "passed": true, "evidence": "Answer states 'interacts with domain contracts (interfaces), not with database specifics'"}
-  ],
-  "summary": {"passed": 4, "failed": 0, "total": 4, "pass_rate": 1.000}
-}

@@ -1,1 +1,0 @@
-{ "id": 5, "answer": "When the queried entity does not exist in the database, you should return a 'NotFoundError' from the ddgo package. This error maps to HTTP status 404 Not Found." }

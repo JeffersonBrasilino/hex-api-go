@@ -1,4 +1,0 @@
-{
-  "id": 15,
-  "answer": "No. The toDatabase and toDomain mapper functions should not be exported (they should be unexported, starting with a lowercase letter). These are internal implementation details of the database/infrastructure package and should not be accessible from outside that package."
-}

@@ -35,7 +35,9 @@ This skill receives a feature description(jira link or text or path to prd) and 
 - You must always treat this process as an informal chat, so the technical specification plan is built naturally.
 - **IMPORTANT**: All your communication with the user, questions, technical specification plan, and notes MUST be in the user's language in context window and in plans.
 - In the technical specification plan, you must always use the [plan-schema](references/plan-schema.md) template.
-- This skill works in a phased manner, the phases must be executed in order and in sequence
+- This skill works in a phased manner, the phases must be executed in order and in sequence.
+- **CRITICAL — Phase 1 is mandatory**: Even if the user directly asks for a plan or a specification, you MUST execute Phase 1 (scope elicitation and Gate 1 confirmation) before generating any plan. Never skip or abbreviate Phase 1.
+- **CRITICAL — One file per task**: Each task in the plan MUST reference exactly one file. When a use case involves both a command/DTO and a handler, they MUST be separate tasks (e.g., `TASK-APP-[CONCERN]-COMMAND` for `command.go` and `TASK-APP-[CONCERN]-HANDLER` for `handler.go`). Never group two files into a single task.
 
 ## Workflow
 
@@ -54,7 +56,8 @@ This skill receives a feature description(jira link or text or path to prd) and 
 
 - **First, attempt to extract** pre-conditions, post-conditions, and invariants directly from the provided PRD or context.
 - **Only ask the user questions** if there are missing details, ambiguities, or contradictions. Do not ask questions about information already explicitly stated in the context.
-- Consolidate what you understood (or your questions, if any) in a single message to validate with the user, rather than asking one question at a time.
+- **CRITICAL — Always present a scope summary first**: Even when information is incomplete and you have questions, you MUST present a partial scope summary BEFORE the questions. Never send only questions without a preceding scope summary. List every invariant or constraint you can infer from context (e.g., "integração com evento UserCreated — mecanismo a confirmar"), even if incomplete.
+- Consolidate everything (partial summary + remaining questions, if any) in a single message to validate with the user, rather than asking one question at a time.
 - After validation, formulate the pre-conditions, post-conditions, and invariants in precise technical language.
 
 > **Pre-conditions Examples:** required database state, necessary feature flags, authenticated user roles, existing entities, etc.
@@ -62,7 +65,9 @@ This skill receives a feature description(jira link or text or path to prd) and 
 > **Invariants Examples:** hexagonal port contracts, API backward-compatibility, no new libraries, no DB migrations, etc.
 
 **Gate 1:** Present a **short and concise** consolidated Scope summary to the user (Intent, Invariants/Constraints, Pre-conditions, Post-conditions).
-Wait for explicit confirmation ("ok", "aprovado", "continue") before advancing to Phase 2.
+Always end the Gate 1 message with an explicit confirmation question, for example: "Você confirma este escopo para avançarmos para a Fase 2?" or "Podemos prosseguir com este escopo?".
+**CRITICAL — Confirmation phrase is mandatory even with pending questions**: When there are elicitation questions in the message, the confirmation phrase MUST still appear as a separate closing sentence AFTER the questions — never omit it. Use a forward-looking phrase such as: "Assim que responder, confirmo o escopo e avançamos para a Fase 2." This ensures Gate 1 is always explicit, regardless of whether the scope is complete or partial.
+Wait for explicit confirmation ("ok", "aprovado", "continue", "sim", "yes") before advancing to Phase 2.
 
 ### PHASE 2 — Specification Creation
 

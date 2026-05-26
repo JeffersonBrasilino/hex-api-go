@@ -1,4 +1,0 @@
-{
-  "id": 6,
-  "answer": "ValidationError is used to indicate failures in payload or DTO structural validation — use it in the application or infrastructure layers when incoming request data fails basic structural validation (e.g., required fields missing). It maps to HTTP 400 Bad Request.\n\nInvalidDataError is used to indicate domain-specific business rule validation failures — use it in domain entities, value objects, and builders when business invariants or domain validations fail. It maps to HTTP 422 Unprocessable Entity."
-}

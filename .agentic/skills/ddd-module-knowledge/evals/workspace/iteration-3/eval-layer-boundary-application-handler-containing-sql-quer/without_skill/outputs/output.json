@@ -1,1 +1,0 @@
-{ "id": 8, "answer": "No. Raw SQL queries do not belong inside application command handlers. The application layer orchestrates domain logic and delegates persistence concerns to the repository interface (defined as a domain contract). SQL is an infrastructure concern and must live in the repository implementation in the infrastructure/database layer." }

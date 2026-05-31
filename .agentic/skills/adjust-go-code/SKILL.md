@@ -1,6 +1,8 @@
 ---
-name: adjust_go_code
-description: Format Go code and generate GoDoc documentation adhering to Go best practices.
+name: adjust-go-code
+description: > 
+   Format Go code and generate GoDoc documentation adhering to Go best practices.
+   Use when prompted "adjust this code", "format code", "sanitize code", "document this code", "add documentation"
 ---
 
 # Go Code Formatting and GoDoc Structure Skill
@@ -40,6 +42,10 @@ Document every public function, method, struct, and exported constant. Include:
 - **Parameters**: A detailed breakdown of each input parameter.
 - **Return Type**: Description of the returned value(s), including errors.
 - **Behavior**: Any side effects, special states, or specific panics the function might cause.
+
+### Struct Field Documentation
+
+Do **NOT** add inline GoDoc comments to struct fields when the field name and type already convey the meaning (e.g. `Name string`, `Value string`). Only add a field-level comment when there is something genuinely non-obvious: a hidden constraint, a specific format requirement, or a surprising invariant that would confuse a future reader. When in doubt, omit the comment.
 
 ## 🛑 Constraints & Edge Cases
 

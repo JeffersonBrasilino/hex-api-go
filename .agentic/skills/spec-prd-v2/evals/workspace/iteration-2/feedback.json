@@ -1,0 +1,12 @@
+{
+  "eval-sem-contexto-a-skill-pergunta-o-problema-funcionalidade": "",
+  "eval-com-contexto-a-skill-entrevista-uma-pergunta-por-vez": "A skill apresenta vantagem clara ao sugerir um valor padrão recomendado junto à pergunta de elicitação, comportamento ausente no baseline. Considere reforçar na SKILL.md que toda pergunta de entrevista deve vir acompanhada de uma sugestão ou valor padrão explícito — essa é a diferença que separa os dois comportamentos neste cenário.",
+  "eval-implementacao-de-codigo-esta-fora-do-escopo": "",
+  "eval-gate-de-aprovacao-impede-gerar-prd-sem-aprovacao": "",
+  "eval-resumo-de-aprovacao-segue-o-formato-padronizado": "Este é o eval com maior diferencial da iteração (delta 0.40). O baseline falha em incluir 'Critérios de aceitação' e cenários no formato BDD (happy path + erro) no resumo de aprovação. A skill acerta em ambos os pontos. Nenhuma ação necessária — o comportamento está bem especificado e estável.",
+  "eval-nao-salva-arquivos-na-raiz-do-projeto": "",
+  "eval-prd-gerado-contem-secoes-obrigatorias-e-fora-de-escopo": "Segundo maior diferencial da iteração (delta 0.333). O baseline falha em emitir as seções RF-0X e RNF-0X com identificadores numerados. A skill cobre corretamente os identificadores obrigatórios. Recomenda-se manter e reforçar no template do PRD que as seções de requisitos funcionais e não funcionais exigem identificadores RF-0X e RNF-0X explícitos.",
+  "eval-criterios-de-aceitacao-usam-dado-quando-entao": "",
+  "eval-explora-privacidade-lgpd-quando-ha-dados-pessoais": "A skill garante uma única pergunta por turno sobre LGPD, enquanto o baseline agrupa três questões simultaneamente. O comportamento correto já está especificado na skill. Considere adicionar um exemplo negativo explícito na SKILL.md (ex.: 'NUNCA agrupe mais de uma pergunta por mensagem, mesmo quando há múltiplas dimensões de privacidade a explorar').",
+  "eval-notas-nao-sao-criadas-no-bootstrap-e-nao-sobrescrevem": ""
+}

@@ -1,6 +1,8 @@
 ---
-name: make_unit_tests
-description: Generate comprehensive unit tests in Go with 100% coverage following specific structural standards.
+name: make-unit-tests
+description: >
+ Generate comprehensive unit tests in Go with 100% coverage following specific structural standards.
+ Use when prompted "add unit tests", "add new unit tests", "test this code", "test this", "make unit test", "make test"
 ---
 
 # Go Unit Test Generation Skill

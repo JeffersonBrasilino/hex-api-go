@@ -1,27 +1,28 @@
 #### Product Requirements Document (PRD) Template
 
-This is a template for a Product Requirements Document (PRD). 
+This is a template for a Product Requirements Document (PRD).
 This template must be used to document all new features that are to be built.
-This template must be writed in pt-BR.
+This template must be written in pt-BR.
 
 ```markdown
 
-# [Título da Funcionalidade/Produto] - Documento de Requisitos do Produto (PRD)
+# [Título da Funcionalidade] - Documento de Requisitos do Produto (PRD)
 
 | Campo | Valor |
 |-------|-------|
-| **Autor** | [Seu nome] |
+| **Autor** | [Nome] |
 | **Última Atualização** | [YYYY-MM-DD] |
-| **Status** | Draft/Em Revisão/Aprovado/Em Desenvolvimento |
+| **Status** | Draft / Em Revisão / Aprovado |
 | **Versão** | [Versão] |
 
-## 1. Visão Geral (Overview)
+## 1. Visão Geral
 
-[Forneça um resumo de alto nível da funcionalidade. Qual problema está sendo resolvido? Por que estamos construindo isso? Que valor isso entrega aos usuários? Mantenha-o conciso - 2-3 parágrafos no máximo.]
+[Qual problema esta funcionalidade resolve? Por que estamos construindo isso? Que valor entrega aos usuários? 2-3 parágrafos no máximo.]
 
 ## 2. Objetivos
 
-[Quais são os objetivos específicos e mensuráveis desta funcionalidade? O que define o sucesso? Use o formato de meta SMART onde aplicável.]
+[Quais são os objetivos específicos e mensuráveis desta funcionalidade? O que define o sucesso?]
+
 - [Objetivo 1]
 - [Objetivo 2]
 - [Objetivo 3]
@@ -30,102 +31,65 @@ This template must be writed in pt-BR.
 
 [Capture os requisitos do usuário no formato padrão: "Como um [usuário], eu quero [ação], para que [benefício]."]
 
-**Épicos:**
 - **Épico 1:** [Título do épico]
     - Como um [usuário], eu quero [ação], para que [benefício].
     - Como um [usuário], eu quero [ação], para que [benefício].
 - **Épico 2:** [Título do épico]
     - Como um [usuário], eu quero [ação], para que [benefício].
 
-**Requisitos Não-Funcionais (NFRs):**
-- [Requisitos de desempenho]
-- [Requisitos de segurança]
-- [Requisitos de escalabilidade]
-- [Requisitos de acessibilidade]
+## 4. Requisitos Funcionais
 
-## 4. Regras de Negócio
+[O que o sistema deve fazer. Descreva comportamentos observáveis pelo usuário ou por sistemas integrados, sem detalhe de implementação técnica.]
 
-[Documente quaisquer regras de negócio, restrições ou políticas que se aplicam a esta funcionalidade. Isso é especialmente importante para indústrias regulamentadas.]
-- [Regra 1]
-- [Regra 2]
-- [Regra 3]
+- **RF-01:** [Descrição do comportamento esperado]
+- **RF-02:** [Descrição do comportamento esperado]
+- **RF-03:** [Descrição do comportamento esperado]
 
-## 5. Restrições Arquiteturais
+## 5. Requisitos Não Funcionais
 
-[Decisões e restrições arquiteturais que afetam a implementação desta funcionalidade. Estas restrições orientam o agente de planejamento técnico e reduzem ambiguidades durante a criação do plano de especificação.]
+[Qualidade e restrições do sistema: performance, segurança, disponibilidade, usabilidade. Descreva em linguagem de negócio, sem decisões de implementação.]
 
-- **Localização de responsabilidades:** [Indicar se lógicas específicas devem residir no domínio, aplicação ou infraestrutura. Ex: "hashing de senha deve ficar na infraestrutura, não no domínio".]
-- **Contratos existentes:** [Indicar se contratos/interfaces existentes podem ser alterados ou se devem permanecer inalterados. Ex: "não alterar UserRepository existente".]
-- **Organização de arquivos:** [Preferências de granularidade de arquivos. Ex: "múltiplas interfaces coesas podem coexistir no mesmo arquivo" ou "uma interface por arquivo".]
-- **Escopo de alteração:** [Definir se a feature pode gerar ripple effects em código existente ou deve ser isolada. Ex: "não alterar handlers existentes" ou "permitido adicionar dependências aos handlers existentes".]
-- **Bibliotecas e dependências:** [Restrições sobre uso de bibliotecas externas nas camadas. Ex: "nenhuma lib de terceiros no domínio além do ddgo".]
+- **RNF-01 (Performance):** [Ex: a operação deve responder em até X segundos para Y usuários simultâneos]
+- **RNF-02 (Segurança):** [Ex: dados sensíveis não devem ser expostos em logs ou respostas de erro]
+- **RNF-03 (Disponibilidade):** [Ex: a funcionalidade deve estar disponível 24/7]
+- **RNF-04 (Usabilidade):** [Ex: mensagens de erro devem ser claras e orientar o usuário sobre como proceder]
 
-## 6. Requisitos de Dados
+## 6. Regras de Negócio
 
-[Especifique os requisitos relacionados a dados, incluindo fontes de dados, transformações de dados, políticas de retenção de dados e considerações de privacidade de dados.]
-- **Fontes de dados:** [Liste as fontes de dados]
-- **Transformações de dados:** [Descreva quaisquer transformações de dados necessárias]
-- **Retenção de dados:** [Por quanto tempo os dados devem ser retidos?]
-- **Privacidade:** [Considerações sobre PII, conformidade com GDPR/LGPD]
+[Documente restrições, políticas e invariantes de negócio que se aplicam a esta funcionalidade. Sem detalhes de implementação.]
 
-## 7. Critérios de Aceitação
+- **RN-01:** [Regra]
+- **RN-02:** [Regra]
+- **RN-03:** [Regra]
 
-[Condições claras e testáveis que devem ser atendidas para que a funcionalidade seja considerada completa. Formato: "Dado [contexto], quando [ação], então [resultado]."]
+## 7. Requisitos de Dados
 
-**Critérios Funcionais:**
-- **Cenário 1:** Dado [contexto], quando [ação], então [resultado].
-- **Cenário 2:** Dado [contexto], quando [ação], então [resultado].
-- **Cenário 3:** Dado [contexto], quando [ação], então [resultado].
+[Dados manipulados pela funcionalidade. Foco em origem, responsabilidade e privacidade — sem descrever transformações técnicas.]
 
-**Critérios Não-Funcionais:**
-- [Critérios de aceitação de desempenho]
-- [Critérios de aceitação de segurança]
-- [Critérios de aceitação de usabilidade]
+- **Entidades envolvidas:** [Quais entidades de domínio são criadas, alteradas ou consultadas]
+- **Origem dos dados:** [Quem fornece os dados: usuário final, sistema externo, evento de domínio, etc.]
+- **Privacidade / LGPD:** [Há dados pessoais envolvidos? Requer consentimento? Há obrigação de anonimização ou retenção limitada?]
 
-## 8. Design & Experiência do Usuário
+## 8. Critérios de Aceitação
 
-### Interface do Usuário (UI)
-- [Componentes de UI principais e seu propósito]
-- [Fluxos do usuário e padrões de interação]
-- [Localização de wireframes/mockups]
+[Condições claras e testáveis que definem quando a funcionalidade está completa. Formato BDD: Dado/Quando/Então.]
 
-### Experiência do Usuário (UX)
-- [Experiência do usuário desejada e resposta emocional]
-- [Abordagem de tratamento de erros]
-- [Mecanismos de feedback]
+- **Cenário 1 — [Nome]:** Dado [contexto], quando [ação], então [resultado esperado].
+- **Cenário 2 — [Nome]:** Dado [contexto], quando [ação], então [resultado esperado].
+- **Cenário 3 — [Nome — caminho de erro]:** Dado [contexto com dado inválido ou condição de falha], quando [ação], então [comportamento de erro esperado].
 
-### Arquitetura
-- [Decisões arquitetônicas de alto nível]
-- [Pontos de integração com sistemas existentes]
-- [Considerações sobre a pilha de tecnologia]
+## 9. Perguntas Abertas
 
-### Diagramas
-- [Diagramas em mermaid de arquitetura, fluxo, sequência, etc.]
+[Dúvidas que surgiram durante a coleta de requisitos e que precisam ser respondidas antes do desenvolvimento prosseguir.]
 
-## 9. Critérios de Lançamento
-
-[Quais condições devem ser atendidas antes que esta funcionalidade possa ser lançada em produção? Isso deve se alinhar com o processo de lançamento da sua organização.]
-- Todos os critérios de aceitação foram atendidos
-- Revisão de código concluída e aprovada
-- Testes de QA concluídos com aprovação
-- Testes de desempenho concluídos
-- Testes de segurança concluídos
-- Documentação concluída
-- Materiais de treinamento disponíveis (se aplicável)
-- Revisão legal/de conformidade (se aplicável)
+- [Pergunta 1]
+- [Pergunta 2]
 
 ## 10. Considerações Futuras
 
-[Documente quaisquer melhorias futuras conhecidas, funcionalidades relacionadas ou "nice-to-haves" que estão fora do escopo deste lançamento, mas devem ser rastreadas para consideração futura.]
-- [Consideração futura 1]
-- [Consideração futura 2]
-- [Consideração futura 3]
+[Melhorias conhecidas e funcionalidades relacionadas que estão fora do escopo deste lançamento, mas devem ser rastreadas para o futuro.]
 
-## 11. Perguntas Abertas
-
-[Quaisquer perguntas que surgiram durante a coleta de requisitos que precisam de respostas antes que o desenvolvimento possa prosseguir.]
-- [Pergunta 1]
-- [Pergunta 2]
-- [Pergunta 3]
+- [Consideração 1]
+- [Consideração 2]
 
 ```

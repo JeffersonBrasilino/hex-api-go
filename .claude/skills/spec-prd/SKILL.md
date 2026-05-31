@@ -8,4 +8,4 @@ execution_profile:
   strategy: agent # [plan | agent]
 ---
 
-read reading `.agentic/skills/spec-prd/SKILL.md`.
+read `.agentic/skills/spec-prd/SKILL.md`.

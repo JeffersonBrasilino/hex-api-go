@@ -59,24 +59,27 @@
     },
     {
       "id": 6,
-      "description": "template PRD inclui secao 5 Restricoes Arquiteturais com sub-itens obrigatorios",
-      "prompt": "Módulo: auth, Feature: reset-password. Contexto completo levantado e aprovado: O usuário esqueceu a senha e solicita redefinição via email. Regras de negócio: link de redefinição expira em 1 hora, máximo de 3 solicitações por hora por usuário, senha deve ter mínimo 8 caracteres. Critérios BDD já foram validados e aprovados pelo usuário. Restrições: nenhuma biblioteca externa nova, hashing de senha deve ficar na camada de infraestrutura, UserRepository existente não pode ser alterado. Gere agora o PRD.md completo para docs/auth/reset-password/.",
+      "description": "template PRD inclui secoes RF RNF e nao contem Restricoes Arquiteturais",
+      "prompt": "Módulo: auth, Feature: reset-password. Contexto completo levantado e aprovado: O usuário esqueceu a senha e solicita redefinição via email. Regras de negócio: link de redefinição expira em 1 hora, máximo de 3 solicitações por hora por usuário, senha deve ter mínimo 8 caracteres. Critérios BDD já foram validados e aprovados pelo usuário. Gere agora o PRD.md completo para docs/auth/reset-password/.",
       "assertions": [
-        "O PRD contém a seção '## 5. Restrições Arquiteturais' ou equivalente com esse título exato",
-        "A seção de Restrições Arquiteturais contém ao menos um dos sub-itens obrigatórios do template: 'Localização de responsabilidades', 'Contratos existentes', 'Organização de arquivos', 'Escopo de alteração' ou 'Bibliotecas e dependências'",
-        "O PRD contém a seção '## 7. Critérios de Aceitação' com cenários BDD usando os termos 'Dado', 'Quando', 'Então'",
-        "O PRD está escrito em português (pt-BR) e menciona o caminho docs/auth/reset-password/PRD.md",
-        "O PRD contém ao menos 8 seções numeradas distintas cobrindo visão geral, objetivos, histórias de usuário, regras de negócio, critérios de aceitação e critérios de lançamento"
+        "O PRD contém a seção '## 4. Requisitos Funcionais' com ao menos um item numerado no formato 'RF-0X'",
+        "O PRD contém a seção '## 5. Requisitos Não Funcionais' com ao menos um item numerado no formato 'RNF-0X'",
+        "O PRD NÃO contém uma seção chamada 'Restrições Arquiteturais' ou qualquer sub-item como 'Localização de responsabilidades' ou 'Contratos existentes'",
+        "O PRD contém a seção '## 8. Critérios de Aceitação' com cenários BDD usando os termos 'Dado', 'Quando', 'Então'",
+        "O PRD está escrito em português (pt-BR) e menciona o caminho docs/auth/reset-password/PRD.md"
       ]
     },
     {
       "id": 7,
-      "description": "notes md estrutura exata com 4 secoes obrigatorias apos resposta de elicitacao",
+      "description": "notes md estrutura exata com 7 secoes obrigatorias apos resposta de elicitacao",
       "prompt": "Módulo: inventory, Feature: stock-alert. Contexto inicial já coletado: Sistema deve enviar alerta quando o estoque de um produto cai abaixo do limite mínimo configurado. Resposta do usuário à primeira pergunta: o alerta deve ser enviado por email para o gestor responsável pelo produto e também registrado no sistema para auditoria. Atualize o NOTES.md com essas informações.",
       "assertions": [
         "A resposta menciona explicitamente a atualização do arquivo NOTES.md em docs/inventory/stock-alert/NOTES.md ou caminho equivalente",
         "A resposta indica que o NOTES.md contém ou será atualizado com a seção '# Objetivos e Contexto'",
+        "A resposta indica que o NOTES.md contém ou será atualizado com a seção '# Requisitos Funcionais'",
+        "A resposta indica que o NOTES.md contém ou será atualizado com a seção '# Requisitos Não Funcionais'",
         "A resposta indica que o NOTES.md contém ou será atualizado com a seção '# Regras de Negócio'",
+        "A resposta indica que o NOTES.md contém ou será atualizado com a seção '# Requisitos de Dados'",
         "A resposta indica que o NOTES.md contém ou será atualizado com as seções '# Linguagem Ubíqua (Glossário)' e '# Dúvidas Pendentes'",
         "Após mencionar a atualização do NOTES.md, a resposta faz exatamente uma nova pergunta de elicitação ao usuário"
       ]
@@ -114,6 +117,40 @@
         "A resposta notifica o usuário sobre a criação/uso do arquivo de rascunho com o caminho, seguindo o padrão '📝 Iniciando processo...' ou equivalente informativo",
         "A resposta está escrita em português (pt-BR)",
         "A resposta faz exatamente uma pergunta de elicitação para iniciar o levantamento de requisitos"
+      ]
+    },
+    {
+      "id": 11,
+      "description": "elicitacao explora requisitos nao funcionais durante levantamento",
+      "prompt": "Módulo: payment, Feature: process-payment. O sistema deve processar pagamentos com cartão de crédito. Resposta à primeira pergunta: o pagamento deve ser processado via gateway externo, o usuário não deve ver dados sensíveis do cartão após o preenchimento.",
+      "assertions": [
+        "A resposta explora ou pergunta sobre ao menos um requisito não funcional: tempo de resposta, disponibilidade, segurança dos dados, ou comportamento sob falha do gateway",
+        "A resposta NÃO faz mais de uma pergunta ao usuário na mesma mensagem",
+        "A resposta menciona atualização do NOTES.md com as informações recebidas",
+        "A resposta está escrita em português (pt-BR)"
+      ]
+    },
+    {
+      "id": 12,
+      "description": "elicitacao explora requisitos de dados e privacidade LGPD quando dados pessoais envolvidos",
+      "prompt": "Módulo: user, Feature: user-profile. O sistema deve permitir que o usuário visualize e edite seu perfil, incluindo nome completo, data de nascimento, CPF e endereço.",
+      "assertions": [
+        "A resposta menciona ou pergunta sobre aspectos de privacidade, LGPD, ou proteção de dados pessoais (CPF, data de nascimento são dados sensíveis)",
+        "A resposta explora ou captura informações sobre a origem dos dados ou quem pode acessar/alterar esses dados",
+        "A resposta NÃO faz mais de uma pergunta ao usuário na mesma mensagem",
+        "A resposta está escrita em português (pt-BR)"
+      ]
+    },
+    {
+      "id": 13,
+      "description": "criterios BDD extraidos no step 2 possuem nome de cenario explícito",
+      "prompt": "Módulo: order, Feature: cancel-order. Elicitação concluída e aprovada pelo usuário. Contexto: usuário autenticado pode cancelar um pedido que ainda não foi despachado. Pedidos já despachados não podem ser cancelados. Cancelamento notifica o vendedor por email. Gate 1 aprovado. Extraia agora os critérios de aceitação BDD.",
+      "assertions": [
+        "Cada cenário BDD apresentado possui um nome explícito no formato 'Cenário N — [Nome descritivo]' ou equivalente que identifique o cenário",
+        "A resposta contém ao menos um cenário de caminho feliz (cancelamento bem-sucedido)",
+        "A resposta contém ao menos um cenário de erro ou restrição (tentativa de cancelar pedido já despachado)",
+        "Os cenários usam os termos 'Dado', 'Quando', 'Então' em português",
+        "A resposta aguarda aprovação explícita do usuário antes de prosseguir para criação do PRD"
       ]
     }
   ],

@@ -6,9 +6,6 @@ description: >
   for domain, application, and infrastructure layers. Use this skill when creating, modifying,
   analyzing, or reviewing DDD modules, or when any task requires understanding the module
   architecture, layer boundaries, or component patterns of this codebase.
-execution_profile:
-  tier: speed
-  strategy: plan
 ---
 
 # DDD Module Knowledge Base

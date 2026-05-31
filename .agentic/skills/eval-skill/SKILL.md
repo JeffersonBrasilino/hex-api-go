@@ -3,14 +3,12 @@ name: eval-skill
 description: >
   Run structured evaluations (evals) for any skill that has an evals/evals.json file.
   Executes each test case twice — once with the skill loaded (with_skill) and once without
-  it (without_skill baseline) — then grades outputs against assertions, generates per-eval
-  grading.json, timing.json, benchmark.json, and a feedback.json for human review.
+  it (without_skill baseline) — then grades outputs against assertions via a dedicated haiku
+  grader subagent, generates per-eval grading.json, timing.json, benchmark.json, and a
+  feedback.json for human review. Grading and reporting are offloaded to subagents to keep
+  the main context lean.
   Use when the user says "eval this skill", "run evals for", "test this skill", or provides
   a skill path and asks to evaluate it. Requires the target skill to have evals/evals.json.
-
-execution_profile:
-  tier: reasoning
-  strategy: agent
 ---
 
 # eval-skill
@@ -18,6 +16,9 @@ execution_profile:
 Runs the agentskills.io eval workflow for any skill. Produces a with/without baseline
 comparison, per-assertion grading, benchmark delta, and a feedback file for human review
 and skill iteration.
+
+Grading and report generation are delegated to dedicated subagents to minimize tokens
+consumed in the main context.
 
 ## Language
 
@@ -27,11 +28,11 @@ All output — grading evidence, benchmark analysis, report content, feedback fi
 
 **This skill covers:**
 - Reading `evals/evals.json` from the target skill directory
-- Running with_skill and without_skill passes for all test cases
-- Grading each assertion with PASS/FAIL + concrete evidence
+- Optionally filtering evals by ID before running
+- Running with_skill and without_skill passes for all selected test cases
+- Grading each assertion via a dedicated haiku subagent (offloaded from main context)
 - Writing per-eval `grading.json` and `timing.json` per configuration
-- Writing `benchmark.json` and `feedback.json` at the iteration root
-- Producing a structured gap analysis to guide skill iteration
+- Writing `benchmark.json`, `feedback.json`, and `report.md` via a dedicated subagent
 
 **This skill does NOT cover:**
 - Creating or editing `evals.json` — do that separately before running evals
@@ -46,7 +47,9 @@ The user must provide the **skill path** — the directory containing the target
 
 Resolve relative paths from the repository root.
 
-**Optional**: the user may specify a **model** for the subagent runs (e.g., "eval using haiku", "use opus"). If not specified, use the current conversation model. The model ID is recorded in `timing.json` and used for cost calculation.
+**Optional parameters:**
+- `--ids N,M,...` — run only evals with these IDs (e.g., `--ids 1,3,5`). If omitted, all evals run.
+- `--model <model-id>` — model for the runner subagents. If omitted, use the current conversation model. The model ID is recorded in `timing.json` and used for cost calculation.
 
 ## Workspace Layout
 
@@ -71,7 +74,8 @@ my-skill/
             ├── eval-{slug}/
             │   └── ...
             ├── benchmark.json          ← aggregated statistics across all evals
-            └── feedback.json           ← human review notes per eval slug
+            ├── feedback.json           ← human review notes per eval slug
+            └── report.md              ← summary report in pt-BR
 ```
 
 **Eval slug**: derive from the `description` field (lowercase, spaces and special chars → hyphens, max 60 chars). Fall back to `eval-{id}` if no description. Examples:
@@ -85,20 +89,20 @@ my-skill/
 1. Read `{skill-path}/SKILL.md`
 2. Read `{skill-path}/evals/evals.json`
 3. Validate: `evals` array non-empty; each entry has `id`, `prompt`, `assertions`
-4. If invalid, stop and report what is missing
-5. Read all files under `{skill-path}/references/` — this is the full knowledge injected into the with_skill run
-6. Compute workspace root: `{skill-path}/evals/workspace/`
-7. Determine iteration: count existing `iteration-N/` dirs in workspace root, use N+1 (start at 1)
-8. Create directory tree:
-   - `{workspace}/iteration-{N}/`
-   - `{workspace}/iteration-{N}/eval-{slug}/with_skill/outputs/` for each eval
-   - `{workspace}/iteration-{N}/eval-{slug}/without_skill/outputs/` for each eval
+4. If `--ids` was provided, filter the `evals` array to only entries whose `id` is in the list. If none match, stop and report.
+5. If invalid, stop and report what is missing
+6. Read all files under `{skill-path}/references/` — injected into the with_skill run
+7. Compute workspace root: `{skill-path}/evals/workspace/`
+8. Determine iteration: count existing `iteration-N/` dirs in workspace root, use N+1 (start at 1)
+9. Create directory tree using the Write tool on placeholder files — never use shell mkdir:
+   - For each eval: `{workspace}/iteration-{N}/eval-{slug}/with_skill/outputs/.keep`
+   - For each eval: `{workspace}/iteration-{N}/eval-{slug}/without_skill/outputs/.keep`
 
-### PHASE 2 — Execute Runs (parallel)
+### PHASE 2 — Execute Runner Subagents (parallel)
 
-**File writing rule**: always use the dedicated Write tool to create files. Never use shell scripts, Python scripts, bash heredocs, or any other scripting mechanism to write files. The Write tool is faster, does not require a shell process, and keeps the run time low.
+**File writing rule**: always use the dedicated Write tool to create files. Never use shell scripts, Python scripts, bash heredocs, or any other scripting mechanism to write files.
 
-Each eval should run in a **clean context** — no state from previous evals. In Claude Code, subagents provide this isolation naturally. Spawn **two subagents in parallel** — one per configuration — each receiving all eval prompts at once to minimise subagent count while preserving config isolation.
+Spawn **two subagents in parallel** — one per configuration — each receiving all selected eval prompts at once. Capture timing immediately from the task completion notification.
 
 **with_skill agent** prompt:
 ```
@@ -130,80 +134,109 @@ Questions:
 {for each eval: N. [slug: {slug}] {prompt}}
 ```
 
-After each subagent completes, immediately capture from the task completion notification — these are not persisted anywhere else:
-- `model` — model ID string (e.g., `"claude-sonnet-4-6"`)
+After each subagent completes, immediately capture from the task completion notification:
+- `model` — model ID string
 - `input_tokens` and `output_tokens` — capture separately when available; fall back to `total_tokens` only if the split is absent
 - `duration_ms`
 
-Compute `estimated_cost_usd` using the pricing table in `references/pricing-table.md`. Apply fallback rules from that reference if model or token split is unknown.
+Compute `estimated_cost_usd` using the pricing table in `references/pricing-table.md`.
 
 For each eval write:
 - `{workspace}/iteration-{N}/eval-{slug}/with_skill/outputs/output.json` → `{ "id": N, "answer": "..." }`
 - `{workspace}/iteration-{N}/eval-{slug}/without_skill/outputs/output.json` → same
-- `{workspace}/iteration-{N}/eval-{slug}/with_skill/timing.json` → see [timing schema](references/grading-schema.md)
+- `{workspace}/iteration-{N}/eval-{slug}/with_skill/timing.json` — see [timing schema](references/grading-schema.md), add `"note": "batch run — timing shared across {K} evals"`
 - `{workspace}/iteration-{N}/eval-{slug}/without_skill/timing.json` → same
 
-When batching evals into one subagent, the timing values are shared across all evals in the batch. Add `"note": "batch run — timing shared across {N} evals"` to each `timing.json`.
+### PHASE 3 — Grade via Haiku Subagent
 
-If a subagent cannot write files, capture its answer array from the task result and write all files yourself before continuing.
+Do NOT grade assertions in the main context. Spawn a **single grader subagent using `claude-haiku-4-5-20251001`** that receives all answers and assertions for both configurations and writes all `grading.json` files directly.
 
-### PHASE 3 — Grade
+Build the grader prompt as follows:
 
-For each eval and each configuration, grade every assertion against the answer in `outputs/output.json`:
-- **PASS**: assertion clearly satisfied — provide the exact quote or observation as evidence
-- **FAIL**: assertion not satisfied — state precisely what was missing or wrong
+```
+You are a strict eval grader. For each eval, grade every assertion against the given answer.
 
 Grading rules:
-- Require concrete evidence for PASS — no benefit of the doubt
-- Negative assertions ("does NOT suggest X"): PASS only if X is genuinely absent from the output
-- Redirect assertions ("redirects to skill Y"): PASS only if the skill name is explicitly present
-- Grade on substance only — not tone, style, or length
+- PASS: assertion clearly satisfied — provide the exact quote or observation as evidence.
+- FAIL: assertion not satisfied — state precisely what was missing or wrong.
+- Require concrete evidence for PASS — no benefit of the doubt.
+- Negative assertions ("does NOT suggest X"): PASS only if X is genuinely absent.
+- Redirect assertions ("redirects to skill Y"): PASS only if the skill name is explicitly present.
+- Grade on substance only — not tone, style, or length.
+- `text`: copy the assertion verbatim.
+- `pass_rate`: passed / total rounded to 3 decimal places.
 
-Write per-eval per-config grading files:
-- `{workspace}/iteration-{N}/eval-{slug}/with_skill/grading.json`
-- `{workspace}/iteration-{N}/eval-{slug}/without_skill/grading.json`
+For each eval and each configuration, write the grading.json file at the path specified.
 
-Schema → see [reference](references/grading-schema.md).
+=== GRADING SCHEMA ===
+{full content of references/grading-schema.md}
 
-### PHASE 4 — Benchmark
+=== EVALS TO GRADE ===
+{for each eval:
+--- EVAL: {slug} ---
+Assertions:
+{JSON array of assertions}
 
-Aggregate timing and pass rates across all evals for both configurations. Compute delta.
+with_skill answer:
+{answer from with_skill output.json}
 
-**Costs**: sum `estimated_cost_usd` from each eval's `timing.json` per configuration; compute `mean_per_eval` and `delta.estimated_cost_usd`.
+without_skill answer:
+{answer from without_skill output.json}
 
-**value_tier**: classify `delta.pass_rate` using the thresholds in [benchmark-schema.md](references/benchmark-schema.md):
-- `"forte"` ≥ 0.40 · `"moderado"` 0.20–0.39 · `"fraco"` 0.05–0.19 · `"sem_valor"` 0.00–0.04 · `"negativo"` < 0.00
-
-**delta_vs_prev_iteration**: when `N > 1`, read `iteration-(N-1)/benchmark.json` and compute `pass_rate_delta_change`, `value_tier_change`, and `cost_delta_change_usd`. Set to `null` for iteration 1.
-
-Write `{workspace}/iteration-{N}/benchmark.json` — full schema → see [reference](references/benchmark-schema.md).
-
-Pattern analysis to include in the benchmark:
-- Assertions that **always pass in both configs** — these inflate the with_skill rate without measuring skill value; flag for review
-- Assertions that **always fail in both configs** — broken assertion or task too hard; flag for fixing
-- Assertions that **pass with skill, fail without** — where the skill clearly adds value
-- High `stddev` across evals — signal of ambiguous or flaky skill instructions
-
-### PHASE 5 — Feedback File
-
-Write `{workspace}/iteration-{N}/feedback.json` pre-populated with empty strings per eval slug:
-
-```json
-{
-  "eval-module-structure-verify-layout": "",
-  "eval-naming-convention-command-dir": ""
+Write to:
+  {workspace}/iteration-{N}/eval-{slug}/with_skill/grading.json
+  {workspace}/iteration-{N}/eval-{slug}/without_skill/grading.json
 }
 ```
 
-Instruct the user to fill in specific, actionable notes for each eval where the output missed the point — even if assertions passed. Empty string = output was acceptable. Schema → see [reference](references/feedback-schema.md).
+After the grader subagent completes, verify that all `grading.json` files exist. If any are missing (subagent denied write permissions), read the grader's output and write the missing files yourself.
 
-### PHASE 6 — Report
+### PHASE 4 — Benchmark and Report via Subagent
 
-Write a `report.md` file at `{workspace}/iteration-{N}/report.md` using the Write tool. Do NOT print the report to the prompt. The file must be written in Brazilian Portuguese (pt-BR).
+Do NOT build the benchmark or report in the main context. Spawn a **single benchmark subagent** that reads all grading and timing files and writes `benchmark.json`, `feedback.json`, and `report.md`.
 
-Structure of `report.md`:
+Build the benchmark prompt as follows:
 
-```markdown
+```
+You are an eval benchmark aggregator. Read the grading and timing results below and produce
+benchmark.json, feedback.json, and report.md for iteration {N} of skill "{skill-name}".
+
+All written content (report.md, feedback values if non-empty) must be in Brazilian Portuguese (pt-BR).
+JSON keys, file paths, PASS/FAIL labels, and code identifiers stay in their original form.
+
+=== BENCHMARK SCHEMA ===
+{full content of references/benchmark-schema.md}
+
+=== FEEDBACK SCHEMA ===
+{full content of references/feedback-schema.md}
+
+=== PRICING TABLE ===
+{full content of references/pricing-table.md}
+
+{if N > 1:
+=== PREVIOUS ITERATION BENCHMARK ===
+{content of iteration-(N-1)/benchmark.json}
+}
+
+=== GRADING AND TIMING DATA ===
+{for each eval:
+--- {slug} ---
+with_skill/grading.json:
+{content}
+
+without_skill/grading.json:
+{content}
+
+with_skill/timing.json:
+{content}
+
+without_skill/timing.json:
+{content}
+}
+
+=== REPORT STRUCTURE ===
+Write report.md with the following structure (in pt-BR):
+
 # Relatório de Avaliação: `{skill-name}` — iteração {N}
 
 ## Pontuação Geral
@@ -225,8 +258,6 @@ _(Se N > 1)_ Comparado à iteração anterior: delta passou de X.XXX → X.XXX (
 | without_skill | $X.XXXXXX | $X.XXXXXX | {model} |
 | **custo adicional da skill** | **$X.XXXXXX** | — | — |
 
-_(Se aplicável)_ Nota de precificação: `{pricing_note}`
-
 ## Por Avaliação
 
 | Slug | with_skill | without_skill | delta |
@@ -241,7 +272,6 @@ _(Se aplicável)_ Nota de precificação: `{pricing_note}`
 
 ## Baseline confirmado (ambos ≥ 0.95)
 
-Estas avaliações passam sem a skill — são guardas de regressão válidas:
 - `slug`
 
 ## Lacunas da skill (with_skill < 1.0)
@@ -249,14 +279,19 @@ Estas avaliações passam sem a skill — são guardas de regressão válidas:
 | Slug | Asserção falha | Correção sugerida |
 |---|---|---|
 ...
-_(Nenhuma — pontuação perfeita)_ se aplicável
 
 ## Recomendação
 
 Uma frase — pronta / precisa de iteração / precisa de revisão maior.
+
+=== OUTPUT PATHS ===
+Write these files using the Write tool:
+- {workspace}/iteration-{N}/benchmark.json
+- {workspace}/iteration-{N}/feedback.json   (pre-populated with empty strings per slug)
+- {workspace}/iteration-{N}/report.md
 ```
 
-After writing `report.md`, output **only** this message (nothing else):
+After the benchmark subagent completes, output **only** this message:
 
 ```
 o relatório da avaliação da skill foi criado, local: {workspace}/iteration-{N}/report.md
@@ -264,21 +299,22 @@ o relatório da avaliação da skill foi criado, local: {workspace}/iteration-{N
 
 ## Gotchas
 
-- **Never use scripts** (Python, bash, shell heredocs) to write files — use the Write tool exclusively; scripts add latency and increase total run time significantly
+- **Never grade or report in main context** — always delegate to subagents (Phases 3 and 4); doing it inline defeats the token-saving design
+- **Grader uses haiku** (`claude-haiku-4-5-20251001`) — grading is mechanical and does not need a reasoning model
+- **Eval filtering** (`--ids`) is applied before spawning runner subagents — runners only receive the selected evals
+- **Never use scripts** (Python, bash, shell heredocs) to write files — use the Write tool exclusively
 - All written content must be in **pt-BR**; only JSON keys, file paths, code identifiers, PASS/FAIL labels stay in their original form
 - The report goes to `report.md` inside the iteration dir — never printed to the conversation prompt
-- Workspace is **alongside** the skill dir — `my-skill-workspace/` next to `my-skill/`, not inside it
 - Always read ALL `references/` files before building the with_skill prompt — critical conventions often live in references/, not SKILL.md body
 - Eval slug must be filesystem-safe: lowercase, hyphens only, max 60 chars — truncate if needed
 - Iteration number comes from filesystem scan — never assume 1 if `{workspace}/` already exists
 - Capture `model`, `input_tokens`, `output_tokens`, and `duration_ms` immediately from task completion notification — they are not available later
-- Token split (`input_tokens` / `output_tokens`) may not always be present in the notification; apply the 75/25 fallback from pricing-table.md and record `pricing_note` — never skip cost computation
-- `value_tier` is derived solely from `delta.pass_rate` — do not adjust it based on cost or context
+- Token split may not always be present; apply the 75/25 fallback from pricing-table.md and record `pricing_note`
+- `value_tier` is derived solely from `delta.pass_rate` — do not adjust based on cost or context
 - `delta_vs_prev_iteration` requires reading the previous iteration's `benchmark.json` — skip only if iteration 1
-- If subagent is denied write permissions, answers still arrive in task result — write all files yourself
+- If a subagent is denied write permissions, answers still arrive in task result — write all files yourself
 - Negative assertions are highest-signal — grade strictly, they catch regressions
-- `stddev` in benchmark is only meaningful with multiple runs per eval; with single runs, focus on raw delta
-- Baseline-confirmed evals are not waste — they validate no regression in universal knowledge; do not suggest removing them without user input
+- Baseline-confirmed evals are not waste — they validate no regression in universal knowledge
 
 ## References
 

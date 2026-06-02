@@ -1,0 +1,18 @@
+{
+  "eval-sem-contexto-a-skill-pergunta-o-problema-funcionalidade-e-nao-cria-prd": "",
+  "eval-com-contexto-a-skill-entrevista-uma-pergunta-por-vez-com-resposta-recomendada": "",
+  "eval-implementacao-de-codigo-esta-fora-do-escopo": "",
+  "eval-gate-de-aprovacao-impede-gerar-prd-sem-aprovacao-do-resumo": "",
+  "eval-resumo-de-aprovacao-segue-o-formato-padronizado": "",
+  "eval-nao-salva-arquivos-na-raiz-do-projeto": "",
+  "eval-prd-gerado-contem-secoes-obrigatorias-e-fora-de-escopo-sem-detalhe-de-implementacao": "",
+  "eval-criterios-de-aceitacao-usam-dado-quando-entao-em-portugues-com-nome-de-cenario": "",
+  "eval-explora-privacidade-lgpd-quando-ha-dados-pessoais": "",
+  "eval-notas-nao-sao-criadas-no-bootstrap-e-nao-sobrescrevem-arquivo-existente": "",
+  "eval-sem-contexto-real-a-skill-nao-inicia-entrevista-mesmo-sob-pressao-do-usuario": "",
+  "eval-implementacao-disfarcada-de-rnf-e-recusada-e-redirecionada": "",
+  "eval-gate-de-aprovacao-obrigatorio-mesmo-com-contexto-completo-fornecido-de-uma-vez": "",
+  "eval-caminho-invalido-dentro-de-docs-sem-subpastas-de-modulo-e-feature-e-recusado": "",
+  "eval-criterios-aprovados-nao-dispensam-o-gate-de-aprovacao-formal-antes-de-gerar-o-prd": "",
+  "eval-substituicao-explicita-de-notes-md-e-recusada-e-o-arquivo-e-incrementado": ""
+}

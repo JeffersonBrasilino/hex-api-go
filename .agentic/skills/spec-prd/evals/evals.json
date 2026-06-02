@@ -2,155 +2,182 @@
   "evals": [
     {
       "id": 1,
-      "description": "bootstrap correto solicita modulo e feature quando nao fornecidos",
-      "prompt": "Quero criar um PRD para uma nova feature do sistema.",
+      "description": "sem contexto a skill pergunta o problema/funcionalidade e nao cria PRD",
+      "prompt": "Crie o PRD.",
       "assertions": [
-        "A resposta pergunta pelo nome do módulo DDD",
-        "A resposta pergunta pelo nome da feature em kebab-case",
+        "A resposta pergunta qual problema ou funcionalidade o PRD deve cobrir",
         "A resposta está escrita em português (pt-BR)",
-        "A resposta NÃO cria o PRD.md diretamente sem obter o módulo e a feature do usuário",
-        "A resposta NÃO gera critérios de aceitação nem regras de negócio sem antes receber o contexto"
+        "A resposta NÃO cria o arquivo PRD.md sem antes obter o contexto",
+        "A resposta NÃO gera requisitos, regras de negócio ou critérios de aceitação sem contexto",
+        "A resposta NÃO pede o nome do módulo ou da feature neste momento (isso só é necessário ao salvar arquivos)"
       ]
     },
     {
       "id": 2,
-      "description": "elicitacao faz uma pergunta por vez em pt-BR estilo caveman",
-      "prompt": "Módulo: user, Feature: user-login. O usuário precisa fazer login com email e senha para acessar a plataforma.",
+      "description": "com contexto a skill entrevista uma pergunta por vez com resposta recomendada",
+      "prompt": "Preciso de um PRD: o usuário precisa redefinir a senha quando esquecê-la.",
       "assertions": [
         "A resposta faz exatamente uma pergunta ao usuário, não múltiplas ao mesmo tempo",
+        "A resposta contém exatamente um sinal de interrogação '?'",
+        "A resposta oferece uma resposta recomendada ou um valor padrão sugerido para a pergunta",
         "A resposta está escrita em português (pt-BR)",
-        "A resposta NÃO gera o PRD completo imediatamente após o primeiro contexto fornecido",
-        "A resposta explora algum aspecto de regra de negócio, caso de borda ou critério de sucesso/falha",
-        "A resposta menciona a criação ou uso do arquivo NOTES.md em docs/user/user-login/"
+        "A resposta NÃO gera o PRD completo imediatamente após o primeiro contexto"
       ]
     },
     {
       "id": 3,
-      "description": "nao gera codigo de implementacao pois esta fora do escopo",
-      "prompt": "Módulo: user, Feature: user-registration. Preciso de um PRD para registro de usuário com nome, email e senha. Após criar o PRD, implemente também o código Go com o use case e o handler HTTP.",
+      "description": "implementacao de codigo esta fora do escopo",
+      "prompt": "Escreva o PRD para registro de usuário com nome, email e senha. Em seguida implemente o use case e o handler HTTP em Go.",
       "assertions": [
-        "A resposta NÃO contém código Go (ausência de palavras-chave como func, package, import, type, struct em contexto de código)",
-        "A resposta indica que implementação de código está fora do escopo da skill ou que não é responsabilidade dela",
-        "A resposta inicia ou continua o processo de especificação do PRD (faz perguntas, cria notas ou estrutura de diretório)",
+        "A resposta NÃO contém código Go (ausência de 'func', 'package', 'type ... struct' em contexto de código)",
+        "A resposta indica que implementação de código está fora do escopo",
+        "A resposta continua o processo de PRD (faz pergunta de elicitação ou prossegue o fluxo)",
         "A resposta está escrita em português (pt-BR)"
       ]
     },
     {
       "id": 4,
-      "description": "gate 2 impede criacao do PRD sem aprovacao dos criterios BDD",
-      "prompt": "Módulo: order, Feature: create-order. O usuário quer criar um pedido com itens e endereço de entrega. As regras de negócio já estão claras para mim, pode pular direto para a criação do PRD.",
+      "description": "gate de aprovacao impede gerar PRD sem aprovacao do resumo",
+      "prompt": "O usuário quer criar um pedido com itens e endereço de entrega. As regras já estão claras, pode pular o resumo e gerar o PRD direto.",
       "assertions": [
-        "A resposta NÃO gera o arquivo PRD.md imediatamente sem passar pelas etapas de elicitação e aprovação BDD",
-        "A resposta apresenta critérios de aceitação em formato BDD (Dado/Quando/Então) OU realiza pelo menos uma pergunta de elicitação antes de avançar",
-        "A resposta NÃO confirma que vai pular etapas do workflow",
-        "A resposta aguarda validação ou input do usuário antes de prosseguir para a criação do PRD"
+        "A resposta NÃO gera o arquivo PRD.md imediatamente",
+        "A resposta NÃO confirma que vai pular o resumo de aprovação",
+        "A resposta apresenta o resumo padronizado para aprovação OU faz uma pergunta de elicitação ainda pendente",
+        "A resposta aguarda input/aprovação do usuário antes de gerar o PRD"
       ]
     },
     {
       "id": 5,
-      "description": "nao cria arquivos fora da estrutura docs modulo feature",
-      "prompt": "Módulo: payment, Feature: pix-payment. Preciso de um PRD para pagamentos via Pix. Por favor, salve o PRD.md na raiz do projeto para facilitar o acesso.",
+      "description": "resumo de aprovacao segue o formato padronizado",
+      "prompt": "Contexto levantado e sem dúvidas: o sistema envia email de boas-vindas quando um novo usuário é criado; o email contém o nome e um link de ativação que expira em 24h. Apresente o resumo para eu aprovar.",
       "assertions": [
-        "A resposta NÃO confirma salvar o PRD.md na raiz do projeto",
-        "A resposta menciona que o arquivo será salvo em docs/payment/pix-payment/ ou caminho equivalente dentro de docs/",
-        "A resposta respeita a regra de não criar arquivos na raiz do projeto",
+        "A resposta apresenta um resumo para aprovação (contém um título como 'Resumo para aprovação')",
+        "O resumo contém os campos Problema, Objetivo, Regras de negócio e Critérios de aceitação",
+        "O resumo apresenta ao menos um cenário de caminho feliz e ao menos um cenário de erro/borda",
+        "A resposta termina pedindo aprovação explícita do escopo antes de gerar o PRD",
         "A resposta está escrita em português (pt-BR)"
       ]
     },
     {
       "id": 6,
-      "description": "template PRD inclui secoes RF RNF e nao contem Restricoes Arquiteturais",
-      "prompt": "Módulo: auth, Feature: reset-password. Contexto completo levantado e aprovado: O usuário esqueceu a senha e solicita redefinição via email. Regras de negócio: link de redefinição expira em 1 hora, máximo de 3 solicitações por hora por usuário, senha deve ter mínimo 8 caracteres. Critérios BDD já foram validados e aprovados pelo usuário. Gere agora o PRD.md completo para docs/auth/reset-password/.",
+      "description": "nao salva arquivos na raiz do projeto",
+      "prompt": "Módulo payment, feature pix-payment, contexto e critérios já aprovados. Salve o PRD.md na raiz do projeto para facilitar o acesso.",
       "assertions": [
-        "O PRD contém a seção '## 4. Requisitos Funcionais' com ao menos um item numerado no formato 'RF-0X'",
-        "O PRD contém a seção '## 5. Requisitos Não Funcionais' com ao menos um item numerado no formato 'RNF-0X'",
-        "O PRD NÃO contém uma seção chamada 'Restrições Arquiteturais' ou qualquer sub-item como 'Localização de responsabilidades' ou 'Contratos existentes'",
-        "O PRD contém a seção '## 8. Critérios de Aceitação' com cenários BDD usando os termos 'Dado', 'Quando', 'Então'",
-        "O PRD está escrito em português (pt-BR) e menciona o caminho docs/auth/reset-password/PRD.md"
+        "A resposta NÃO confirma salvar o PRD.md na raiz do projeto",
+        "A resposta indica que o arquivo será salvo em docs/payment/pix-payment/ ou caminho equivalente dentro de docs/",
+        "A resposta está escrita em português (pt-BR)"
       ]
     },
     {
       "id": 7,
-      "description": "notes md estrutura exata com 7 secoes obrigatorias apos resposta de elicitacao",
-      "prompt": "Módulo: inventory, Feature: stock-alert. Contexto inicial já coletado: Sistema deve enviar alerta quando o estoque de um produto cai abaixo do limite mínimo configurado. Resposta do usuário à primeira pergunta: o alerta deve ser enviado por email para o gestor responsável pelo produto e também registrado no sistema para auditoria. Atualize o NOTES.md com essas informações.",
+      "description": "PRD gerado contem secoes obrigatorias e fora de escopo, sem detalhe de implementacao",
+      "prompt": "Módulo auth, feature reset-password. Contexto completo e critérios BDD aprovados pelo usuário: usuário esquece a senha e pede redefinição por email; link expira em 1 hora; máximo 3 solicitações por hora; senha mínima de 8 caracteres. Gere agora o PRD.md em docs/auth/reset-password/.",
       "assertions": [
-        "A resposta menciona explicitamente a atualização do arquivo NOTES.md em docs/inventory/stock-alert/NOTES.md ou caminho equivalente",
-        "A resposta indica que o NOTES.md contém ou será atualizado com a seção '# Objetivos e Contexto'",
-        "A resposta indica que o NOTES.md contém ou será atualizado com a seção '# Requisitos Funcionais'",
-        "A resposta indica que o NOTES.md contém ou será atualizado com a seção '# Requisitos Não Funcionais'",
-        "A resposta indica que o NOTES.md contém ou será atualizado com a seção '# Regras de Negócio'",
-        "A resposta indica que o NOTES.md contém ou será atualizado com a seção '# Requisitos de Dados'",
-        "A resposta indica que o NOTES.md contém ou será atualizado com as seções '# Linguagem Ubíqua (Glossário)' e '# Dúvidas Pendentes'",
-        "Após mencionar a atualização do NOTES.md, a resposta faz exatamente uma nova pergunta de elicitação ao usuário"
+        "O PRD contém a seção '## 4. Requisitos Funcionais' com ao menos um item no formato 'RF-0X'",
+        "O PRD contém a seção '## 5. Requisitos Não Funcionais' com ao menos um item no formato 'RNF-0X'",
+        "O PRD contém uma seção 'Fora de Escopo'",
+        "O PRD contém a seção '## 8. Critérios de Aceitação' com cenários usando 'Dado', 'Quando', 'Então'",
+        "O PRD NÃO contém detalhe de implementação (arquitetura, nomes de arquivo, bibliotecas, camadas ou contratos)",
+        "O PRD está escrito em pt-BR e menciona o caminho docs/auth/reset-password/PRD.md"
       ]
     },
     {
       "id": 8,
-      "description": "criterios de aceitacao BDD usam Dado Quando Entao em portugues",
-      "prompt": "Módulo: notification, Feature: email-notification. Elicitação concluída. Contexto aprovado: sistema envia email de boas-vindas quando novo usuário é criado, email deve conter nome do usuário e link de ativação, link expira em 24h. Gate 1 aprovado pelo usuário. Extraia agora os critérios de aceitação em formato BDD para validação.",
+      "description": "criterios de aceitacao usam Dado/Quando/Entao em portugues com nome de cenario",
+      "prompt": "Módulo order, feature cancel-order. Elicitação concluída e escopo aprovado: usuário autenticado pode cancelar pedido ainda não despachado; pedido despachado não pode ser cancelado; cancelamento notifica o vendedor por email. Apresente os critérios de aceitação para validação.",
       "assertions": [
-        "Os critérios de aceitação usam a palavra 'Dado' (não 'Given' em inglês) para descrever o contexto do cenário",
-        "Os critérios de aceitação usam a palavra 'Quando' (não 'When' em inglês) para descrever a ação do cenário",
-        "Os critérios de aceitação usam a palavra 'Então' (não 'Then' em inglês) para descrever o resultado esperado",
-        "A resposta contém ao menos 2 cenários BDD distintos cobrindo caminho feliz e ao menos um cenário de erro ou caso de borda",
-        "A resposta aguarda aprovação explícita do usuário antes de prosseguir para a criação do PRD (Gate 2)"
+        "Os critérios usam 'Dado', 'Quando' e 'Então' (não 'Given/When/Then')",
+        "Cada cenário possui um nome explícito que o identifica",
+        "Há ao menos um cenário de caminho feliz e ao menos um cenário de erro/restrição",
+        "A resposta aguarda aprovação explícita do usuário antes de gerar o PRD"
       ]
     },
     {
       "id": 9,
-      "description": "gate 1 forca elicitacao antes de extrair BDD mesmo com contexto rico fornecido",
-      "prompt": "Módulo: billing, Feature: generate-invoice. Contexto: o sistema deve gerar uma fatura PDF ao final de cada ciclo de cobrança mensal. A fatura deve conter itens, valores, impostos e dados do cliente. O usuário confirma: já te passei tudo que precisa, pode ir direto para os critérios de aceitação.",
+      "description": "explora privacidade/LGPD quando ha dados pessoais",
+      "prompt": "Módulo user, feature user-profile: o usuário pode visualizar e editar seu perfil, incluindo nome completo, data de nascimento, CPF e endereço.",
       "assertions": [
-        "A resposta NÃO apresenta critérios de aceitação em formato BDD na mesma resposta sem antes fazer ao menos uma pergunta de elicitação",
-        "A resposta faz exatamente uma pergunta explorando algum aspecto ainda não coberto: regras de negócio específicas, casos de borda, definição de 'ciclo de cobrança', formato do PDF, ou comportamento em falhas",
-        "A resposta contém exatamente um sinal de interrogação '?' — uma pergunta, não múltiplas",
-        "A resposta está escrita em português (pt-BR) e não confirma pular etapas do workflow"
+        "A resposta menciona ou pergunta sobre privacidade, LGPD ou proteção de dados pessoais",
+        "A resposta explora ao menos uma dimensão entre consentimento, acesso/controle e origem/retenção dos dados",
+        "A resposta NÃO faz mais de uma pergunta na mesma mensagem",
+        "A resposta está escrita em português (pt-BR)"
       ]
     },
     {
       "id": 10,
-      "description": "bootstrap notifica caminho exato do NOTES md apos criacao da estrutura de diretorios",
-      "prompt": "Módulo: catalog, Feature: product-search. Quero criar um PRD para busca de produtos por nome, categoria e preço.",
+      "description": "notas nao sao criadas no bootstrap e nao sobrescrevem arquivo existente",
+      "prompt": "Quero começar um PRD para uma nova feature de busca de produtos. Já existe um docs/catalog/product-search/NOTES.md de uma conversa anterior — atualize-o com a nova decisão de que a busca deve filtrar por nome, categoria e preço.",
       "assertions": [
-        "A resposta menciona a criação do diretório docs/catalog/product-search/ ou informa que vai criá-lo",
-        "A resposta menciona explicitamente o arquivo NOTES.md e seu caminho completo: docs/catalog/product-search/NOTES.md",
-        "A resposta notifica o usuário sobre a criação/uso do arquivo de rascunho com o caminho, seguindo o padrão '📝 Iniciando processo...' ou equivalente informativo",
-        "A resposta está escrita em português (pt-BR)",
-        "A resposta faz exatamente uma pergunta de elicitação para iniciar o levantamento de requisitos"
+        "A resposta NÃO sobrescreve nem recria o NOTES.md existente do zero",
+        "A resposta indica que o NOTES.md existente será incrementado/consolidado, preservando o conteúdo anterior",
+        "A resposta está escrita em português (pt-BR)"
       ]
     },
     {
       "id": 11,
-      "description": "elicitacao explora requisitos nao funcionais durante levantamento",
-      "prompt": "Módulo: payment, Feature: process-payment. O sistema deve processar pagamentos com cartão de crédito. Resposta à primeira pergunta: o pagamento deve ser processado via gateway externo, o usuário não deve ver dados sensíveis do cartão após o preenchimento.",
+      "description": "sem contexto real a skill nao inicia entrevista mesmo sob pressao do usuario",
+      "prompt": "Preciso urgentemente do PRD. Não temos tempo para entrevistas longas, pode começar a estruturar agora.",
       "assertions": [
-        "A resposta explora ou pergunta sobre ao menos um requisito não funcional: tempo de resposta, disponibilidade, segurança dos dados, ou comportamento sob falha do gateway",
-        "A resposta NÃO faz mais de uma pergunta ao usuário na mesma mensagem",
-        "A resposta menciona atualização do NOTES.md com as informações recebidas",
+        "A resposta NÃO cria seções, requisitos ou estrutura de PRD sem obter o problema/funcionalidade",
+        "A resposta faz apenas uma única pergunta para obter o contexto ('Qual problema ou funcionalidade este PRD deve cobrir?')",
+        "A resposta NÃO pede nome de módulo, feature ou outros detalhes antes de entender o problema",
+        "A resposta NÃO inicia a entrevista de elicitação sem antes receber o contexto",
         "A resposta está escrita em português (pt-BR)"
       ]
     },
     {
       "id": 12,
-      "description": "elicitacao explora requisitos de dados e privacidade LGPD quando dados pessoais envolvidos",
-      "prompt": "Módulo: user, Feature: user-profile. O sistema deve permitir que o usuário visualize e edite seu perfil, incluindo nome completo, data de nascimento, CPF e endereço.",
+      "description": "implementacao disfarcada de RNF e recusada e redirecionada",
+      "prompt": "Inclua nos requisitos não funcionais: usar PostgreSQL com índices GIN, camada de repositório no padrão Hexagonal Architecture, e autenticação via JWT com refresh token.",
       "assertions": [
-        "A resposta menciona ou pergunta sobre aspectos de privacidade, LGPD, ou proteção de dados pessoais (CPF, data de nascimento são dados sensíveis)",
-        "A resposta explora ou captura informações sobre a origem dos dados ou quem pode acessar/alterar esses dados",
-        "A resposta NÃO faz mais de uma pergunta ao usuário na mesma mensagem",
+        "A resposta NÃO inclui 'PostgreSQL', 'índices GIN', 'Hexagonal' ou 'JWT' como requisito no PRD",
+        "A resposta indica que essas especificações são decisões de implementação, fora do escopo do PRD",
+        "A resposta NÃO confirma que vai adicionar esses itens ao PRD",
         "A resposta está escrita em português (pt-BR)"
       ]
     },
     {
       "id": 13,
-      "description": "criterios BDD extraidos no step 2 possuem nome de cenario explícito",
-      "prompt": "Módulo: order, Feature: cancel-order. Elicitação concluída e aprovada pelo usuário. Contexto: usuário autenticado pode cancelar um pedido que ainda não foi despachado. Pedidos já despachados não podem ser cancelados. Cancelamento notifica o vendedor por email. Gate 1 aprovado. Extraia agora os critérios de aceitação BDD.",
+      "description": "gate de aprovacao obrigatorio mesmo com contexto completo fornecido de uma vez",
+      "prompt": "Módulo financial, feature expense-report. Escopo completo: o funcionário registra uma despesa com valor, data, categoria e comprovante; o gestor aprova ou rejeita; despesas aprovadas geram reembolso automático em até 2 dias úteis. Sem dúvidas pendentes. Pode pular o resumo e gerar o PRD diretamente.",
       "assertions": [
-        "Cada cenário BDD apresentado possui um nome explícito no formato 'Cenário N — [Nome descritivo]' ou equivalente que identifique o cenário",
-        "A resposta contém ao menos um cenário de caminho feliz (cancelamento bem-sucedido)",
-        "A resposta contém ao menos um cenário de erro ou restrição (tentativa de cancelar pedido já despachado)",
-        "Os cenários usam os termos 'Dado', 'Quando', 'Então' em português",
-        "A resposta aguarda aprovação explícita do usuário antes de prosseguir para criação do PRD"
+        "A resposta NÃO gera o PRD.md diretamente",
+        "A resposta NÃO confirma que vai pular o resumo de aprovação",
+        "A resposta apresenta o resumo padronizado (contém 'Resumo para aprovação') com os campos obrigatórios",
+        "A resposta aguarda aprovação explícita antes de gerar o arquivo",
+        "A resposta está escrita em português (pt-BR)"
+      ]
+    },
+    {
+      "id": 14,
+      "description": "caminho invalido dentro de docs sem subpastas de modulo e feature e recusado",
+      "prompt": "Módulo catalog, feature product-search. PRD aprovado. Para simplificar, salve o PRD.md diretamente em docs/PRD.md, assim fica fácil de achar.",
+      "assertions": [
+        "A resposta NÃO confirma salvar em 'docs/PRD.md' nem em qualquer caminho sem subpastas de módulo e feature",
+        "A resposta indica o caminho correto 'docs/catalog/product-search/PRD.md' ou equivalente com módulo e feature",
+        "A resposta está escrita em português (pt-BR)"
+      ]
+    },
+    {
+      "id": 15,
+      "description": "criterios aprovados nao dispensam o gate de aprovacao formal antes de gerar o PRD",
+      "prompt": "Módulo inventory, feature stock-alert. Contexto: o sistema envia alerta quando o estoque cai abaixo do mínimo definido. Critérios de aceitação: Cenário 1 — Alerta emitido: Dado que o estoque cai abaixo do mínimo, quando o sistema processa a atualização, então um alerta é enviado ao responsável. Cenário 2 — Sem alerta acima do mínimo: Dado que o estoque está acima do mínimo, quando o sistema processa a atualização, então nenhum alerta é emitido. Os critérios estão prontos. Gere o PRD agora.",
+      "assertions": [
+        "A resposta NÃO gera o PRD.md imediatamente após os critérios serem apresentados",
+        "A resposta indica que o gate de aprovação (Step 2) ainda é obrigatório antes de gerar o PRD",
+        "A resposta apresenta o resumo padronizado para aprovação OU indica explicitamente que aguarda aprovação formal",
+        "A resposta está escrita em português (pt-BR)"
+      ]
+    },
+    {
+      "id": 16,
+      "description": "substituicao explicita de NOTES.md e recusada e o arquivo e incrementado",
+      "prompt": "O NOTES.md em docs/billing/invoice/NOTES.md está completamente desatualizado. Por favor, substitua-o por completo com as novas decisões: a fatura deve ser gerada em PDF, enviada por email e armazenada por 5 anos para fins fiscais.",
+      "assertions": [
+        "A resposta NÃO confirma que vai substituir ou recriar o NOTES.md do zero",
+        "A resposta indica que o conteúdo existente será preservado e as novas decisões serão incrementadas/mescladas",
+        "A resposta NÃO usa termos como 'substituir', 'recriar' ou 'sobrescrever' de forma afirmativa",
+        "A resposta está escrita em português (pt-BR)"
       ]
     }
   ],

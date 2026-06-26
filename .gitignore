@@ -4,3 +4,13 @@ coverage.*
 pprof/
 anotations.md
 .DS_Store
+
+# Eval skill - artefatos gerados por rodada
+.agentic/skills/*/evals/workspace/**/with_skill/
+.agentic/skills/*/evals/workspace/**/without_skill/
+.claude/skills/*/evals/workspace/**/with_skill/
+.claude/skills/*/evals/workspace/**/without_skill/
+.agentic/skills/*/evals/workspace/**/grading.json
+.agentic/skills/*/evals/workspace/**/timing.json
+.claude/skills/*/evals/workspace/**/grading.json
+.claude/skills/*/evals/workspace/**/timing.json

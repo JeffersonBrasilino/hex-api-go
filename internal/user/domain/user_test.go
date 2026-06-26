@@ -7,10 +7,14 @@ import (
 )
 
 func validPersonPropsForUserTest() *domain.PersonProps {
+	contactType, _ := domain.NewContactType(&domain.ContactTypeProps{
+		UuId:        "contact-uuid-1",
+		Description: "email",
+	})
 	contact, _ := domain.NewContact(&domain.ContactProps{
 		UuId:        "contact-uuid-1",
 		Description: "test@example.com",
-		ContactType: "email",
+		ContactType: contactType,
 	})
 	document, _ := domain.NewDocument(&domain.DocumentProps{
 		Value: "123.456.789-00",
@@ -29,13 +33,18 @@ func validPerson() *domain.Person {
 	return p
 }
 
+func validPassword() *domain.Password {
+	pwd, _ := domain.NewPassword(&domain.PasswordProps{Value: "StrongP@ss123"})
+	return pwd
+}
+
 func TestNewUser(t *testing.T) {
 	t.Run("Should success when create user with valid data", func(t *testing.T) {
 		t.Parallel()
 		props := &domain.UserProps{
 			UuId:     "user-uuid-1",
 			Username: "johndoe",
-			Password: "s3cr3t",
+			Password: validPassword(),
 			Person:   validPerson(),
 		}
 
@@ -54,26 +63,7 @@ func TestNewUser(t *testing.T) {
 		props := &domain.UserProps{
 			UuId:     "user-uuid-1",
 			Username: "",
-			Password: "s3cr3t",
-			Person:   validPerson(),
-		}
-
-		user, err := domain.NewUser(props)
-		if err == nil {
-			t.Errorf("Should return an error, got: %v", err)
-		}
-
-		if user != nil {
-			t.Error("Should return nil user, got user")
-		}
-	})
-
-	t.Run("Should fail when create user with empty password", func(t *testing.T) {
-		t.Parallel()
-		props := &domain.UserProps{
-			UuId:     "user-uuid-1",
-			Username: "johndoe",
-			Password: "",
+			Password: validPassword(),
 			Person:   validPerson(),
 		}
 
@@ -92,7 +82,7 @@ func TestNewUser(t *testing.T) {
 		props := &domain.UserProps{
 			UuId:     "user-uuid-1",
 			Username: "johndoe",
-			Password: "s3cr3t",
+			Password: validPassword(),
 			Person:   nil,
 		}
 
@@ -107,7 +97,7 @@ func TestNewUser(t *testing.T) {
 		props := &domain.UserProps{
 			UuId:     "",
 			Username: "johndoe",
-			Password: "s3cr3t",
+			Password: validPassword(),
 			Person:   validPerson(),
 		}
 
@@ -126,7 +116,7 @@ func TestNewUser(t *testing.T) {
 		props := &domain.UserProps{
 			UuId:     "",
 			Username: "",
-			Password: "",
+			Password: nil,
 			Person:   nil,
 		}
 
@@ -147,7 +137,7 @@ func TestUserGetters(t *testing.T) {
 		props := &domain.UserProps{
 			UuId:     "user-uuid-1",
 			Username: "johndoe",
-			Password: "s3cr3t",
+			Password: validPassword(),
 			Person:   validPerson(),
 		}
 
@@ -157,8 +147,8 @@ func TestUserGetters(t *testing.T) {
 			t.Errorf("Should return 'johndoe', got: %v", user.Username())
 		}
 
-		if user.Password() != "s3cr3t" {
-			t.Errorf("Should return 's3cr3t', got: %v", user.Password())
+		if user.Password().Value() != "StrongP@ss123" {
+			t.Errorf("Should return 'StrongP@ss123', got: %v", user.Password().Value())
 		}
 	})
 
@@ -168,7 +158,7 @@ func TestUserGetters(t *testing.T) {
 		props := &domain.UserProps{
 			UuId:     "user-uuid-1",
 			Username: "johndoe",
-			Password: "s3cr3t",
+			Password: validPassword(),
 			Person:   p,
 		}
 
@@ -190,15 +180,16 @@ func TestUserSetters(t *testing.T) {
 		props := &domain.UserProps{
 			UuId:     "user-uuid-1",
 			Username: "johndoe",
-			Password: "s3cr3t",
+			Password: validPassword(),
 			Person:   validPerson(),
 		}
 
 		user, _ := domain.NewUser(props)
-		user.SetPassword("newpassword")
+		newPwd, _ := domain.NewPassword(&domain.PasswordProps{Value: "NewStr0ngP@ss!"})
+		user.SetPassword(newPwd)
 
-		if user.Password() != "newpassword" {
-			t.Errorf("Should return the updated password, got: %v", user.Password())
+		if user.Password().Value() != "NewStr0ngP@ss!" {
+			t.Errorf("Should return the updated password, got: %v", user.Password().Value())
 		}
 	})
 }

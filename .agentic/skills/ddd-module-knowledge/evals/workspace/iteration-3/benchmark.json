@@ -1,0 +1,68 @@
+{
+  "run_summary": {
+    "model": "claude-sonnet-4-6",
+    "with_skill": {
+      "pass_rate": { "mean": 1.000, "stddev": 0.000 },
+      "time_seconds": { "mean": 1.532, "stddev": null },
+      "tokens": { "mean": 916.4, "stddev": null },
+      "estimated_cost_usd": { "total": 0.082476, "mean_per_eval": 0.005498 }
+    },
+    "without_skill": {
+      "pass_rate": { "mean": 0.678, "stddev": 0.292 },
+      "time_seconds": { "mean": 2.146, "stddev": null },
+      "tokens": { "mean": 673.5, "stddev": null },
+      "estimated_cost_usd": { "total": 0.060612, "mean_per_eval": 0.004041 }
+    },
+    "delta": {
+      "pass_rate": 0.322,
+      "time_seconds": -0.614,
+      "tokens": 242.9,
+      "estimated_cost_usd": 0.021864
+    },
+    "value_tier": "moderado",
+    "delta_vs_prev_iteration": {
+      "pass_rate_delta_change": 0.033,
+      "value_tier_change": "sem mudança",
+      "cost_delta_change_usd": -0.001341
+    }
+  },
+  "pattern_analysis": {
+    "baseline_confirmed_both_gte_095": [
+      "eval-error-handling-notfounderror-usage",
+      "eval-layer-boundary-application-handler-containing-sql-quer",
+      "eval-gotcha-domain-event-emission-by-child-entity",
+      "eval-gotcha-aggregate-root-name-must-equal-module-name",
+      "eval-mapper-visibility-rule"
+    ],
+    "skill_adds_clear_value_delta_gte_040": [
+      {
+        "slug": "eval-error-handling-validationerror-vs-invaliddataerror",
+        "delta": 1.000,
+        "note": "without_skill inverts HTTP codes (ValidationError→422, InvalidDataError sem código) e atribui camadas erradas; skill fornece distinção precisa 400/422 e camadas application-infra vs domain"
+      },
+      {
+        "slug": "eval-naming-convention-http-handler-function-and-request-str",
+        "delta": 0.667,
+        "note": "without_skill omite o sufixo 'Handler' no nome da função e não fornece o nome do arquivo; skill impõe CreateProductHandler e create_product_handler.go"
+      },
+      {
+        "slug": "eval-naming-convention-tablename-return-value",
+        "delta": 0.600,
+        "note": "without_skill retorna apenas 'users' sem o prefixo do projeto; skill impõe o padrão 'hex-api-go.users'"
+      },
+      {
+        "slug": "eval-module-structure-verify-correct-directory-layout-for-a",
+        "delta": 0.571,
+        "note": "without_skill omite domain/contract/, usa 'events/' (plural), colapsa command/query em um único diretório e nomeia o arquivo raiz como module.go"
+      },
+      {
+        "slug": "eval-naming-convention-command-directory-name",
+        "delta": 0.500,
+        "note": "without_skill sugere 'create_product' (snake_case) em vez de 'createproduct' (sem separador)"
+      }
+    ],
+    "with_skill_below_1_0": [],
+    "always_fail_both": [],
+    "pricing_note": "token split estimated 75/25 — actual split unavailable for both configurations"
+  }
+}

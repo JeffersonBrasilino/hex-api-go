@@ -1,7 +1,6 @@
 package domain_test
 
 import (
-	"fmt"
 	"testing"
 
 	domain "github.com/jeffersonbrasilino/hex-api-go/internal/user/domain"
@@ -10,13 +9,17 @@ import (
 func TestNewPerson(t *testing.T) {
 	t.Run("Should success when create person with valid data", func(t *testing.T) {
 		t.Parallel()
+		contactType, _ := domain.NewContactType(&domain.ContactTypeProps{
+			UuId:        "1",
+			Description: "1",
+		})
 		ctt, _ := domain.NewContact(&domain.ContactProps{
 			UuId:        "1",
 			Description: "1",
-			ContactType: "1",
+			ContactType: contactType,
 		})
 		dcm, _ := domain.NewDocument(&domain.DocumentProps{
-			Value: "1",
+			Value: "52998224725",
 		})
 		props := &domain.PersonProps{
 			UuId:      "1",
@@ -49,8 +52,6 @@ func TestNewPerson(t *testing.T) {
 		}
 
 		person, err := domain.NewPerson(props)
-		fmt.Println("PROPS", props)
-		fmt.Println("RESULTADO", err)
 		if err == nil {
 			t.Errorf("Should return an error, got: %v", err)
 		}
@@ -64,13 +65,17 @@ func TestNewPerson(t *testing.T) {
 func TestPersonGetters(t *testing.T) {
 	t.Run("Should return the correct person data", func(t *testing.T) {
 		t.Parallel()
+		contactType, _ := domain.NewContactType(&domain.ContactTypeProps{
+			UuId:        "1",
+			Description: "1",
+		})
 		ctt, _ := domain.NewContact(&domain.ContactProps{
 			UuId:        "1",
 			Description: "1",
-			ContactType: "1",
+			ContactType: contactType,
 		})
 		dcm, _ := domain.NewDocument(&domain.DocumentProps{
-			Value: "1",
+			Value: "52998224725",
 		})
 		props := &domain.PersonProps{
 			UuId:      "1",
@@ -96,9 +101,8 @@ func TestPersonGetters(t *testing.T) {
 			t.Errorf("Should return the correct contact value, got: %v", person.Contacts()[0].Description())
 		}
 
-		if person.Document().Value() != "1" {
+		if person.Document().Value() != "52998224725" {
 			t.Errorf("Should return the correct document value, got: %v", person.Document().Value())
 		}
 	})
 }
-

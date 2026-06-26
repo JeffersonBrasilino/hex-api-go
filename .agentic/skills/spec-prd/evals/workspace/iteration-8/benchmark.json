@@ -1,0 +1,36 @@
+{
+  "run_summary": {
+    "model": "claude-sonnet-4-6",
+    "with_skill": {
+      "pass_rate": { "mean": 1.000, "stddev": null },
+      "time_seconds": { "mean": 6.080, "stddev": null },
+      "tokens": { "mean": 975.375, "stddev": null },
+      "estimated_cost_usd": { "total": 0.093636, "mean_per_eval": 0.005852 }
+    },
+    "without_skill": {
+      "pass_rate": { "mean": 0.975, "stddev": null },
+      "time_seconds": { "mean": 3.705, "stddev": null },
+      "tokens": { "mean": 901.375, "stddev": null },
+      "estimated_cost_usd": { "total": 0.086532, "mean_per_eval": 0.005408 }
+    },
+    "delta": {
+      "pass_rate": 0.025,
+      "time_seconds": 2.375,
+      "tokens": 74.0,
+      "estimated_cost_usd": 0.007104
+    },
+    "value_tier": "sem_valor",
+    "delta_vs_prev_iteration": {
+      "iteration": 7,
+      "note": "comparação aproximada — iteração 7 foi execução parcial (3 evals), iteração 8 é execução completa (16 evals)",
+      "pass_rate_delta_prev": 0.556,
+      "pass_rate_delta_curr": 0.025,
+      "pass_rate_delta_change": -0.531,
+      "value_tier_prev": "forte",
+      "value_tier_curr": "sem_valor",
+      "cost_delta_prev_usd": 0.035178,
+      "cost_delta_curr_usd": 0.007104,
+      "cost_delta_change_usd": -0.028074
+    }
+  }
+}

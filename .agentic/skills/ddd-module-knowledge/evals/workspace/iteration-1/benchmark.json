@@ -1,0 +1,37 @@
+{
+  "run_summary": {
+    "with_skill": {
+      "pass_rate": { "mean": 0.978, "stddev": null },
+      "time_seconds": { "mean": 22.096, "stddev": null },
+      "tokens": { "mean": 13753, "stddev": null }
+    },
+    "without_skill": {
+      "pass_rate": { "mean": 0.756, "stddev": null },
+      "time_seconds": { "mean": 34.106, "stddev": null },
+      "tokens": { "mean": 10059, "stddev": null }
+    },
+    "delta": {
+      "pass_rate": 0.222,
+      "time_seconds": -12.010,
+      "tokens": 3694
+    }
+  },
+  "pattern_analysis": {
+    "baseline_confirmed_both_gte_095": [
+      "eval-error-handling-notfounderror-usage",
+      "eval-layer-boundary-application-handler-containing-sql-quer",
+      "eval-gotcha-domain-event-emission-by-child-entity",
+      "eval-mapper-visibility-rule"
+    ],
+    "skill_adds_clear_value_delta_gte_040": [
+      { "slug": "eval-naming-convention-command-directory-name", "delta": 0.500, "note": "without_skill suggests 'create_product' (underscored); skill enforces 'createproduct' (no separator)" },
+      { "slug": "eval-naming-convention-tablename-return-value", "delta": 0.600, "note": "without_skill omits project prefix; skill enforces 'hex-api-go.users' pattern" },
+      { "slug": "eval-error-handling-validationerror-vs-invaliddataerror", "delta": 0.800, "note": "without_skill confuses HTTP codes (400/422 both) and layer assignment; skill provides precise layer + code mapping" },
+      { "slug": "eval-gotcha-builder-pattern-usage-for-child-entity", "delta": 0.750, "note": "without_skill hedges and entertains Builder for child entity; skill enforces the rule strictly" }
+    ],
+    "with_skill_below_1_0": [
+      { "slug": "eval-gotcha-aggregate-root-name-must-equal-module-name", "with_skill_rate": 0.667, "note": "Assertion 3 requires explicit 'PascalCase' keyword; skill answer shows example only without naming the convention" }
+    ],
+    "always_fail_both": []
+  }
+}

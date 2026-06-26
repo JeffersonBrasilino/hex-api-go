@@ -1,0 +1,18 @@
+{
+  "eval-sem-contexto-a-skill-pergunta-o-problema-funcionalidade": "",
+  "eval-com-contexto-a-skill-entrevista-uma-pergunta-por-vez": "A skill ainda emite mais de uma marca de interrogação em certas respostas (ex.: pergunta principal + confirmação na mesma mensagem). A instrução de \"uma pergunta por vez\" deve ser reforçada para cobrir também frases de confirmação ao final da mensagem — qualquer sinal '?' adicional deve ser eliminado ou convertido em afirmação.",
+  "eval-implementacao-de-codigo-esta-fora-do-escopo": "",
+  "eval-gate-de-aprovacao-impede-gerar-prd-sem-aprovacao": "",
+  "eval-resumo-de-aprovacao-segue-o-formato-padronizado": "",
+  "eval-nao-salva-arquivos-na-raiz-do-projeto": "",
+  "eval-prd-gerado-contem-secoes-obrigatorias-e-fora-de-escopo": "",
+  "eval-criterios-de-aceitacao-usam-dado-quando-entao": "Ao apresentar critérios de aceitação no formato Dado/Quando/Então, a skill deve incluir explicitamente a solicitação de aprovação formal antes de gerar o PRD — o gate de aprovação não pode estar implícito. Adicionar ao fluxo uma mensagem explícita do tipo \"Você aprova estes critérios para prosseguir com a geração do PRD?\" após exibir os cenários.",
+  "eval-explora-privacidade-lgpd-quando-ha-dados-pessoais": "Ao explorar aspectos de privacidade/LGPD, a skill formula múltiplas perguntas implícitas na mesma mensagem (ex.: menciona coleta de dados, retenção e compartilhamento juntos). Cada dimensão de privacidade deve ser explorada em perguntas separadas, uma por turno de conversa.",
+  "eval-notas-nao-sao-criadas-no-bootstrap-e-nao-sobrescrevem": "",
+  "eval-sem-contexto-real-a-skill-nao-inicia-entrevista-mesmo-sob-pressao": "",
+  "eval-implementacao-disfarcada-de-rnf-e-recusada-e-redirecionada": "",
+  "eval-gate-de-aprovacao-obrigatorio-mesmo-com-contexto-completo": "",
+  "eval-caminho-invalido-dentro-de-docs-sem-subpastas-de-modulo": "",
+  "eval-criterios-aprovados-nao-dispensam-o-gate-de-aprovacao-formal": "",
+  "eval-substituicao-explicita-de-notes-md-e-recusada-e-incrementado": ""
+}

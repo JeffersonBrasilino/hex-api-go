@@ -1,0 +1,185 @@
+{
+  "skill_name": "ddd-module-knowledge",
+  "evals": [
+    {
+      "id": 1,
+      "description": "Module structure — verify correct directory layout for a new module",
+      "prompt": "I need to create a new module called 'product'. What is the correct directory structure I should follow?",
+      "expected_output": "Output must include: internal/product/ as root, domain/ with contract/ and event/ subdirs, application/ with command/ and query/ subdirs, infrastructure/ with database/ and http/ subdirs, and product.go at module root. Must NOT suggest cross-module imports.",
+      "assertions": [
+        "Output shows internal/product/ as the module root",
+        "Output includes domain/contract/ subdirectory",
+        "Output includes domain/event/ subdirectory",
+        "Output includes application/command/ and application/query/ subdirectories",
+        "Output includes infrastructure/database/ and infrastructure/http/ subdirectories",
+        "Output includes product.go at the module root",
+        "Output does NOT suggest importing from other modules"
+      ]
+    },
+    {
+      "id": 2,
+      "description": "Naming convention — command directory name",
+      "prompt": "What should be the directory name for a command that creates a product?",
+      "expected_output": "Must answer 'createproduct' — singular, lowercase, no separator. Must NOT suggest 'create-product', 'create_product', or 'CreateProduct'.",
+      "assertions": [
+        "Output specifies 'createproduct' as the directory name",
+        "Output does NOT suggest 'create-product' (hyphenated)",
+        "Output does NOT suggest 'create_product' (underscored)",
+        "Output does NOT suggest 'CreateProduct' (PascalCase)"
+      ]
+    },
+    {
+      "id": 3,
+      "description": "Naming convention — GORM repository struct and constructor",
+      "prompt": "What should the GORM repository struct and its constructor be named for the 'order' module?",
+      "expected_output": "Struct: GormOrderRepository. Constructor: NewGormOrderRepository. File: gorm_order_repository.go.",
+      "assertions": [
+        "Output specifies struct name as 'GormOrderRepository'",
+        "Output specifies constructor name as 'NewGormOrderRepository'",
+        "Output specifies file name as 'gorm_order_repository.go'"
+      ]
+    },
+    {
+      "id": 4,
+      "description": "Naming convention — TableName() return value",
+      "prompt": "What should the TableName() method return for the persistence model of the 'user' module?",
+      "expected_output": "Must return 'hex-api-go.users' — pattern [project-name].[table_name] in lowercase plural. Must NOT return just 'users' or 'user'.",
+      "assertions": [
+        "Output specifies return value as 'hex-api-go.users'",
+        "Output includes the project name prefix 'hex-api-go'",
+        "Output uses plural table name 'users'",
+        "Output does NOT suggest returning just 'users' without the project prefix",
+        "Output does NOT suggest returning just 'user' (singular)"
+      ]
+    },
+    {
+      "id": 5,
+      "description": "Error handling — NotFoundError usage",
+      "prompt": "In the repository, when the queried entity does not exist in the database, which error from ddgo should I return and what HTTP status does it map to?",
+      "expected_output": "Must specify ddgo.NewNotFoundError. Must specify 404 Not Found. Must NOT suggest creating a custom error type.",
+      "assertions": [
+        "Output specifies ddgo.NewNotFoundError as the error to use",
+        "Output specifies 404 Not Found as the mapped HTTP status",
+        "Output does NOT suggest creating a custom error type",
+        "Output does NOT suggest returning a raw Go error"
+      ]
+    },
+    {
+      "id": 6,
+      "description": "Error handling — ValidationError vs InvalidDataError",
+      "prompt": "What is the difference between ValidationError and InvalidDataError in the ddgo package, and where should each be used?",
+      "expected_output": "ValidationError: structural/DTO validation in application or infrastructure layers, maps to 400. InvalidDataError: domain business rule failures in entities/value objects/builders, maps to 422. Must distinguish layers of use.",
+      "assertions": [
+        "Output maps ValidationError to 400 Bad Request",
+        "Output maps InvalidDataError to 422 Unprocessable Entity",
+        "Output states ValidationError belongs in application or infrastructure layers",
+        "Output states InvalidDataError belongs in domain entities, value objects, or builders",
+        "Output clearly distinguishes the two errors by layer and purpose"
+      ]
+    },
+    {
+      "id": 7,
+      "description": "Layer boundary — HTTP handler calling repository directly",
+      "prompt": "Can the HTTP handler call the repository directly to fetch data?",
+      "expected_output": "Must answer NO. HTTP handlers must dispatch through the gomes bus only. Must reference the infrastructure layer rule about never calling domain or repository directly.",
+      "assertions": [
+        "Output answers NO explicitly",
+        "Output states HTTP handlers must dispatch through the gomes bus",
+        "Output does NOT suggest any scenario where direct repository access from HTTP handler is acceptable"
+      ]
+    },
+    {
+      "id": 8,
+      "description": "Layer boundary — application handler containing SQL query",
+      "prompt": "Is it acceptable to write a raw SQL query inside the application command handler?",
+      "expected_output": "Must answer NO. Application layer must be independent of infrastructure details. SQL belongs in the infrastructure/database layer behind a domain contract interface.",
+      "assertions": [
+        "Output answers NO explicitly",
+        "Output states the application layer must be independent of infrastructure details",
+        "Output states SQL belongs in infrastructure/database layer",
+        "Output mentions domain contract (interface) as the correct abstraction boundary"
+      ]
+    },
+    {
+      "id": 9,
+      "description": "Gotcha — domain event emission by child entity",
+      "prompt": "I have a Person entity that is a child of the User aggregate root. Can Person emit domain events?",
+      "expected_output": "Must answer NO. Only the aggregate root can emit domain events. Person is a child entity — it cannot emit events. User (aggregate root) is the only emitter.",
+      "assertions": [
+        "Output answers NO explicitly",
+        "Output states only the aggregate root can emit domain events",
+        "Output identifies User as the aggregate root and sole event emitter",
+        "Output does NOT suggest any workaround that lets Person emit events"
+      ]
+    },
+    {
+      "id": 10,
+      "description": "Gotcha — Builder pattern usage for child entity",
+      "prompt": "Should I use the Builder pattern to construct the Person child entity inside the User module?",
+      "expected_output": "Must answer NO. Builder pattern is only for the aggregate root. Child entities must use New[Entity]() constructor directly.",
+      "assertions": [
+        "Output answers NO explicitly",
+        "Output states Builder pattern is exclusively for the aggregate root",
+        "Output states child entities must use New[Entity]() constructor directly",
+        "Output does NOT suggest creating a Builder for Person"
+      ]
+    },
+    {
+      "id": 11,
+      "description": "Gotcha — aggregate root name must equal module name",
+      "prompt": "I created a module called 'account'. What must the aggregate root entity struct be named?",
+      "expected_output": "Must answer 'Account'. The aggregate root entity name must equal the module name in PascalCase.",
+      "assertions": [
+        "Output specifies struct name as 'Account'",
+        "Output explains that aggregate root name must match the module name",
+        "Output specifies PascalCase as the required casing"
+      ]
+    },
+    {
+      "id": 12,
+      "description": "Naming convention — HTTP handler function and request struct",
+      "prompt": "What should the handler function and request struct be named for an HTTP handler that handles product creation?",
+      "expected_output": "Handler function: CreateProductHandler. Request struct: CreateProductRequest. File: create_product_handler.go.",
+      "assertions": [
+        "Output specifies handler function name as 'CreateProductHandler'",
+        "Output specifies request struct name as 'CreateProductRequest'",
+        "Output specifies file name as 'create_product_handler.go'"
+      ]
+    },
+    {
+      "id": 13,
+      "description": "Scope boundary — skill must not generate unit tests",
+      "prompt": "Using the ddd-module-knowledge skill, generate unit tests for the User entity.",
+      "expected_output": "Must decline or redirect. Unit test generation is out of scope for this skill — must direct user to the make-unit-tests skill.",
+      "assertions": [
+        "Output does NOT generate any unit test code",
+        "Output clearly states that unit test generation is out of scope for this skill",
+        "Output redirects user to the make-unit-tests skill"
+      ]
+    },
+    {
+      "id": 14,
+      "description": "Domain contract — where interfaces must be defined",
+      "prompt": "Where should I define the repository interface for the product module?",
+      "expected_output": "Must specify internal/product/domain/contract/ directory. Interface must be in the domain layer. Infrastructure layer implements it — domain layer owns the contract.",
+      "assertions": [
+        "Output specifies internal/product/domain/contract/ as the correct location",
+        "Output states the interface must be owned by the domain layer",
+        "Output states the infrastructure layer is responsible for implementing the interface",
+        "Output does NOT suggest placing the interface in the infrastructure or application layer"
+      ]
+    },
+    {
+      "id": 15,
+      "description": "Mapper — visibility rule",
+      "prompt": "Should the toDatabase and toDomain mapper functions in the database package be exported?",
+      "expected_output": "Must answer NO. Mapper functions must be package-private (unexported). They reside in the database package and are only used internally.",
+      "assertions": [
+        "Output answers NO explicitly",
+        "Output states mapper functions must be unexported (package-private)",
+        "Output confirms toDatabase and toDomain are the correct function names",
+        "Output does NOT suggest exporting mapper functions for any reason"
+      ]
+    }
+  ]
+}

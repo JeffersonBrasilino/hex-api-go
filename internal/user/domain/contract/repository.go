@@ -8,4 +8,5 @@ import (
 
 type UserRepository interface {
 	Create(ctx context.Context, aggregate *domain.User) error
+	ExistsByDocument(ctx context.Context, document string) (bool, error)
 }

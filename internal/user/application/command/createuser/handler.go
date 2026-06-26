@@ -2,9 +2,9 @@ package createuser
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/google/uuid"
+	"github.com/jeffersonbrasilino/ddgo"
 	"github.com/jeffersonbrasilino/gomes/otel"
 	"github.com/jeffersonbrasilino/hex-api-go/internal/user/domain"
 	"github.com/jeffersonbrasilino/hex-api-go/internal/user/domain/contract"
@@ -23,8 +23,16 @@ func NewComandHandler(repository contract.UserRepository) *Handler {
 }
 
 func (c *Handler) Handle(ctx context.Context, data *Command) (any, error) {
+	
+	exists, errExists := c.repository.ExistsByDocument(ctx, data.Document)
+	if errExists != nil {
+		return nil, errExists
+	}
+	if exists {
+		return nil, ddgo.NewAlreadyExistsError("User already exists")
+	}
+
 	user, errAg := c.makeAggregate(data)
-	fmt.Println("data", user, errAg)
 	if errAg != nil {
 		return nil, errAg
 	}
@@ -38,26 +46,31 @@ func (c *Handler) Handle(ctx context.Context, data *Command) (any, error) {
 }
 
 func (c *Handler) makeAggregate(data *Command) (*domain.User, error) {
+
+	contactData := []*domain.WithContactProps{}
+	if data.Email != "" {
+		contactData = append(contactData, &domain.WithContactProps{
+			UuId:        uuid.NewString(),
+			Description: data.Email,
+			ContactType: "f70e57f1-244a-4ef7-ab27-05f5adc777d7",
+		})
+	}
+
 	return domain.NewBuilder().
 		WithUuId(uuid.NewString()).
 		WithPassword(data.Password).
 		WithUsername(data.Username).
 		WithPerson(&domain.WithPersonProps{
-			Person: &domain.PersonProps{
-				UuId:      uuid.NewString(),
-				Name:      data.PersonName,
-				BirthDate: data.BirthDate,
-			},
-			Document: &domain.DocumentProps{
-				Value: data.Document,
-			},
-			Contacts: []*domain.ContactProps{
-				{
-					UuId:        uuid.NewString(),
-					ContactType: "email",
-					Description: data.Email,
-				},
+			UuId:      uuid.NewString(),
+			Name:      data.PersonName,
+			BirthDate: data.BirthDate,
+			Document:  data.Document,
+			Contacts:  contactData,
+		}).
+		WithUserGroups([]*domain.UserGroupProps{
+			{
+				UuId: "422eacba-efda-4c0a-af22-cf3b2f92b174",
 			},
 		}).
 		Build()
-}	
+}

@@ -12,4 +12,3 @@ type Command struct {
 func (c *Command) Name() string {
 	return "createUser"
 }
-

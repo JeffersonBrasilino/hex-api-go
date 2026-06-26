@@ -1,0 +1,6 @@
+{
+  "eval-bootstrap-initialize-pipeline-when-state-md-does-not-ex": "",
+  "eval-phase-routing-prd-plan-advance-when-prd-md-is-detected": "",
+  "eval-wave-confirmation-gate-must-wait-for-user-approval-befo": "",
+  "eval-done-phase-show-completion-summary-with-artifact-paths": ""
+}

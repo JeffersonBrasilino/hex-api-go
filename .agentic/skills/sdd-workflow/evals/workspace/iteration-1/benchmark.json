@@ -1,0 +1,25 @@
+{
+  "run_summary": {
+    "model": "claude-sonnet-4-6",
+    "with_skill": {
+      "pass_rate": { "mean": 1.000, "stddev": 0.000 },
+      "time_seconds": { "mean": 3.287, "stddev": null },
+      "tokens": { "mean": 3862, "stddev": null },
+      "estimated_cost_usd": { "total": 0.092688, "mean_per_eval": 0.023172 }
+    },
+    "without_skill": {
+      "pass_rate": { "mean": 0.5625, "stddev": 0.3248 },
+      "time_seconds": { "mean": 3.544, "stddev": null },
+      "tokens": { "mean": 3187, "stddev": null },
+      "estimated_cost_usd": { "total": 0.076476, "mean_per_eval": 0.019119 }
+    },
+    "delta": {
+      "pass_rate": 0.4375,
+      "time_seconds": -0.257,
+      "tokens": 675,
+      "estimated_cost_usd": 0.016212
+    },
+    "value_tier": "forte",
+    "delta_vs_prev_iteration": null
+  }
+}

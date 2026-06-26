@@ -1,0 +1,48 @@
+{
+  "evals": [
+    {
+      "id": 1,
+      "description": "Bootstrap — initialize pipeline when STATE.md does not exist",
+      "prompt": "O usuário invoca /sdd-workflow para a feature docs/payment/checkout. Não existe nenhum STATE.md nesse caminho. O que o orquestrador deve fazer e qual saída deve produzir?",
+      "assertions": [
+        "The output indicates that STATE.md will be created with phase: prd for the feature docs/payment/checkout",
+        "The output instructs the user to open a new session and execute /spec-prd",
+        "The output does NOT advance to the plan, implement, verify, or done phases in this invocation",
+        "The entire user-facing output is written in Brazilian Portuguese (pt-BR)"
+      ]
+    },
+    {
+      "id": 2,
+      "description": "Phase routing prd→plan — advance when PRD.md is detected on disk",
+      "prompt": "STATE.md existe para a feature docs/user/login com phase: prd e artifacts.prd vazio. O arquivo docs/user/login/PRD.md foi encontrado no disco. Execute o orquestrador SDD para esta feature.",
+      "assertions": [
+        "The output explicitly mentions advancing to the PLAN phase (Avançando para fase: PLAN or equivalent)",
+        "The output instructs the user to run /spec-plan docs/user/login/PRD.md in a new session",
+        "The output references the detected PRD.md path (docs/user/login/PRD.md)",
+        "The output does NOT generate or propose the content of a PLAN.md file"
+      ]
+    },
+    {
+      "id": 3,
+      "description": "Wave confirmation gate — must wait for user approval before spawning implement subagents",
+      "prompt": "STATE.md tem phase: implement, current_wave: 1. pending_tasks: [TASK-DOM-TOKEN, TASK-APP-LOGIN-COMMAND]. completed_tasks: []. TASK-DOM-TOKEN tem depends_on: [] e parallel_group: domain. TASK-APP-LOGIN-COMMAND tem depends_on: [] e parallel_group: application. O orquestrador identificou as tasks executáveis desta wave. Como deve proceder?",
+      "assertions": [
+        "The output presents the executable tasks grouped by parallel_group before spawning any subagent",
+        "The output explicitly requests user confirmation (e.g., asks for 'sim') before spawning any implementation subagent",
+        "The output does NOT spawn or claim to have already spawned any subagent without the user's explicit 'sim' confirmation",
+        "The output uses a wave header format (e.g., --- Wave 1 --- or Grupo 1) to display the task plan"
+      ]
+    },
+    {
+      "id": 4,
+      "description": "Done phase — show completion summary with artifact paths in pt-BR",
+      "prompt": "STATE.md tem phase: done. artifacts: prd: docs/user/login/PRD.md, plan: docs/user/login/PLAN.md. Todas as tasks foram implementadas e verificadas. Invoque o /sdd-workflow.",
+      "assertions": [
+        "The output shows a pipeline completion message for the feature docs/user/login",
+        "The output lists both artifact paths: docs/user/login/PRD.md and docs/user/login/PLAN.md",
+        "The entire user-facing output is written in Brazilian Portuguese (pt-BR)",
+        "The output does NOT attempt to advance to any new phase, spawn any subagent, or start any new work"
+      ]
+    }
+  ]
+}

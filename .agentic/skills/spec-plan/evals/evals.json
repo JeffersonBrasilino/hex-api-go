@@ -42,6 +42,30 @@
         "The scope summary identifies at least one invariant or constraint relevant to the notification domain (e.g., integration with user creation, no external email library assumptions)",
         "The response ends with a clear request for the user to confirm, approve, or continue"
       ]
+    },
+    {
+      "id": 9,
+      "description": "Dependency analysis — tasks declare depends_on and parallel_group with semantic IDs",
+      "prompt": "O escopo foi aprovado para a feature 'Login com JWT' no módulo user. Pré-condição: usuário cadastrado com senha válida. Pós-condição: ao autenticar com email e senha, retorna HTTP 200 com um token JWT. Invariante: sem novas migrações de banco de dados. A feature envolve: um contrato de porta para gerar o token (TokenGenerator), um command e um handler de login na camada de aplicação, e um handler HTTP que expõe o endpoint. Gere agora o plano técnico completo, declarando explicitamente as dependências de cada task.",
+      "assertions": [
+        "Every task block declares a 'depends_on' field, listing semantic task IDs (e.g., [TASK-APP-LOGIN-COMMAND]) or an empty list [] when there are no dependencies",
+        "Every task block declares a 'parallel_group' field tagging the layer it touches (e.g., domain, application, infrastructure)",
+        "The task for the login handler declares a dependency (in depends_on) on the task that creates the token-generator contract and/or the login command it consumes",
+        "depends_on references use semantic task IDs (TASK-[LAYER]-[CONCERN]), not sequential numbers or line references",
+        "At least one task that creates a foundational artifact (e.g., the domain contract) has an empty depends_on, marking it as an immediate parallel candidate"
+      ]
+    },
+    {
+      "id": 10,
+      "description": "Complexity evaluation — tasks scored on five dimensions with derived tier",
+      "prompt": "O escopo foi aprovado para a feature 'Soft delete de pedido' no módulo order. Pré-condição: pedido existente. Pós-condição: ao cancelar via POST /orders/{id}/cancel, o status muda para CANCELLED e retorna HTTP 204. Invariante: sem migrações de banco de dados, sem novas bibliotecas. Gere agora o plano técnico completo, avaliando a complexidade de cada task.",
+      "assertions": [
+        "Every task block includes a complexity assessment scoring all five dimensions: scope, ambiguity, coupling, novelty, and reversibility",
+        "Every task declares a 'score' computed as the simple average of the five dimensions and a 'tier' value of low, medium, or high",
+        "The tier is consistent with the documented thresholds (low when score <= 2.0, medium when score <= 3.5, high when score > 3.5)",
+        "Any task tagged with tier 'high' includes a 'risk_note' describing its main risk; tasks not tagged high do not require one",
+        "The complexity scores use a 1-to-5 scale, not arbitrary values outside that range"
+      ]
     }
   ],
   "disabled_evals": [

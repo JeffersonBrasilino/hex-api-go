@@ -14,6 +14,17 @@ This skill provides the **reference knowledge** for how DDD modules are composed
 It does not perform actions — it delivers the architectural context, conventions, and
 implementation patterns that other skills or agents consume when working with modules.
 
+## Usage Modes
+
+**Default: Planning mode** — use unless the caller explicitly declares implementation mode or the task involves writing code.
+
+**Planning mode** triggers: caller declares `planning mode`; or task contains words like `plan`, `decompose`, `scope`, `spec`, `PLAN.md`, `tasks`.
+Use only: Module Architecture Overview, Module Rules, Naming Conventions, Errors Handling, Gotchas.
+Do **not** read any file under `references/` — implementation boilerplates are irrelevant for planning.
+
+**Implementation mode** triggers: caller declares `implementation mode`; or task contains words like `implement`, `write`, `create`, `generate`, `test`, `code`.
+Load only the `references/` files relevant to the component being implemented. Do not preload all references.
+
 ## Scope
 
 **This skill covers:**
@@ -189,7 +200,7 @@ The mapping between these errors and HTTP status codes is handled automatically 
 - Don`t violate the SOLID principles.
 - Don`t violate the Hexagonal Architecture principles.
 - Don`t violate the DDD principles.
-- Existing domain contracts should not be altered unless the change is explicitly stated in the PRD or if the user requests the change.
+- Domain contracts are scoped to a **user action** (e.g., `login`, `createUser`). A contract may gain new methods only when the change serves the same user action for which it was created. When a new feature requires a contract that does not yet exist, always create a new file — never add methods to a contract from a different user action. This enforces Interface Segregation: handlers depend only on the methods they actually use.
 
 ## Layer Implementation Patterns
 

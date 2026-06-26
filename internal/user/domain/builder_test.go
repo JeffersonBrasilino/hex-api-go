@@ -11,7 +11,7 @@ func validPersonProps() *domain.WithPersonProps {
 		UuId:      "person-uuid-1",
 		Name:      "John Doe",
 		BirthDate: "1990-01-01",
-		Document:  "123.456.789-00",
+		Document:  "52998224725",
 		Contacts: []*domain.WithContactProps{
 			{
 				UuId:        "contact-uuid-1",

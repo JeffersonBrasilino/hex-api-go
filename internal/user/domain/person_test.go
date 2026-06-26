@@ -19,7 +19,7 @@ func TestNewPerson(t *testing.T) {
 			ContactType: contactType,
 		})
 		dcm, _ := domain.NewDocument(&domain.DocumentProps{
-			Value: "1",
+			Value: "52998224725",
 		})
 		props := &domain.PersonProps{
 			UuId:      "1",
@@ -75,7 +75,7 @@ func TestPersonGetters(t *testing.T) {
 			ContactType: contactType,
 		})
 		dcm, _ := domain.NewDocument(&domain.DocumentProps{
-			Value: "1",
+			Value: "52998224725",
 		})
 		props := &domain.PersonProps{
 			UuId:      "1",
@@ -101,7 +101,7 @@ func TestPersonGetters(t *testing.T) {
 			t.Errorf("Should return the correct contact value, got: %v", person.Contacts()[0].Description())
 		}
 
-		if person.Document().Value() != "1" {
+		if person.Document().Value() != "52998224725" {
 			t.Errorf("Should return the correct document value, got: %v", person.Document().Value())
 		}
 	})

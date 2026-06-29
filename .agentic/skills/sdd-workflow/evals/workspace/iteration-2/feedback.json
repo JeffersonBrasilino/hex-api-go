@@ -1,0 +1,20 @@
+{
+  "evals": {
+    "eval-bootstrap-initialize-pipeline": {
+      "with_skill": "",
+      "without_skill": ""
+    },
+    "eval-phase-routing-prd-to-plan": {
+      "with_skill": "",
+      "without_skill": ""
+    },
+    "eval-wave-confirmation-gate": {
+      "with_skill": "",
+      "without_skill": ""
+    },
+    "eval-done-phase-completion-summary": {
+      "with_skill": "",
+      "without_skill": ""
+    }
+  }
+}

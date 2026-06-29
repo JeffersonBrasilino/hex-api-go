@@ -24,12 +24,16 @@ only the minimal metadata from `STATE.md`.
 
 ## Step 0 — Detect feature
 
-Accept the argument as a docs path (e.g. `docs/user/login`) or detect it automatically:
+Accept the arguments as a docs path and optional wave filter (e.g. `docs/user/login implement-wave=2`):
 
-1. If the user provided a path, use it as `{feature_path}`.
-2. If not, glob `docs/**/STATE.md`. If exactly one match, use it. If multiple, list them and ask
+1. Parse `implement-wave=N` from the arguments if present. Store as `{target_wave}` (integer). If
+   absent, `{target_wave}` is `null` (all waves).
+2. Parse `--yolo` from the arguments if present. Store as `{yolo}` (boolean, default `false`).
+3. Strip `implement-wave=N` and `--yolo` tokens from the remaining argument string.
+4. If a path remains, use it as `{feature_path}`.
+5. If not, glob `docs/**/STATE.md`. If exactly one match, use it. If multiple, list them and ask
    the user to choose.
-3. If none found, ask: `Para qual feature deseja iniciar o pipeline? (ex: docs/user/login)`
+6. If none found, ask: `Para qual feature deseja iniciar o pipeline? (ex: docs/user/login)`
 
 ## Step 1 — Read STATE.md
 
@@ -51,7 +55,7 @@ Pipeline SDD inicializado para {feature_path}.
 
 Abra uma nova sessão e execute:
 
-  /spec-prd
+  /sdd-prd
 
 Quando o PRD.md estiver aprovado e salvo, volte a esta sessão e execute /sdd-workflow novamente.
 ```
@@ -72,11 +76,11 @@ Check whether `{feature_path}/PRD.md` exists.
 ```
 Aguardando PRD.
 
-Execute /spec-prd em uma nova sessão.
+Execute /sdd-prd em uma nova sessão.
 Quando PRD.md estiver salvo, volte e execute /sdd-workflow novamente.
 ```
 
-**Exists:** Update `STATE.md` → `phase: plan`, `artifacts.prd: {feature_path}/PRD.md`.
+**Exists:** Update `STATE.md` → `phase: plan`, `artifacts.prd: {feature_path}/PRD.md`. Also check whether `{feature_path}/NOTES.md` exists; if so, update `artifacts.notes: {feature_path}/NOTES.md`.
 ```
 PRD detectado: {feature_path}/PRD.md
 
@@ -84,7 +88,7 @@ PRD detectado: {feature_path}/PRD.md
 
 Abra uma nova sessão e execute:
 
-  /spec-plan {feature_path}/PRD.md
+  /sdd-plan {feature_path}/PRD.md
 
 Quando o PLAN.md estiver aprovado e salvo, volte e execute /sdd-workflow novamente.
 ```
@@ -99,14 +103,15 @@ Check whether `{feature_path}/PLAN.md` exists.
 ```
 Aguardando PLAN.
 
-Execute /spec-plan {feature_path}/PRD.md em uma nova sessão.
+Execute /sdd-plan {feature_path}/PRD.md em uma nova sessão.
 Quando PLAN.md estiver salvo, volte e execute /sdd-workflow novamente.
 ```
 
 **Exists:** Update `STATE.md` → `phase: implement`, `artifacts.plan: {feature_path}/PLAN.md`.
 Read `PLAN.md` and extract all tasks (IDs and `depends_on`). Compute Wave 1: tasks whose
-`depends_on` is `[]`. Populate `STATE.md.implement.pending_tasks` with all IDs. Then go to
-**Step 4 — Execute wave**.
+`depends_on` is `[]`. Populate `STATE.md.implement.pending_tasks` with all IDs.
+Update `PLAN.md` header field `Status` from `Ready for Implementation` to `Implementando`.
+Then go to **Step 4 — Execute wave**.
 
 ---
 
@@ -125,6 +130,14 @@ Pendentes: {list}
 Concluídas: {list}
 Verifique o PLAN.md e resolva manualmente.
 ```
+
+If `{target_wave}` is set, validate it before proceeding:
+- Read `STATE.md.implement.current_wave`.
+- If `{target_wave}` < `current_wave`: inform the user that the wave was already executed and stop.
+- If `{target_wave}` > `current_wave` + gap of more than 1: warn that previous waves must complete
+  first and stop.
+- If `{target_wave}` == `current_wave` or `current_wave + 1`: proceed normally, but filter Step 4
+  to only execute that wave.
 
 Otherwise: go to **Step 4 — Execute wave**.
 
@@ -181,112 +194,140 @@ Grupo 1 — {parallel_group}:
 Grupo 2 — {parallel_group}:
   {TASK-ID} | {file} | tier: {tier}
 
-{N} grupo(s) serão executados por subagentes independentes.
+{N} grupo(s), {M} task(s) total — 1 subagente por task, grupos em paralelo dentro de cada grupo.
 Tasks de tier "high" exigem atenção redobrada (ver risk_note no PLAN.md).
 
 Executar esta wave? Responda "sim" para spawnar os agentes.
 ```
 
-Wait for explicit confirmation before spawning.
+**If `{yolo}` is `false`:** wait for explicit user confirmation ("sim") before spawning.
 
-### 4.2 — Spawn one subagent per group
+**If `{yolo}` is `true`:** skip confirmation entirely. Output instead:
 
-For each wave group, load [implement-agent](.agentic/subagents/implement-agent.md) and
-inject the following inputs:
+```
+[YOLO] Iniciando Wave {N} automaticamente — sem confirmação.
+```
+
+Then spawn immediately.
+
+### 4.2 — Spawn one subagent per task; groups run sequentially, tasks within a group run in parallel
+
+Process groups **sequentially** (group 1 fully resolves before group 2 starts).
+Within each group, spawn all implement-agents and all verify-agents **in parallel**.
+Retry cycles run **sequentially** after all verdicts for the group are consolidated.
+
+#### Step A — Implement (parallel within group)
+
+For every task in the group, spawn an implement-agent **simultaneously**:
+
+Load [implement-agent](.agentic/subagents/implement-agent.md) and inject:
 - `{feature_path}` → feature path
-- `{plan_path}` → `{feature_path}/PLAN.md`
-- `{task_ids}` → IDs for this group only
+- `{prd_path}` → `STATE.md.artifacts.prd`
+- `{plan_path}` → `STATE.md.artifacts.plan`
+- `{task_ids}` → this single task ID only
 - `{completed_tasks}` → `STATE.md.implement.completed_tasks`
 - `{wave}` → current wave number
-- `{group}` → current parallel_group name
+- `{group}` → `parallel_group` of this task
 
-Spawn each subagent sequentially. Collect all results before presenting to the user.
-Tasks in different groups touch different files — there is no conflict risk between groups
-within the same wave.
+Wait for **all** implement-agents in the group to complete before proceeding to Step B.
 
-### 4.3 — Review all group results
+#### Step B — Verify (parallel within group)
 
-After all groups complete, present a consolidated summary:
+For every task in the group, spawn a verify-agent **simultaneously**:
+
+Load [verify-agent](.agentic/subagents/verify-agent.md) and inject:
+- `{feature_path}` → feature path
+- `{prd_path}` → `STATE.md.artifacts.prd`
+- `{plan_path}` → `STATE.md.artifacts.plan`
+- `{tasks_to_verify}` → this task ID only
+- `{failed_tasks}` → `STATE.md.verify.failed_tasks[*].id`
+
+Wait for **all** verify-agents in the group to complete before proceeding to Step C.
+
+#### Step C — Consolidate verdicts and retry (sequential)
+
+After all verify verdicts for the group are in, process them one by one:
+
+- **PASS** → record as passed (do not update STATE.md or PLAN.md yet — wait for Step 4.3).
+- **FAIL** → apply retry logic sequentially, one failed task at a time:
+  1. Read `STATE.md.verify.retry_counts[task_id]` (default 0).
+  2. If `< 3`: increment counter in STATE.md, re-spawn implement-agent for this single task
+     with failure details as `{dev_feedback}`, then re-spawn verify-agent for this task.
+     Wait for both to complete before retrying the next failed task.
+  3. If `== 3`: revert the file (`git checkout HEAD -- {file}`), update PLAN.md
+     `Validation Status: Failed`, add to `STATE.md.verify.failed_tasks`, inform the user.
+
+Only after all retries for the group are resolved, proceed to the next group.
+
+### 4.3 — Wave summary
+
+After all groups in the wave complete, update PLAN.md and STATE.md, then present a consolidated
+summary.
+
+**Update PLAN.md — for every PASS task:**
+- In the "Execution Roadmap" section: mark the task checkbox as `[x]` (normal mode) or `[y]`
+  (yolo mode — `{yolo}` is `true`).
+- In the "Execution — Validated Checklist" section: set `Validation Status` to
+  `✅ Validated` (normal) or `✅ Validated (yolo-mode)` (yolo).
+
+**Update STATE.md:**
+- Add all PASS task IDs to `implement.completed_tasks`.
+- Remove them from `implement.pending_tasks`.
+- Increment `current_wave` to N+1.
+- Clear `current_wave_groups`.
+
+Then present the summary:
 
 ```
 --- Resultado da Wave {N} ---
 
-Grupo {parallel_group}:
-{subagent summary}
+| Task | File | Verify | Status |
+|------|------|--------|--------|
+| {TASK-ID} | {file} | PASS | Concluída |
+| {TASK-ID} | {file} | FAIL (3 tentativas) | Revertida |
 
-Grupo {parallel_group}:
-{subagent summary}
-
-Aprova esta wave? Responda "aprovar" para marcar as tasks como concluídas,
-ou indique qual grupo precisa de correção.
+Tasks concluídas adicionadas ao histórico. Avançando para a próxima wave.
 ```
 
-**If approved:** add all wave task IDs to `STATE.md.implement.completed_tasks`.
-Remove them from `pending_tasks`. Increment `current_wave` to N+1.
+**If `{target_wave}` is set (single-wave mode):**
+- Do NOT proceed to the next wave automatically.
+- Output:
+  ```
+  Wave {N} concluída (modo single-wave).
+
+  Para continuar, execute /sdd-workflow novamente.
+  Para executar apenas a próxima wave: /sdd-workflow implement-wave={N+1}
+  ```
+- Stop here.
+
+**If `{target_wave}` is null (default — all waves):**
 Recompute executable tasks and repeat Step 4 if more waves remain.
-
-**If partially rejected:** the user identifies which group(s) need correction. Re-spawn
-only the affected group subagent(s) using the correction prompt (see template). Tasks from
-approved groups are marked completed in `STATE.md` immediately.
-
-**If fully rejected:** spawn correction subagents for all groups with the user's feedback.
+If all tasks are done (pending_tasks empty), advance to Step 5.
 
 ## Step 5 — Verify
 
-### 5.1 — Spawn verify-agent
+Verification now happens per task inside Step 4.2. Step 5 is a gate-only check.
 
-Load [verify-agent](assets/verify-agent-prompt.md) and inject:
-- `{feature_path}` → feature path
-- `{prd_path}` → `STATE.md.artifacts.prd`
-- `{plan_path}` → `STATE.md.artifacts.plan`
-- `{tasks_to_verify}` → `STATE.md.implement.completed_tasks` minus IDs already in `STATE.md.verify.failed_tasks`
-- `{failed_tasks}` → `STATE.md.verify.failed_tasks[*].id` (empty list if none)
+### 5.1 — Check completion
 
-Spawn the subagent. Collect the structured report.
-
-### 5.2 — Process task verdicts
-
-For each task in the report:
-
-**Verdict PASS:** no action needed. Task remains in `completed_tasks`.
-
-**Verdict FAIL:**
-
-1. Read `STATE.md.verify.retry_counts[task_id]` (default 0).
-2. If `retry_counts[task_id] < 3`:
-   - Increment `retry_counts[task_id]` in `STATE.md`.
-   - Present failure details to the user.
-   - Load [implement-agent](assets/implement-agent-prompt.md) with the correction section appended:
-     - `{task_ids}` → this task only
-     - `{dev_feedback}` → the failure reasons from the verify report
-   - Spawn the correction subagent.
-   - After correction, re-spawn the verify-agent for this task only (Step 5.1, scoped to the single task).
-   - Repeat until verdict is PASS or `retry_counts[task_id]` reaches 3.
-3. If `retry_counts[task_id] == 3` (third attempt also failed):
-   - Revert the task's file using `git checkout HEAD -- {file}` (file path from PLAN.md task block).
-   - Update PLAN.md: set the task's `Validation Status` to `Failed` and add a `Failure Reason` field with the last verify report's failure description.
-   - Add `{id: task_id, reason: "..."}` to `STATE.md.verify.failed_tasks`.
-   - Remove task from `STATE.md.implement.completed_tasks`.
-   - Inform the user:
-     ```
-     Task {TASK-ID} falhou após 3 tentativas. Arquivo revertido. Status no PLAN.md atualizado para "Failed".
-     ```
-
-### 5.3 — Advance or report deadlock
-
-After processing all verdicts:
-
-- If `pending_tasks` in `STATE.md.implement` is empty and no new FAIL tasks remain unresolved:
+- If `STATE.md.implement.pending_tasks` is empty:
   - Update `STATE.md` → `phase: done`.
+  - Update `PLAN.md` header field `Status` to `Done`.
   - Proceed to Phase `done` (Step 3).
-- If there are tasks that could not be retried (all already in `failed_tasks`), still advance to `done` — failed tasks are recorded, not blocking.
+- If there are still pending tasks with unsatisfied dependencies (deadlock), report:
+  ```
+  Deadlock detectado: tasks pendentes têm dependências não satisfeitas.
+  Pendentes: {list}
+  Concluídas: {list}
+  Verifique o PLAN.md e resolva manualmente.
+  ```
 
 ## Gotchas
 
 - Never advance a phase without verifying the expected artifact exists on disk.
 - `STATE.md` is the single source of truth — do not rely on conversation memory.
-- Tasks in the same `parallel_group` with no pending dependencies can be grouped in the same wave,
-  but never mix different groups if there is a risk of file conflict.
+- `parallel_group` controls both display and execution order: tasks in the same group run in
+  parallel; groups run sequentially. Each task always gets its own implement-agent.
 - If the user invokes `/sdd-workflow` mid-wave (interrupted session), re-present the current wave
   and ask whether to re-execute or skip.
 - Revert (`git checkout HEAD -- {file}`) only after the 3rd failed verify attempt — never before.
@@ -294,3 +335,12 @@ After processing all verdicts:
 - `failed_tasks` entries are permanent within the pipeline run. Never re-verify or re-execute a
   task already in `failed_tasks`.
 - Phase `done` is reached even when there are failed tasks — failures are reported, not blocking.
+- `implement-wave=N` only filters execution — it never skips dependency checks. Wave 2 can only
+  run after wave 1 tasks are in `completed_tasks`; enforce this even in single-wave mode.
+- After single-wave execution, `STATE.md` phase remains `implement` until all pending tasks are
+  done. The next `/sdd-workflow` invocation (with or without `implement-wave`) will resume
+  correctly from `current_wave`.
+- `--yolo` suppresses only the wave confirmation prompt. Retry logic, revert on failure, and
+  deadlock detection are never skipped — even in YOLO mode.
+- `--yolo` is combinable with `implement-wave=N`: `/sdd-workflow implement-wave=2 --yolo` executes
+  exactly wave 2 without any confirmation prompt.

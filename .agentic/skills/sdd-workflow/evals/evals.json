@@ -6,7 +6,7 @@
       "prompt": "O usuário invoca /sdd-workflow para a feature docs/payment/checkout. Não existe nenhum STATE.md nesse caminho. O que o orquestrador deve fazer e qual saída deve produzir?",
       "assertions": [
         "The output indicates that STATE.md will be created with phase: prd for the feature docs/payment/checkout",
-        "The output instructs the user to open a new session and execute /spec-prd",
+        "The output instructs the user to open a new session and execute /sdd-prd",
         "The output does NOT advance to the plan, implement, verify, or done phases in this invocation",
         "The entire user-facing output is written in Brazilian Portuguese (pt-BR)"
       ]
@@ -17,7 +17,7 @@
       "prompt": "STATE.md existe para a feature docs/user/login com phase: prd e artifacts.prd vazio. O arquivo docs/user/login/PRD.md foi encontrado no disco. Execute o orquestrador SDD para esta feature.",
       "assertions": [
         "The output explicitly mentions advancing to the PLAN phase (Avançando para fase: PLAN or equivalent)",
-        "The output instructs the user to run /spec-plan docs/user/login/PRD.md in a new session",
+        "The output instructs the user to run /sdd-plan docs/user/login/PRD.md in a new session",
         "The output references the detected PRD.md path (docs/user/login/PRD.md)",
         "The output does NOT generate or propose the content of a PLAN.md file"
       ]

@@ -1,9 +1,9 @@
 ---
-name: spec-plan
+name: sdd-plan
 description: >
   Create a technical specification plan for a specific feature, from a PRD or a feature description.
   Use it when the user requests a technical specification plan or needs help creating one. Reads a
-  PRD (from the spec-prd skill or provided by the user), elicits and confirms scope, then produces an
+  PRD (from the sdd-prd skill or provided by the user), elicits and confirms scope, then produces an
   approved PLAN.md whose tasks are annotated with dependencies and complexity, following plan-schema.
 ---
 
@@ -20,7 +20,7 @@ in [plan-schema](references/plan-schema.md).
 
 **This skill covers:**
 
-- Reading and interpreting a PRD (from `spec-prd` or provided by the user) or a feature description.
+- Reading and interpreting a PRD (from `sdd-prd` or provided by the user) or a feature description.
 - Researching the codebase patterns through the `ddd-module-knowledge` skill **in planning mode**.
 - Decomposing the feature into file-level tasks, with dependency and complexity analysis.
 - Producing a `PLAN.md` that follows [plan-schema](references/plan-schema.md), approved by the user.
@@ -29,7 +29,7 @@ in [plan-schema](references/plan-schema.md).
 
 - Writing code, tests, or any implementation artifact.
 - Reviewing or executing an existing plan.
-- Product decisions or requirement gathering → use the `spec-prd` skill.
+- Product decisions or requirement gathering → use the `sdd-prd` skill.
 
 ## Principles
 
@@ -75,6 +75,13 @@ Mode: reasoning only, no writes to disk.
 > Post-conditions: HTTP status, DB state changes, domain events dispatched, response payload.
 > Invariants: hexagonal port contracts, API backward-compatibility, no new libraries, no migrations.
 
+**1.3 — Unit test coverage**
+
+- Check whether the PRD explicitly mentions unit test creation.
+- If it does not, include the following in the scope questions bundle:
+  > "O PRD não menciona testes unitários. Deseja incluir uma task de testes para cada task de implementação? (padrão: sim)"
+- Record the decision as a scope constraint: `unit_tests: yes | no` before advancing.
+
 **Gate 1 — Scope confirmation**
 
 Present a short consolidated scope summary with four elements: Intent, Invariants/Constraints,
@@ -93,6 +100,16 @@ If the scope was not confirmed, return to Phase 1.
 Identify the file-level tasks. Each maps to one file and one logical concern, with a semantic ID
 `TASK-[LAYER]-[CONCERN]` (LAYER ∈ DOM/APP/INFRA/MOD). Map every PRD acceptance criterion to distinct
 unit and integration test scenarios.
+
+**Test tasks**
+
+If `unit_tests: yes` (from Phase 1.3):
+- For each implementation task, include a corresponding `TASK-TEST-[CONCERN]` task referencing the same file.
+- If the file already has tests, the test task description is "adjust or extend existing tests to reflect the new behavior."
+- If the file has no tests, the test task description is "generate unit tests using `make-unit-tests`."
+- Test tasks depend on their corresponding implementation task.
+- Test tasks go in `parallel_group: tests`.
+- When possible, keep implementation task and its test task in the same wave group so the same subagent handles both without a wave boundary between them.
 
 **2.2 — Analyze dependencies**
 

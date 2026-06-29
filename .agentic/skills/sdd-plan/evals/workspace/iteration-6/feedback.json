@@ -1,0 +1,30 @@
+{
+  "iteration": 6,
+  "model": "claude-sonnet-4-6",
+  "evals": [
+    {
+      "slug": "eval-scope-elicitation-scope-summary",
+      "feedback": ""
+    },
+    {
+      "slug": "eval-plan-schema-semantic-task-ids",
+      "feedback": ""
+    },
+    {
+      "slug": "eval-no-code-generation",
+      "feedback": ""
+    },
+    {
+      "slug": "eval-phase-gate-enforcement",
+      "feedback": ""
+    },
+    {
+      "slug": "eval-dependency-analysis-depends-on",
+      "feedback": ""
+    },
+    {
+      "slug": "eval-complexity-evaluation-five-dimensions",
+      "feedback": ""
+    }
+  ]
+}

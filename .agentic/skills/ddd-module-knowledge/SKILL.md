@@ -201,6 +201,7 @@ The mapping between these errors and HTTP status codes is handled automatically 
 - Don`t violate the Hexagonal Architecture principles.
 - Don`t violate the DDD principles.
 - Domain contracts are scoped to a **user action** (e.g., `login`, `createUser`). A contract may gain new methods only when the change serves the same user action for which it was created. When a new feature requires a contract that does not yet exist, always create a new file — never add methods to a contract from a different user action. This enforces Interface Segregation: handlers depend only on the methods they actually use.
+- When multiple infrastructure concerns share the same underlying technology (e.g., Redis, gRPC, S3), group them in a single adapter file named `{technology}_adapter.go` (e.g., `redis_adapter.go`) inside the appropriate infrastructure subfolder. This centralizes technology-specific code, reduces file count, and keeps maintenance isolated — without violating DIP or ISP, since domain contracts remain separate and focused per user action.
 
 ## Layer Implementation Patterns
 

@@ -30,7 +30,7 @@
 
 | Slug | Delta | Motivo |
 |---|---|---|
-| eval-phase-routing-prd-plan-advance-when-prd-md-is-detected | +0.750 | Sem a skill, o modelo não produziu a saída explícita de avanço de fase, não exibiu o caminho do PRD.md detectado e não instruiu o usuário a executar `/spec-plan` com o caminho correto — apenas descreveu o comportamento esperado em vez de executá-lo. |
+| eval-phase-routing-prd-plan-advance-when-prd-md-is-detected | +0.750 | Sem a skill, o modelo não produziu a saída explícita de avanço de fase, não exibiu o caminho do PRD.md detectado e não instruiu o usuário a executar `/sdd-plan` com o caminho correto — apenas descreveu o comportamento esperado em vez de executá-lo. |
 | eval-wave-confirmation-gate-must-wait-for-user-approval-befo | +0.750 | Sem a skill, o modelo não exibiu as tasks agrupadas por `parallel_group`, não apresentou o cabeçalho de wave no formato esperado e não solicitou confirmação explícita ao usuário com o termo "sim" — descreveu o fluxo conceitualmente sem produzir a saída formatada. |
 
 ## Baseline confirmado (ambos ≥ 0.95)

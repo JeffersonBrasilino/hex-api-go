@@ -1,8 +1,8 @@
 ---
-name: spec-prd-v2
+name: sdd-prd
 description: >
   Create clear, implementation-ready Product Requirements Documents (PRDs) through a guided
-  interview, then synthesize a product-focused PRD that feeds the spec-plan skill. Use when the
+  interview, then synthesize a product-focused PRD that feeds the sdd-plan skill. Use when the
   user wants to write or create a PRD. Triggers: "crie o prd", "preciso de um prd", "escreva o prd",
   "criar um prd", "create a PRD", "write a PRD", "analyze and create a PRD". Interviews the user to
   resolve ambiguity, gets approval on a standardized summary, then writes PRD.md (no implementation
@@ -13,10 +13,10 @@ description: >
 
 You are a **product manager pairing with a developer**. The developer carries the technical
 knowledge; you carry the product craft. Your job is to turn a rough idea into a PRD that is simple,
-unambiguous, and detailed enough for the `spec-plan` skill to build a technical plan from it.
+unambiguous, and detailed enough for the `sdd-plan` skill to build a technical plan from it.
 
 A PRD here describes **product behavior and intent** — what the system must do and why — never *how*
-to implement it. Implementation (architecture, files, contracts) belongs to `spec-plan`.
+to implement it. Implementation (architecture, files, contracts) belongs to `sdd-plan`.
 
 ## Scope
 
@@ -29,7 +29,7 @@ to implement it. Implementation (architecture, files, contracts) belongs to `spe
 **This skill does NOT cover:**
 
 - Writing code, tests, or any implementation artifact → out of scope
-- Technical/architecture decisions or the implementation plan → use `spec-plan` skill
+- Technical/architecture decisions or the implementation plan → use `sdd-plan` skill
 - Deep codebase/domain context → only when truly needed, use `ddd-module-knowledge` skill
 
 ## Principles
@@ -129,23 +129,31 @@ Fill every placeholder with content gathered in Step 1. Output the completed blo
 
 After explicit approval:
 
-1. Determine the target folder `docs/[module-name]/[feature-name]/`. If you do not know the DDD
-   module name and a kebab-case feature name yet, ask for them now (single message).
-2. Create the folder if missing. Never write files at the project root.
-3. Load `references/prd-template.md` and write `PRD.md` following it exactly, in pt-BR.
-   - Functional requirements use the `RF-0X` identifier with a hyphen (e.g. `**RF-01:**`);
-     non-functional requirements use `RNF-0X` with a hyphen (e.g. `**RNF-01 (Performance):**`).
-   - Write the full PRD content in the response, then confirm the saved path.
-4. After saving, confirm the full output path in your message to the user
-   (e.g. `PRD gerado em docs/auth/reset-password/PRD.md`).
-5. Persist `NOTES.md` (see "Decision notes" — this is the post-approval trigger).
+1. If you do not know the DDD module name and feature name yet, ask for them now (single message).
+2. Run `node .agentic/skills/sdd-prd/scripts/prd-write.js --help` to get the PRD input schema.
+   Build the `sections` JSON and write it to `/tmp/prd-data.json`.
+3. Run both scripts — each tem uma responsabilidade:
+   ```bash
+   node .agentic/skills/sdd-prd/scripts/prd-write.js --input /tmp/prd-data.json
+   node .agentic/skills/sdd-prd/scripts/notes-write.js --input /tmp/notes-data.json
+   ```
+   `prd-write.js` renders PRD.md via template e valida tags. Se abortar com "Tags não substituídas", preencha os campos faltantes e tente novamente.
+   `notes-write.js` cria ou faz merge do NOTES.md. Run com `--help` para o schema de notes.
+4. Confirm the path from the script output to the user (e.g. `PRD gerado em docs/auth/reset-password/PRD.md`).
 
 ### Step 4 — Review & deliver
 
 - Give the user the `PRD.md` path and ask them to review it.
-- If they request changes, edit `PRD.md` and ask for a new review. Repeat until they agree.
-- Close with a short next-step suggestion, e.g.: `PRD pronto em docs/<...>/PRD.md. Próximo passo:
-  invoque a skill spec-plan para gerar o plano técnico.`
+- If they request changes to specific sections (scope, acceptance criteria, business rules, etc.):
+  1. Build a `patch` JSON with **only the changed fields** (run `prd-write.js --help` if unsure).
+  2. Run the scripts:
+     ```bash
+     node .agentic/skills/sdd-prd/scripts/prd-write.js --input /tmp/prd-patch.json
+     node .agentic/skills/sdd-prd/scripts/notes-write.js --input /tmp/notes-patch.json
+     ```
+  3. Confirm what changed and the new version to the user.
+- Repeat until approved.
+- Close with: `PRD pronto em docs/<...>/PRD.md. Próximo passo: invoque a skill sdd-plan para gerar o plano técnico.`
 
 ## Decision notes (NOTES.md)
 
@@ -154,25 +162,22 @@ It is **not** created at bootstrap — only when one of these triggers fires:
 
 - **Trigger A — context about to be compacted / conversation grown long:** if you receive any signal
   that the context will be summarized/compacted, or the conversation is long, persist the current
-  decisions before continuing.
-- **Trigger B — after PRD approval (Step 3):** persist the final decision record.
-
-Rules:
-
-- **Never overwrite an existing `NOTES.md`.** If it already exists (e.g. created during a prior
-  compaction), it is precious — **merge and increment** it: add new decisions, refresh the
-  consolidated state, do not discard prior content.
-- Write it in pt-BR, in the feature folder `docs/[module-name]/[feature-name]/NOTES.md`.
-- Load `references/notes-template.md` for the structure when persisting.
+  decisions before continuing. Write `NOTES.md` yourself using `references/notes-template.md` as
+  structure. **Never overwrite** — if it exists, read it first and merge: update each section to
+  reflect current state, append to "Registro de Decisões" only.
+- **Trigger B — after PRD approval (Step 3):** handled automatically by `prd-write.js`. The script
+  merges NOTES.md safely — do not write it yourself after Step 3.
 
 ## Gotchas
 
-- The PRD is product-facing: keep architecture and implementation out of it — that is `spec-plan`'s job.
+- The PRD is product-facing: keep architecture and implementation out of it — that is `sdd-plan`'s job.
 - Re-asking for context the user already gave wastes their time and tokens. Check first.
 - This skill lives in `.agentic/skills/` to stay agent-agnostic; mirror it to `.claude/skills/` if you
   want it active inside Claude Code.
 
 ## References
 
-- PRD structure → load `references/prd-template.md` when writing `PRD.md` (Step 3).
-- Notes structure → load `references/notes-template.md` when persisting `NOTES.md`.
+- PRD structure → `references/prd-template.md` — load when writing `PRD.md` (Step 3).
+- Notes structure → `references/notes-template.md` — used on Trigger A (manual write).
+- `scripts/prd-write.js` — normalizes path, creates folder, renders/patches PRD.md. Run `--help` for schema.
+- `scripts/notes-write.js` — creates/merges NOTES.md. Run `--help` for schema.

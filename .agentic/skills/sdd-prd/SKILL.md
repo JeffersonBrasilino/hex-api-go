@@ -40,8 +40,9 @@ These are calibrated on purpose — follow the prescriptive ones strictly, use j
   "the skill would…". You *are* the role. When a step calls for a summary or a PRD, output
   the content — not a description of what it will contain.
 - **Language: always pt-BR** for every message, question, summary, and file content. *(strict)*
-- **Token economy.** Keep chat messages short and direct. Reserve full, formal prose for `PRD.md`
-  and `NOTES.md`, which other people read.
+- **Token economy.** Keep chat messages short and direct. The intake form collects most context in
+  one shot — do not revert to one-question-at-a-time after reading it. Reserve full, formal prose
+  for `PRD.md` and `NOTES.md`, which other people read.
 - **No implementation detail in the PRD.** No architecture, file paths, libraries, or layer/contract
   decisions. If the user pushes implementation, note it as an open question and steer back. *(strict)*
 - **Product knowledge first.** You usually do not need the codebase to write a good PRD. Consult the
@@ -61,37 +62,63 @@ The PRD needs a real problem/feature context to exist.
 You do **not** need the DDD module / feature name yet — that is only needed to save files later
 (Step 3). Stay focused on understanding the problem first.
 
-### Step 1 — Interview until shared understanding
+### Step 1a — Intake
 
-Interview the developer like `grill-me`: resolve every open branch of the idea, one focused
-question at a time, until nothing material is ambiguous.
+Present the intake form below and wait for the user to fill it. Do not ask questions before reading the response — the form collects most of what is needed in one shot.
 
-- **Exactly one `?` per message, always at the end — no exceptions. *(strict)*** Before sending
-  any interview message, count the `?` marks: if there are two, you bundled two decisions — split
-  into two turns. This rule applies to every interview turn, including LGPD exploration.
-  Go directly to the question — no preamble about what you are about to ask or why.
-- **One decision per turn.** Ask a single focused question so the developer is never overwhelmed and
-  the chat stays cheap.
-- **Offer a recommended answer.** For each question, propose a sensible default the developer can
-  simply confirm. State the recommendation as a short declarative sentence — one sentence naming the
-  suggested value or approach, ending with `.`. Do not add elaboration or justification that implies
-  "do you agree?" (e.g. avoid `"Esse é o caminho padrão do mercado"`-style elaboration). The
-  explicit question (with `?`) follows immediately after the recommendation.
-- **Cover the branches that matter** (not as a checklist to read aloud — as ground to resolve):
-  problem & value, target users, functional requirements, business rules, non-functional needs
-  (performance, security, availability, usability), data requirements, edge cases, success/failure
-  behavior, and the ubiquitous language (domain terms).
-- **Personal data → LGPD.** When CPF, email, birth date, address, etc. appear, explore each of
-  the three LGPD dimensions **one per turn** — never bundle them in a single message. *(strict)*
-  1. *consentimento* — does processing need explicit consent?
-  2. *acesso e controle* — who can read/edit?
-  3. *origem e retenção* — where does it come from; any anonymization/retention duty?
-- **Gate reminder during criteria iteration.** If acceptance criteria are drafted or revised at any
-  point during the interview, incorporate the changes — and **always** end that turn with an explicit
-  gate reminder such as: `Estes critérios estão corretos? Lembre que a aprovação formal (Passo 2)
-  ainda é obrigatória antes de eu gerar o PRD.` Do not silently move on after presenting criteria.
-- **Stop interviewing** when there are no open branches left and you could write the PRD without
-  guessing. Then go to Step 2.
+```
+Para criar o PRD, preencha o que já sabe — pule o que não souber:
+
+**Problema:** [o que está errado ou faltando hoje]
+**Usuários:** [quem usa / quem é afetado]
+**O que deve fazer:** [principais comportamentos esperados — liste em tópicos]
+**O que NÃO entra:** [limites de escopo]
+**Critério de sucesso:** [como sabemos que funcionou?]
+**Restrições:** [segurança, LGPD, performance, disponibilidade, prazo...]
+```
+
+### Step 1b — Gap analysis and clarification
+
+Read the intake and check each field using the rules below. Build a gap list — only fields that fail their rule go on the list. Then ask one gap per turn (max 3 turns total). For every field NOT on the gap list, apply the declared default and move on.
+
+**Problema**
+- Blank or too vague to derive a one-sentence problem statement → add to gap list.
+- Filled → use as-is.
+
+**Usuários**
+- Blank → add to gap list.
+- Filled → use as-is.
+
+**O que deve fazer**
+- Blank → add to gap list.
+- Fewer than 2 distinct behaviors derivable → add to gap list asking for more.
+- 2+ behaviors present → use as-is.
+
+**O que NÃO entra**
+- Blank → default: *"não definido — sem restrições explícitas de escopo"*. Declare in approval summary. Do NOT ask.
+- Filled → use as-is.
+
+**Critério de sucesso**
+- Blank → derive from the behaviors (e.g. "usuário consegue [behavior] sem erros"). Declare assumption in approval summary. Do NOT ask.
+- Filled → use as-is.
+
+**Restrições — LGPD scan** *(strict)*
+- Scan intake for personal data signals: CPF, CNPJ, e-mail, endereço, data de nascimento, telefone, nome completo.
+- If found: add LGPD to gap list. Ask each of the 3 dimensions **one per turn**:
+  1. *consentimento* — o processamento exige consentimento explícito?
+  2. *acesso e controle* — quem pode ler/editar esses dados?
+  3. *origem e retenção* — de onde vêm; há obrigação de anonimização ou prazo de retenção?
+- If not found: default: *"sem dados pessoais"*. Declare in approval summary. Do NOT ask.
+
+**Restrições — performance / disponibilidade scan**
+- If domain implies high traffic or SLA (e-commerce, auth, payments, public APIs) and no constraint was given → add to gap list.
+- Otherwise → default: *"padrão — sem restrição especial"*. Declare in approval summary.
+
+**Clarification turns — format rules** *(strict)*
+- Exactly one `?` per turn. Count before sending — if two `?` exist, split into two turns.
+- State the recommended default first (one declarative sentence ending in `.`), then ask the question.
+- If gap list is empty after analysis → skip clarification and go directly to Step 2.
+- After 3 clarification turns, stop regardless of remaining gaps — declare remaining items as assumptions in the approval summary.
 
 ### Step 2 — Approval gate (standardized summary)
 
@@ -130,28 +157,15 @@ Fill every placeholder with content gathered in Step 1. Output the completed blo
 After explicit approval:
 
 1. If you do not know the DDD module name and feature name yet, ask for them now (single message).
-2. Run `node .agentic/skills/sdd-prd/scripts/prd-write.js --help` to get the PRD input schema.
-   Build the `sections` JSON and write it to `/tmp/prd-data.json`.
-3. Run both scripts — each tem uma responsabilidade:
-   ```bash
-   node .agentic/skills/sdd-prd/scripts/prd-write.js --input /tmp/prd-data.json
-   node .agentic/skills/sdd-prd/scripts/notes-write.js --input /tmp/notes-data.json
-   ```
-   `prd-write.js` renders PRD.md via template e valida tags. Se abortar com "Tags não substituídas", preencha os campos faltantes e tente novamente.
-   `notes-write.js` cria ou faz merge do NOTES.md. Run com `--help` para o schema de notes.
-4. Confirm the path from the script output to the user (e.g. `PRD gerado em docs/auth/reset-password/PRD.md`).
+2. Load `references/write-ops.md` for schemas and commands.
+3. Build the `sections` JSON, write to `/tmp/prd-data.json`, and run both scripts.
+4. Confirm the paths from the script output to the user.
 
 ### Step 4 — Review & deliver
 
 - Give the user the `PRD.md` path and ask them to review it.
-- If they request changes to specific sections (scope, acceptance criteria, business rules, etc.):
-  1. Build a `patch` JSON with **only the changed fields** (run `prd-write.js --help` if unsure).
-  2. Run the scripts:
-     ```bash
-     node .agentic/skills/sdd-prd/scripts/prd-write.js --input /tmp/prd-patch.json
-     node .agentic/skills/sdd-prd/scripts/notes-write.js --input /tmp/notes-patch.json
-     ```
-  3. Confirm what changed and the new version to the user.
+- If they request changes: load `references/write-ops.md`, build a `patch` JSON with only the changed
+  fields, run both scripts, confirm version and what changed.
 - Repeat until approved.
 - Close with: `PRD pronto em docs/<...>/PRD.md. Próximo passo: invoque a skill sdd-plan para gerar o plano técnico.`
 
@@ -160,24 +174,24 @@ After explicit approval:
 `NOTES.md` is a durable decision record that survives context compaction and serves as history.
 It is **not** created at bootstrap — only when one of these triggers fires:
 
-- **Trigger A — context about to be compacted / conversation grown long:** if you receive any signal
-  that the context will be summarized/compacted, or the conversation is long, persist the current
-  decisions before continuing. Write `NOTES.md` yourself using `references/notes-template.md` as
-  structure. **Never overwrite** — if it exists, read it first and merge: update each section to
-  reflect current state, append to "Registro de Decisões" only.
-- **Trigger B — after PRD approval (Step 3):** handled automatically by `prd-write.js`. The script
-  merges NOTES.md safely — do not write it yourself after Step 3.
+- **Trigger A — context about to be compacted / conversation grown long:** load `references/write-ops.md`,
+  build a `notes-write.js` input JSON with the current interview state, and run the script. It creates
+  or merges NOTES.md safely — do not write it yourself.
+- **Trigger B — after PRD approval (Step 3):** handled by the scripts in Step 3. No action needed.
 
 ## Gotchas
 
 - The PRD is product-facing: keep architecture and implementation out of it — that is `sdd-plan`'s job.
-- Re-asking for context the user already gave wastes their time and tokens. Check first.
+- Re-asking for context the user already gave in the intake wastes tokens. Read the intake fully before building the gap list.
+- Never revert to one-question-at-a-time after the intake — that defeats the token economy entirely.
+- After 3 clarification turns, stop and declare remaining gaps as assumptions. Do not extend the interview.
 - This skill lives in `.agentic/skills/` to stay agent-agnostic; mirror it to `.claude/skills/` if you
   want it active inside Claude Code.
 
 ## References
 
-- PRD structure → `references/prd-template.md` — load when writing `PRD.md` (Step 3).
-- Notes structure → `references/notes-template.md` — used on Trigger A (manual write).
-- `scripts/prd-write.js` — normalizes path, creates folder, renders/patches PRD.md. Run `--help` for schema.
-- `scripts/notes-write.js` — creates/merges NOTES.md. Run `--help` for schema.
+- `references/write-ops.md` — schemas e comandos dos scripts. Carregar apenas nos Steps 3, 4 e Trigger A.
+- `references/prd-template.md` — template com tags usado por `prd-write.js`.
+- `references/notes-template.md` — template com tags usado por `notes-write.js`.
+- `scripts/prd-write.js` — renderiza/patcha PRD.md.
+- `scripts/notes-write.js` — cria/merge NOTES.md.

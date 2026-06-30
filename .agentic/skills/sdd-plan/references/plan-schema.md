@@ -1,10 +1,11 @@
-# 🚀 Feature Specification Plan: [Specification Name]
+<!-- Tags são substituídas por plan-write.js. Não remova nem renomeie as tags deste arquivo. -->
+# 🚀 Feature Specification Plan: {{title}}
 
-**Status:** `Draft` | `Planning` | `Ready for Implementation` | `Done`
-**Date:** [YYYY-MM-DD]
-**Author:** [Dev/Agent Name]
-**Ticket/Reference:** [JIRA/GitHub Link or N/A]
-**Complexity:** `High` | `Medium` | `Low`
+**Status:** `{{status}}`
+**Date:** {{date}}
+**Author:** {{author}}
+**Ticket/Reference:** {{ticket}}
+**Complexity:** `{{overall_complexity}}`
 
 ---
 
@@ -23,9 +24,9 @@
 
 ### Technical Strategy & Architecture
 
-* **Architectural Approach:** [How the feature is designed — aggregates modified, new ports, adapters, etc.]
-* **Affected Layer(s):** [Domain | Application | Infrastructure | Module]
-* **Mapped Skills / Tools:** [e.g. `adjust-go-code`, `make-unit-tests`, `ddd-module-knowledge`]
+* **Architectural Approach:** {{approach}}
+* **Affected Layer(s):** {{layers}}
+* **Mapped Skills / Tools:** {{skills}}
 
 ### Execution Roadmap
 
@@ -37,51 +38,7 @@
 
 ---
 
-- [ ] **TASK-[LAYER]-[CONCERN] — [Short description: file or concern name]**
-  - **File:** `[relative/path/to/file.go]`
-  - **Reason:** [Why this file needs to change, linked to the root cause.]
-  - **Dependencies:**
-    - `depends_on:` `[TASK-ID, TASK-ID]` <!-- semantic IDs, or [] if none -->
-    - `parallel_group:` `[domain | application | infrastructure | module | tests | config]`
-  - **Complexity:**
-    | Dimension       | Score |
-    |-----------------|-------|
-    | scope           | X     |
-    | ambiguity       | X     |
-    | coupling        | X     |
-    | novelty         | X     |
-    | reversibility   | X     |
-    | **score**       | X.X   |
-    | **tier**        | low / medium / high |
-    - `risk_note:` _(only when tier = high)_ [Main risk in one line.]
-  - **Sub-tasks:**
-    - [ ] [TASK-ID].1 — [Specific change: e.g., "Add nil-check guard before calling repository method."]
-    - [ ] [TASK-ID].2 — [Specific change: e.g., "Update unit test to cover the new guard branch."]
-  - **Completion criterion:** [How to know this task is done.]
-
----
-
-- [ ] **TASK-[LAYER]-[CONCERN] — [Short description: file or concern name]**
-  - **File:** `[relative/path/to/file.go]`
-  - **Reason:** [Why this file needs to change.]
-  - **Dependencies:**
-    - `depends_on:` `[TASK-ID, TASK-ID]` <!-- semantic IDs, or [] if none -->
-    - `parallel_group:` `[domain | application | infrastructure | module | tests | config]`
-  - **Complexity:**
-    | Dimension       | Score |
-    |-----------------|-------|
-    | scope           | X     |
-    | ambiguity       | X     |
-    | coupling        | X     |
-    | novelty         | X     |
-    | reversibility   | X     |
-    | **score**       | X.X   |
-    | **tier**        | low / medium / high |
-    - `risk_note:` _(only when tier = high)_ [Main risk in one line.]
-  - **Sub-tasks:**
-    - [ ] [TASK-ID].1 — [Specific change.]
-    - [ ] [TASK-ID].2 — [Specific change.]
-  - **Completion criterion:** [How to know this task is done.]
+{{task_blocks}}
 
 ---
 
@@ -104,21 +61,7 @@
 
 ---
 
-- [ ] **Execution — TASK-[LAYER]-[CONCERN]: [Mirror the task name from Section 1]**
-  - *Agent Notes:* [Filled by agent: what exactly was changed and why.]
-  - *Files Modified:*
-    - `[relative/path/to/file.go]`
-  - *Validation Evidence:* [Test output / log / diff snippet goes here.]
-  - *Validation Status:* `✅ Validated` | `❌ Failed` | `⚠️ Blocked: [reason]`
-
----
-
-- [ ] **Execution — TASK-[LAYER]-[CONCERN]: [Mirror the task name from Section 1]**
-  - *Agent Notes:* [Fill during execution.]
-  - *Files Modified:*
-    - `[relative/path/to/file.go]`
-  - *Validation Evidence:* [Fill during execution.]
-  - *Validation Status:* `✅ Validated` | `❌ Failed` | `⚠️ Blocked: [reason]`
+{{execution_blocks}}
 
 ---
 
@@ -141,13 +84,13 @@ addressed. Write this as if handing over to another engineer.]
 
 | File | Change Type | Description |
 |------|-------------|-------------|
-| `[relative/path/to/file.go]` | `Modified` / `Created` / `Deleted` | [What changed and why.] |
+{{modified_files}}
 
 ### Test Coverage
 
 | Test File | Status | Notes |
 |-----------|--------|-------|
-| `[relative/path/to/file_test.go]` | `Added` / `Updated` / `Unchanged` | [What was covered.] |
+| [to be filled] | `Added` / `Updated` / `Unchanged` | [What was covered.] |
 
 ### Side Effects & Warnings
 

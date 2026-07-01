@@ -13,8 +13,8 @@ You are a **technical lead pairing with a developer**. You turn a PRD or feature
 technical specification plan: a sequence of file-level tasks, each annotated with its dependencies
 and complexity, that another agent can execute one task at a time. You plan — you never write code.
 
-Treat the process as an informal pairing chat so the plan emerges naturally, and follow the task
-structure in [write-ops](references/write-ops.md).
+Treat the process as an informal pairing chat so the plan emerges naturally, and follow the structure
+in [plan-schema](references/plan-schema.md).
 
 ## Scope
 
@@ -23,7 +23,7 @@ structure in [write-ops](references/write-ops.md).
 - Reading and interpreting a PRD (from `sdd-prd` or provided by the user) or a feature description.
 - Researching the codebase patterns through the `ddd-module-knowledge` skill **in planning mode**.
 - Decomposing the feature into file-level tasks, with dependency and complexity analysis.
-- Producing a `PLAN.md` approved by the user, with tasks structured per [write-ops](references/write-ops.md).
+- Producing a `PLAN.md` that follows [plan-schema](references/plan-schema.md), approved by the user.
 
 **This skill does NOT cover:**
 
@@ -142,20 +142,10 @@ A `high` task carries a `risk_note` naming its main risk.
 
 **2.4 — Write the plan**
 
-Load [write-ops](references/write-ops.md). Determine the target directory
-`docs/[module-name]/[feature-name]/`: use the PRD's parent directory when one was provided, otherwise
-ask for the DDD module and a kebab-case feature name.
-
-Assemble a JSON payload with all tasks from phases 2.1–2.3. For each task include the five raw
-complexity scores (1–5); `score`, `tier`, and `overall_complexity` are computed by the script — do
-not calculate them yourself. Call:
-
-```bash
-node .agentic/skills/sdd-plan/scripts/plan-write.js --input /tmp/plan-data.json
-```
-
-The script creates the directory, renders `PLAN.md` following
-[plan-schema](references/plan-schema.md), and returns `{ folder, plan, author, date, tasks_count }`.
+Determine the target directory `docs/[module-name]/[feature-name]/`: use the PRD's parent directory
+when one was provided, otherwise ask for the DDD module and a kebab-case feature name. Create it if
+missing. Write `PLAN.md` there following [plan-schema](references/plan-schema.md), recording the
+dependency and complexity results in each task block.
 
 **Gate 2 — Plan approval**
 
@@ -168,9 +158,8 @@ affected task in `PLAN.md` and re-present its line. Advance only after the user 
 ### Phase 3 — Review & Delivery
 
 - Give the user the `PLAN.md` path for a full read.
-- For any further adjustment to a specific task, build the updated task object (all fields) and call
-  the patch script (see [write-ops](references/write-ops.md)), then re-present the affected
-  `TASK-ID | file | depends_on | tier` line. Repeat until the user agrees.
+- For any further adjustment to the plan or a specific task, edit `PLAN.md` and re-present the
+  affected line, repeating until the user agrees.
 - Close with a short next-step suggestion (e.g. "Plano aprovado. Próximo passo: iniciar a codificação
   pela camada de Domínio, executando uma task por vez.").
 
@@ -182,5 +171,4 @@ affected task in `PLAN.md` and re-present its line. Advance only after the user 
 
 ## References
 
-- Write operations → load [write-ops](references/write-ops.md) in Phase 2.4 and Phase 3 only.
-- `plan-schema.md` is the rendering template consumed by the script — do not load it directly.
+- Plan structure → load [plan-schema](references/plan-schema.md) when writing `PLAN.md` (Phase 2.4).

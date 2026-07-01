@@ -156,28 +156,41 @@ Fill every placeholder with content gathered in Step 1. Output the completed blo
 
 After explicit approval:
 
-1. If you do not know the DDD module name and feature name yet, ask for them now (single message).
-2. Load `references/write-ops.md` for schemas and commands.
-3. Build the `sections` JSON, write to `/tmp/prd-data.json`, and run both scripts.
-4. Confirm the paths from the script output to the user.
+1. Determine the target folder `docs/[module-name]/[feature-name]/`. If you do not know the DDD
+   module name and a kebab-case feature name yet, ask for them now (single message).
+2. Create the folder if missing. Never write files at the project root.
+3. Load `references/prd-template.md` and write `PRD.md` following it exactly, in pt-BR.
+   - Functional requirements use the `RF-0X` identifier with a hyphen (e.g. `**RF-01:**`);
+     non-functional requirements use `RNF-0X` with a hyphen (e.g. `**RNF-01 (Performance):**`).
+   - Write the full PRD content in the response, then confirm the saved path.
+4. After saving, confirm the full output path in your message to the user
+   (e.g. `PRD gerado em docs/auth/reset-password/PRD.md`).
+5. Persist `NOTES.md` (see "Decision notes" — this is the post-approval trigger).
 
 ### Step 4 — Review & deliver
 
 - Give the user the `PRD.md` path and ask them to review it.
-- If they request changes: load `references/write-ops.md`, build a `patch` JSON with only the changed
-  fields, run both scripts, confirm version and what changed.
-- Repeat until approved.
-- Close with: `PRD pronto em docs/<...>/PRD.md. Próximo passo: invoque a skill sdd-plan para gerar o plano técnico.`
+- If they request changes, edit `PRD.md` and ask for a new review. Repeat until they agree.
+- Close with a short next-step suggestion, e.g.: `PRD pronto em docs/<...>/PRD.md. Próximo passo:
+  invoque a skill sdd-plan para gerar o plano técnico.`
 
 ## Decision notes (NOTES.md)
 
 `NOTES.md` is a durable decision record that survives context compaction and serves as history.
 It is **not** created at bootstrap — only when one of these triggers fires:
 
-- **Trigger A — context about to be compacted / conversation grown long:** load `references/write-ops.md`,
-  build a `notes-write.js` input JSON with the current interview state, and run the script. It creates
-  or merges NOTES.md safely — do not write it yourself.
-- **Trigger B — after PRD approval (Step 3):** handled by the scripts in Step 3. No action needed.
+- **Trigger A — context about to be compacted / conversation grown long:** if you receive any signal
+  that the context will be summarized/compacted, or the conversation is long, persist the current
+  decisions before continuing.
+- **Trigger B — after PRD approval (Step 3):** persist the final decision record.
+
+Rules:
+
+- **Never overwrite an existing `NOTES.md`.** If it already exists (e.g. created during a prior
+  compaction), it is precious — **merge and increment** it: add new decisions, refresh the
+  consolidated state, do not discard prior content.
+- Write it in pt-BR, in the feature folder `docs/[module-name]/[feature-name]/NOTES.md`.
+- Load `references/notes-template.md` for the structure when persisting.
 
 ## Gotchas
 
@@ -190,8 +203,5 @@ It is **not** created at bootstrap — only when one of these triggers fires:
 
 ## References
 
-- `references/write-ops.md` — schemas e comandos dos scripts. Carregar apenas nos Steps 3, 4 e Trigger A.
-- `references/prd-template.md` — template com tags usado por `prd-write.js`.
-- `references/notes-template.md` — template com tags usado por `notes-write.js`.
-- `scripts/prd-write.js` — renderiza/patcha PRD.md.
-- `scripts/notes-write.js` — cria/merge NOTES.md.
+- PRD structure → load `references/prd-template.md` when writing `PRD.md` (Step 3).
+- Notes structure → load `references/notes-template.md` when persisting `NOTES.md`.

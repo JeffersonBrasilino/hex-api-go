@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"os"
@@ -9,6 +10,7 @@ import (
 	"github.com/jeffersonbrasilino/ddgo"
 	"github.com/jeffersonbrasilino/hex-api-go/internal/user/domain"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type GormUserRepository struct {
@@ -84,6 +86,35 @@ func (r *GormUserRepository) Create(ctx context.Context, user *domain.User) erro
 	fmt.Println("[REPOSITORY RESULT]")
 
 	return tx.Commit().Error
+}
+
+// FindByUsernameOrDocument implements contract.LoginRepository.
+//
+// Intent: locate a user by either their username or their person's document, joining Users with
+// Person so both fields can be matched in a single query.
+// Parameters:
+//   - ctx: request context.
+//   - identifier: value compared against both the username and the document columns.
+//
+// Returns: the matching *domain.User, or a ddgo.NotFoundError if no user matches, or a
+// ddgo.InternalError if the query fails for any other reason.
+func (r *GormUserRepository) FindByUsernameOrDocument(ctx context.Context, identifier string) (*domain.User, error) {
+	entity, err := gorm.G[Users](r.db).
+		Joins(clause.Has("Person"), nil).
+		Where("username = ? OR document = ?", identifier, identifier).
+		First(ctx)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ddgo.NewNotFoundError(
+				fmt.Sprintf("User not found for identifier: %s", identifier),
+			)
+		}
+		return nil, ddgo.NewInternalError(
+			fmt.Sprintf("Error to find user by username or document: %s", err.Error()),
+		)
+	}
+
+	return toDomain(&entity), nil
 }
 
 func (r *GormUserRepository) ExistsByDocument(ctx context.Context, document string) (bool, error) {

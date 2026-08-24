@@ -48,30 +48,35 @@ Each module lives under `internal/[module-name]/` and follows this structure:
 internal/[module-name]/
 ├── domain/
 │   ├── contract/
-│   │   └── repository.go
-│   │   └── [contract-type].go
+│   │   └── repository.go              → references/domain-contract-pattern.md
+│   │   └── [contract-type].go         → references/domain-contract-pattern.md
 │   ├── event/
-│   │   └── [event_name].go
-│   ├── [entity].go
-│   └── builder.go
+│   │   └── [event_name].go            → references/domain-event-pattern.md
+│   ├── [entity].go                    → references/entity-pattern.md (entity/aggregate root, has identity)
+│   │                                     or references/value-object-pattern.md (immutable, no identity)
+│   └── builder.go                     → references/builder-pattern.md
 ├── application/
 │   ├── command/
 │   │   └── [actionname]/
-│   │       ├── command.go
-│   │       └── handler.go
+│   │       ├── command.go             → references/command-pattern.md
+│   │       └── handler.go             → references/command-handler-pattern.md
 │   └── query/
 │       └── [queryname]/
-│           ├── query.go
-│           └── handler.go
+│           ├── query.go               → (no dedicated reference yet — approximate with command-pattern.md)
+│           └── handler.go             → (no dedicated reference yet — approximate with command-handler-pattern.md)
 ├── infrastructure/
 │   ├── database/
-│   │   ├── gorm_model.go
-│   │   ├── gorm_[module]_repository.go
-│   │   └── mapper.go
+│   │   ├── gorm_model.go              → references/persistence-model-pattern.md
+│   │   ├── gorm_[module]_repository.go → references/repository-pattern.md
+│   │   └── mapper.go                  → references/mapper-pattern.md
 │   └── http/
-│       └── [action_name]_handler.go
-└── [module-name].go
+│       └── [action_name]_handler.go   → references/http-handler-pattern.md
+└── [module-name].go                   → references/module-registration-pattern.md
 ```
+
+Component types with no dedicated reference yet (queries, technology adapters such as
+`{technology}_adapter.go`) should use the closest listed reference as an approximation until a
+dedicated one is written.
 
 ### Request Flow
 
@@ -172,8 +177,8 @@ sequenceDiagram
 
 ## Errors Handling
 
-Always use the errors from the `ddgo` package. Don't create new error types.
-The mapping between these errors and HTTP status codes is handled automatically by the `pkg/http` package.
+Always use the errors from the `ddgo` package as the default. The mapping between these errors and
+HTTP status codes is handled automatically by the `pkg/http` package.
 
 | `ddgo` Error         | Objective                                                    | When to use                                                                                                                                      | HTTP Status               |
 | -------------------- | ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------- |
@@ -183,6 +188,22 @@ The mapping between these errors and HTTP status codes is handled automatically 
 | `AlreadyExistsError` | Indicate a conflict due to a resource already existing       | Use in application layers or repositories when trying to create an entity that violates a unique constraint (e.g. user email already registered) | 409 Conflict              |
 | `DependencyError`    | Indicate failures in external systems or downstream services | Use in infrastructure adapters when external APIs, message brokers, or third-party services fail to respond correctly                            | 502 Bad Gateway           |
 | `InternalError`      | Indicate unexpected systemic failures                        | Use when unexpected errors occur, like database connection loss, internal panics, or marshaling errors                                           | 500 Internal Server Error |
+
+### Fallback — custom domain errors
+
+`ddgo`'s taxonomy is fixed to the six types above. When a failure needs an HTTP status none of them
+cover (e.g. 401 Unauthorized for an invalid/expired session, 429 Too Many Requests for a lockout),
+define a custom error type as a **fallback**, only after confirming no `ddgo` type fits:
+
+- Declare it in the module's `domain/errors.go`, shaped like `ddgo`'s own errors: a struct + `Error()`
+  + a `New[X]Error(message string)` constructor.
+- Keep it in `domain`, not `application`/`infrastructure` — it represents a business-rule outcome
+  (an account lockout, a revoked session), the same reason `ddgo` errors are raised from
+  domain/application and only interpreted by infrastructure.
+- `pkg/http`'s automatic mapping only recognizes `ddgo` types, so the HTTP handler must check for the
+  custom type explicitly (type assertion or `errors.As`) and call `ErrorWithCode` with the matching
+  status **before** falling back to the generic `pkg/http.Error`.
+- Don't use this fallback to duplicate a status already covered by an existing `ddgo` type.
 
 ## Gotchas
 
@@ -196,7 +217,7 @@ The mapping between these errors and HTTP status codes is handled automatically 
 - Join table models do **not** embed `gorm.Model` — they use composite primary keys and explicit timestamp fields
 - When using many-to-many with GORM, you must call `db.SetupJoinTable()` **before** `AutoMigrate`
 - When using regex, prebuild the regex in a var (for performance)
-- for the errors always use `ddgo` error types.
+- for errors, prefer `ddgo` error types; only fall back to a custom domain error (see Errors Handling) when no `ddgo` type covers the HTTP status the failure needs.
 - Don`t violate the SOLID principles.
 - Don`t violate the Hexagonal Architecture principles.
 - Don`t violate the DDD principles.
@@ -205,29 +226,7 @@ The mapping between these errors and HTTP status codes is handled automatically 
 
 ## Layer Implementation Patterns
 
-Consult the following references for detailed boilerplates and implementation examples per component.
-Each reference includes the pattern description, a complete boilerplate, and a link to a real implementation in the codebase.
-
-### Domain Layer
-
-- Entity / Aggregate Root → see [reference](references/entity-pattern.md)
-- Aggregate Root Builder → see [reference](references/builder-pattern.md)
-- Value Objects → see [reference](references/value-object-pattern.md)
-- Domain Events → see [reference](references/domain-event-pattern.md)
-- Domain Contracts → see [reference](references/domain-contract-pattern.md)
-
-### Application Layer
-
-- Command DTO → see [reference](references/command-pattern.md)
-- Command Handler → see [reference](references/command-handler-pattern.md)
-
-### Infrastructure Layer
-
-- HTTP Handler → see [reference](references/http-handler-pattern.md)
-- Repository Implementation → see [reference](references/repository-pattern.md)
-- Persistence Models (GORM) → see [reference](references/persistence-model-pattern.md)
-- Domain-Database Mapper → see [reference](references/mapper-pattern.md)
-
-### Module Bootstrap
-
-- Module Registration → see [reference](references/module-registration-pattern.md)
+Detailed boilerplates and implementation examples per component are in `references/`. Each reference
+includes the pattern description, a complete boilerplate, and a link to a real implementation in the
+codebase. Use the annotated tree in **Module Architecture Overview** above to resolve which reference
+matches a given file path — that mapping is the single source of truth; do not duplicate it elsewhere.

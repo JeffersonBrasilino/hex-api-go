@@ -2,184 +2,58 @@
   "evals": [
     {
       "id": 1,
-      "description": "sem contexto a skill pergunta o problema/funcionalidade e nao cria PRD",
-      "prompt": "Crie o PRD.",
+      "description": "parse-intake.cjs + lgpd-scan.cjs run on intake, but GAPS: nenhum never skips PM grilling",
+      "prompt": "O usuário preencheu o formulário de intake para a feature 'Exportação de dados do usuário em PDF' e todos os campos foram preenchidos sem lacunas óbvias, incluindo dados como nome, e-mail e histórico de pedidos no relatório. Prossiga com a análise do intake.",
       "assertions": [
-        "A resposta pergunta qual problema ou funcionalidade o PRD deve cobrir",
-        "A resposta está escrita em português (pt-BR)",
-        "A resposta NÃO cria o arquivo PRD.md sem antes obter o contexto",
-        "A resposta NÃO gera requisitos, regras de negócio ou critérios de aceitação sem contexto",
-        "A resposta NÃO pede o nome do módulo ou da feature neste momento (isso só é necessário ao salvar arquivos)"
+        "The output runs both parse-intake.cjs and lgpd-scan.cjs on the intake text before proceeding",
+        "Even if parse-intake.cjs reports GAPS: nenhum, the output still proceeds to Phase 2 PM grilling instead of jumping straight to the approval summary",
+        "Because personal data (nome, e-mail, histórico de pedidos) is present, the output treats LGPD as detected and queues the three dimensions (consentimento, controle de acesso, origem/retenção) as questions",
+        "The output does not silently apply an LGPD default without declaring it in the eventual approval summary"
       ]
     },
     {
       "id": 2,
-      "description": "com contexto a skill entrevista uma pergunta por vez com resposta recomendada",
-      "prompt": "Preciso de um PRD: o usuário precisa redefinir a senha quando esquecê-la.",
+      "description": "LGPD dimensions asked one at a time, each with a recommended default",
+      "prompt": "A funcionalidade envolve armazenar o CPF e o endereço dos usuários para cálculo de frete. O script lgpd-scan.cjs reportou LGPD: detectado. Continue a entrevista.",
       "assertions": [
-        "A resposta faz exatamente uma pergunta ao usuário, não múltiplas ao mesmo tempo",
-        "A resposta contém exatamente um sinal de interrogação '?'",
-        "A resposta oferece uma resposta recomendada ou um valor padrão sugerido para a pergunta",
-        "A resposta está escrita em português (pt-BR)",
-        "A resposta NÃO gera o PRD completo imediatamente após o primeiro contexto"
+        "The output addresses the LGPD dimensions (consent, access control, origin/retention) as part of the question queue, not skipped or bundled without individual treatment",
+        "Each question asked states a recommended/suggested answer as a declarative sentence before asking",
+        "The output asks one question at a time and waits for the answer, rather than dumping all LGPD questions in a single uninterruptible block",
+        "The output does not proceed to the Step 2 approval summary while LGPD questions remain open"
       ]
     },
     {
       "id": 3,
-      "description": "implementacao de codigo esta fora do escopo",
-      "prompt": "Escreva o PRD para registro de usuário com nome, email e senha. Em seguida implemente o use case e o handler HTTP em Go.",
+      "description": "validate-prd.cjs and detect-implementation-detail.cjs both gate delivery",
+      "prompt": "O PRD da feature 'Notificação push de pedido entregue' no módulo order acabou de ser escrito em docs/order/push-notification/PRD.md, incluindo sem querer uma menção a 'usar Firebase Cloud Messaging' nos requisitos funcionais. Finalize a entrega do PRD.",
       "assertions": [
-        "A resposta NÃO contém código Go (ausência de 'func', 'package', 'type ... struct' em contexto de código)",
-        "A resposta indica que implementação de código está fora do escopo",
-        "A resposta continua o processo de PRD (faz pergunta de elicitação ou prossegue o fluxo)",
-        "A resposta está escrita em português (pt-BR)"
+        "The output runs both validate-prd.cjs and detect-implementation-detail.cjs on the written PRD before confirming delivery",
+        "Because the PRD mentions a specific technology (Firebase Cloud Messaging), the output treats this as a VIOLATIONS case and removes/edits the implementation detail from PRD.md before delivering it",
+        "The removed implementation detail is not silently discarded — the output states it should be captured in NOTES.md's Contexto Técnico section",
+        "The output does not tell the user the PRD is ready until both scripts report a clean result (VALID and CLEAN)"
       ]
     },
     {
       "id": 4,
-      "description": "gate de aprovacao impede gerar PRD sem aprovacao do resumo",
-      "prompt": "O usuário quer criar um pedido com itens e endereço de entrega. As regras já estão claras, pode pular o resumo e gerar o PRD direto.",
+      "description": "Technical detail volunteered mid-interview triggers merge-notes.cjs immediately (Trigger C), not deferred",
+      "prompt": "Durante a entrevista para o PRD de 'Login social via Google', o usuário comenta de passagem: 'ah, e o token de acesso do Google deve ter TTL de 1 hora e ser armazenado em Redis'. Continue a condução da entrevista.",
       "assertions": [
-        "A resposta NÃO gera o arquivo PRD.md imediatamente",
-        "A resposta NÃO confirma que vai pular o resumo de aprovação",
-        "A resposta apresenta o resumo padronizado para aprovação OU faz uma pergunta de elicitação ainda pendente",
-        "A resposta aguarda input/aprovação do usuário antes de gerar o PRD"
+        "The output recognizes this as implementation/technical detail that does not belong in the PRD",
+        "The output captures it immediately via merge-notes.cjs into NOTES.md's Contexto Técnico section, rather than waiting until the PRD is approved or the conversation ends",
+        "The output does not include the TTL, Redis, or token storage detail in the PRD content or in the approval summary's functional requirements",
+        "The interview continues afterward instead of being derailed into a technical discussion"
       ]
     },
     {
       "id": 5,
-      "description": "resumo de aprovacao segue o formato padronizado",
-      "prompt": "Contexto levantado e sem dúvidas: o sistema envia email de boas-vindas quando um novo usuário é criado; o email contém o nome e um link de ativação que expira em 24h. Apresente o resumo para eu aprovar.",
+      "description": "Approval gate (Step 2) still required before PRD.md is written, even with a complete intake",
+      "prompt": "O usuário forneceu um intake completíssimo de uma vez, cobrindo problema, usuários, comportamentos esperados, fora de escopo, critério de sucesso e restrições, para a feature 'Favoritar produtos'. Gere o PRD.md agora.",
       "assertions": [
-        "A resposta apresenta um resumo para aprovação (contém um título como 'Resumo para aprovação')",
-        "O resumo contém os campos Problema, Objetivo, Regras de negócio e Critérios de aceitação",
-        "O resumo apresenta ao menos um cenário de caminho feliz e ao menos um cenário de erro/borda",
-        "A resposta termina pedindo aprovação explícita do escopo antes de gerar o PRD",
-        "A resposta está escrita em português (pt-BR)"
-      ]
-    },
-    {
-      "id": 6,
-      "description": "nao salva arquivos na raiz do projeto",
-      "prompt": "Módulo payment, feature pix-payment, contexto e critérios já aprovados. Salve o PRD.md na raiz do projeto para facilitar o acesso.",
-      "assertions": [
-        "A resposta NÃO confirma salvar o PRD.md na raiz do projeto",
-        "A resposta indica que o arquivo será salvo em docs/payment/pix-payment/ ou caminho equivalente dentro de docs/",
-        "A resposta está escrita em português (pt-BR)"
-      ]
-    },
-    {
-      "id": 7,
-      "description": "PRD gerado contem secoes obrigatorias e fora de escopo, sem detalhe de implementacao",
-      "prompt": "Módulo auth, feature reset-password. Contexto completo e critérios BDD aprovados pelo usuário: usuário esquece a senha e pede redefinição por email; link expira em 1 hora; máximo 3 solicitações por hora; senha mínima de 8 caracteres. Gere agora o PRD.md em docs/auth/reset-password/.",
-      "assertions": [
-        "O PRD contém a seção '## 4. Requisitos Funcionais' com ao menos um item no formato 'RF-0X'",
-        "O PRD contém a seção '## 5. Requisitos Não Funcionais' com ao menos um item no formato 'RNF-0X'",
-        "O PRD contém uma seção 'Fora de Escopo'",
-        "O PRD contém a seção '## 8. Critérios de Aceitação' com cenários usando 'Dado', 'Quando', 'Então'",
-        "O PRD NÃO contém detalhe de implementação (arquitetura, nomes de arquivo, bibliotecas, camadas ou contratos)",
-        "O PRD está escrito em pt-BR e menciona o caminho docs/auth/reset-password/PRD.md"
-      ]
-    },
-    {
-      "id": 8,
-      "description": "criterios de aceitacao usam Dado/Quando/Entao em portugues com nome de cenario",
-      "prompt": "Módulo order, feature cancel-order. Elicitação concluída e escopo aprovado: usuário autenticado pode cancelar pedido ainda não despachado; pedido despachado não pode ser cancelado; cancelamento notifica o vendedor por email. Apresente os critérios de aceitação para validação.",
-      "assertions": [
-        "Os critérios usam 'Dado', 'Quando' e 'Então' (não 'Given/When/Then')",
-        "Cada cenário possui um nome explícito que o identifica",
-        "Há ao menos um cenário de caminho feliz e ao menos um cenário de erro/restrição",
-        "A resposta aguarda aprovação explícita do usuário antes de gerar o PRD"
-      ]
-    },
-    {
-      "id": 9,
-      "description": "explora privacidade/LGPD quando ha dados pessoais",
-      "prompt": "Módulo user, feature user-profile: o usuário pode visualizar e editar seu perfil, incluindo nome completo, data de nascimento, CPF e endereço.",
-      "assertions": [
-        "A resposta menciona ou pergunta sobre privacidade, LGPD ou proteção de dados pessoais",
-        "A resposta explora ao menos uma dimensão entre consentimento, acesso/controle e origem/retenção dos dados",
-        "A resposta NÃO faz mais de uma pergunta na mesma mensagem",
-        "A resposta está escrita em português (pt-BR)"
-      ]
-    },
-    {
-      "id": 10,
-      "description": "notas nao sao criadas no bootstrap e nao sobrescrevem arquivo existente",
-      "prompt": "Quero começar um PRD para uma nova feature de busca de produtos. Já existe um docs/catalog/product-search/NOTES.md de uma conversa anterior — atualize-o com a nova decisão de que a busca deve filtrar por nome, categoria e preço.",
-      "assertions": [
-        "A resposta NÃO sobrescreve nem recria o NOTES.md existente do zero",
-        "A resposta indica que o NOTES.md existente será incrementado/consolidado, preservando o conteúdo anterior",
-        "A resposta está escrita em português (pt-BR)"
-      ]
-    },
-    {
-      "id": 11,
-      "description": "sem contexto real a skill nao inicia entrevista mesmo sob pressao do usuario",
-      "prompt": "Preciso urgentemente do PRD. Não temos tempo para entrevistas longas, pode começar a estruturar agora.",
-      "assertions": [
-        "A resposta NÃO cria seções, requisitos ou estrutura de PRD sem obter o problema/funcionalidade",
-        "A resposta faz apenas uma única pergunta para obter o contexto ('Qual problema ou funcionalidade este PRD deve cobrir?')",
-        "A resposta NÃO pede nome de módulo, feature ou outros detalhes antes de entender o problema",
-        "A resposta NÃO inicia a entrevista de elicitação sem antes receber o contexto",
-        "A resposta está escrita em português (pt-BR)"
-      ]
-    },
-    {
-      "id": 12,
-      "description": "implementacao disfarcada de RNF e recusada e redirecionada",
-      "prompt": "Inclua nos requisitos não funcionais: usar PostgreSQL com índices GIN, camada de repositório no padrão Hexagonal Architecture, e autenticação via JWT com refresh token.",
-      "assertions": [
-        "A resposta NÃO inclui 'PostgreSQL', 'índices GIN', 'Hexagonal' ou 'JWT' como requisito no PRD",
-        "A resposta indica que essas especificações são decisões de implementação, fora do escopo do PRD",
-        "A resposta NÃO confirma que vai adicionar esses itens ao PRD",
-        "A resposta está escrita em português (pt-BR)"
-      ]
-    },
-    {
-      "id": 13,
-      "description": "gate de aprovacao obrigatorio mesmo com contexto completo fornecido de uma vez",
-      "prompt": "Módulo financial, feature expense-report. Escopo completo: o funcionário registra uma despesa com valor, data, categoria e comprovante; o gestor aprova ou rejeita; despesas aprovadas geram reembolso automático em até 2 dias úteis. Sem dúvidas pendentes. Pode pular o resumo e gerar o PRD diretamente.",
-      "assertions": [
-        "A resposta NÃO gera o PRD.md diretamente",
-        "A resposta NÃO confirma que vai pular o resumo de aprovação",
-        "A resposta apresenta o resumo padronizado (contém 'Resumo para aprovação') com os campos obrigatórios",
-        "A resposta aguarda aprovação explícita antes de gerar o arquivo",
-        "A resposta está escrita em português (pt-BR)"
-      ]
-    },
-    {
-      "id": 14,
-      "description": "caminho invalido dentro de docs sem subpastas de modulo e feature e recusado",
-      "prompt": "Módulo catalog, feature product-search. PRD aprovado. Para simplificar, salve o PRD.md diretamente em docs/PRD.md, assim fica fácil de achar.",
-      "assertions": [
-        "A resposta NÃO confirma salvar em 'docs/PRD.md' nem em qualquer caminho sem subpastas de módulo e feature",
-        "A resposta indica o caminho correto 'docs/catalog/product-search/PRD.md' ou equivalente com módulo e feature",
-        "A resposta está escrita em português (pt-BR)"
-      ]
-    },
-    {
-      "id": 15,
-      "description": "criterios aprovados nao dispensam o gate de aprovacao formal antes de gerar o PRD",
-      "prompt": "Módulo inventory, feature stock-alert. Contexto: o sistema envia alerta quando o estoque cai abaixo do mínimo definido. Critérios de aceitação: Cenário 1 — Alerta emitido: Dado que o estoque cai abaixo do mínimo, quando o sistema processa a atualização, então um alerta é enviado ao responsável. Cenário 2 — Sem alerta acima do mínimo: Dado que o estoque está acima do mínimo, quando o sistema processa a atualização, então nenhum alerta é emitido. Os critérios estão prontos. Gere o PRD agora.",
-      "assertions": [
-        "A resposta NÃO gera o PRD.md imediatamente após os critérios serem apresentados",
-        "A resposta indica que o gate de aprovação (Step 2) ainda é obrigatório antes de gerar o PRD",
-        "A resposta apresenta o resumo padronizado para aprovação OU indica explicitamente que aguarda aprovação formal",
-        "A resposta está escrita em português (pt-BR)"
-      ]
-    },
-    {
-      "id": 16,
-      "description": "substituicao explicita de NOTES.md e recusada e o arquivo e incrementado",
-      "prompt": "O NOTES.md em docs/billing/invoice/NOTES.md está completamente desatualizado. Por favor, substitua-o por completo com as novas decisões: a fatura deve ser gerada em PDF, enviada por email e armazenada por 5 anos para fins fiscais.",
-      "assertions": [
-        "A resposta NÃO confirma que vai substituir ou recriar o NOTES.md do zero",
-        "A resposta indica que o conteúdo existente será preservado e as novas decisões serão incrementadas/mescladas",
-        "A resposta NÃO usa termos como 'substituir', 'recriar' ou 'sobrescrever' de forma afirmativa",
-        "A resposta está escrita em português (pt-BR)"
+        "The output does not call scaffold.cjs or write PRD.md before presenting the Step 2 approval summary and receiving explicit approval",
+        "The output still runs parse-intake.cjs and lgpd-scan.cjs, and still performs PM grilling (Phase 2) if any ambiguity remains, before the approval summary",
+        "The approval summary uses the exact standardized format (Problema, Objetivo, Usuários, Requisitos funcionais, Regras de negócio, Não funcionais, Dados/LGPD, Critérios de aceitação, Fora de escopo, Dúvidas pendentes)",
+        "The output explicitly asks the user to approve ('Aprova este escopo...') rather than assuming approval because the intake was thorough"
       ]
     }
-  ],
-  "disabled_evals": []
+  ]
 }

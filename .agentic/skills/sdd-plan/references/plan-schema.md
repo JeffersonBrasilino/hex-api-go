@@ -5,6 +5,7 @@
 **Author:** [Dev/Agent Name]
 **Ticket/Reference:** [JIRA/GitHub Link or N/A]
 **Complexity:** `High` | `Medium` | `Low`
+**Type:** `feat` | `fix` | `refactor` | `perf` | `chore` | `docs` | `test` | `build` | `ci`
 
 ---
 
@@ -33,16 +34,32 @@
 > specific change within that file. Mark `[ ]` → `[/]` when started → `[x]` when dev-approved.
 > `depends_on` lists the semantic IDs of tasks that must complete first (`[]` when none); tasks with
 > an empty `depends_on` are immediate parallel candidates. `tier` is derived from `score`
-> (`low` ≤ 2.0, `medium` ≤ 3.5, `high` > 3.5); a `high` task carries a `risk_note`.
+> (`low` ≤ 2.0, `medium` ≤ 3.5, `high` > 3.5); a `high` task carries a `risk_note`. `wave` is never
+> decided by hand — it is computed and written by `compute-waves.cjs` from `depends_on` and
+> `parallel_group` (a task can never share a wave with a task it depends on, and never lands in an
+> earlier wave than its own layer's floor: domain/config=1, application=2, infrastructure/module=3).
+> Re-run `compute-waves.cjs` after any `depends_on`/`parallel_group` edit — it is idempotent.
+
+---
+
+### Wave Map
+
+> _(Generated and kept up to date by `compute-waves.cjs` — do not edit by hand. One row per wave:
+> which layers it groups, which earlier wave(s) it depends on, and which tasks it contains.)_
+
+| Wave | Camadas (parallel_group) | Depende de | Tasks |
+|------|---------------------------|------------|-------|
 
 ---
 
 - [ ] **TASK-[LAYER]-[CONCERN] — [Short description: file or concern name]**
   - **File:** `[relative/path/to/file.go]`
   - **Reason:** [Why this file needs to change, linked to the root cause.]
+  - **Requirement:** [RF-0X / RNF-0X / RN-0X id(s) from the PRD this task implements — the specific requirement(s), not just the general area]
   - **Dependencies:**
     - `depends_on:` `[TASK-ID, TASK-ID]` <!-- semantic IDs, or [] if none -->
     - `parallel_group:` `[domain | application | infrastructure | module | tests | config]`
+    - `wave:` `[N]` <!-- computed by compute-waves.cjs — leave any placeholder value, it will be overwritten -->
   - **Complexity:**
     | Dimension       | Score |
     |-----------------|-------|
@@ -64,9 +81,11 @@
 - [ ] **TASK-[LAYER]-[CONCERN] — [Short description: file or concern name]**
   - **File:** `[relative/path/to/file.go]`
   - **Reason:** [Why this file needs to change.]
+  - **Requirement:** [RF-0X / RNF-0X / RN-0X id(s) from the PRD this task implements — the specific requirement(s), not just the general area]
   - **Dependencies:**
     - `depends_on:` `[TASK-ID, TASK-ID]` <!-- semantic IDs, or [] if none -->
     - `parallel_group:` `[domain | application | infrastructure | module | tests | config]`
+    - `wave:` `[N]` <!-- computed by compute-waves.cjs -->
   - **Complexity:**
     | Dimension       | Score |
     |-----------------|-------|
@@ -101,6 +120,37 @@
 >   by the orchestrator. Run all assigned tasks, then produce the consolidated report.
 > - If a task fails the build or a test after implementation, fix it before advancing. If
 >   unresolvable, record the blocker in the execution block and stop only that task.
+>
+> **`Validation Status` lifecycle** *(each value is written by a specific agent/script — never
+> hand-edited)*:
+> - `pending` — default, before the implement-agent starts this task.
+> - `Implemented` — set by the implement-agent once build + scoped tests pass. This is the
+>   structural precondition `validate-execution.cjs` checks before verify-code runs its own
+>   checklist — it does not mean the task has been verified yet. The implement-agent also resets the
+>   status back to `Implemented` after fixing a task during a retry cycle.
+> - `Blocked: [reason]` — set by the implement-agent instead of `Implemented` when it hits a
+>   technical contradiction or impossibility it cannot resolve. Stops only this task; verify-code
+>   does not attempt to verify a `Blocked` task.
+> - `Verified` — set by **verify-code** once build, scoped tests, PLAN structural check
+>   (`validate-execution.cjs`), and architectural compliance all pass. **Not** the terminal state:
+>   PRD conformance for the task's requirement has not been gated yet. A `Verified` task still
+>   needs `verify-wave-prd` (run once per wave — see `.agentic/subagents/verify-wave-prd.md`) to
+>   reach `Done`.
+> - `Verification Failed` — set either by verify-code (build/test/plan/architecture checklist did
+>   not all pass) or by `verify-wave-prd` (the task's output does not satisfy the PRD requirement it
+>   was designed to fulfill — including a defect traced to a task from an **earlier, already-
+>   completed wave**, discovered only once a later wave wires it into observable behavior). This is
+>   a **transient** signal in both cases — it means "the orchestrator's retry cycle needs to re-run
+>   the implement-agent for this task", not a terminal state. The implement-agent overwrites it with
+>   `Implemented` once the fix lands.
+> - `Failed` — the **terminal**, permanent failure state. Set only by the orchestrator via
+>   `update-plan.cjs --mark-failed`, and only after the retry cycle exhausts its 3 attempts. Never
+>   set directly by verify-code or verify-wave-prd — that would conflate a single failed attempt
+>   with the give-up decision, which is the orchestrator's call (it owns `retry_counts`).
+> - `Done` — set by **verify-wave-prd** once its PRD conformance check passes for the task, or by
+>   the orchestrator directly when the whole wave has no checkable behavior (`wave_has_behavior:
+>   false` — the gate is `skipped`, every `Verified` task in that wave is auto-approved). Terminal
+>   state for the task.
 
 ---
 
@@ -109,7 +159,7 @@
   - *Files Modified:*
     - `[relative/path/to/file.go]`
   - *Validation Evidence:* [Test output / log / diff snippet goes here.]
-  - *Validation Status:* `✅ Validated` | `❌ Failed` | `⚠️ Blocked: [reason]`
+  - *Validation Status:* `pending` | `Implemented` | `Blocked: [reason]` | `Verification Failed` | `Failed` | `Done`
 
 ---
 
@@ -118,7 +168,7 @@
   - *Files Modified:*
     - `[relative/path/to/file.go]`
   - *Validation Evidence:* [Fill during execution.]
-  - *Validation Status:* `✅ Validated` | `❌ Failed` | `⚠️ Blocked: [reason]`
+  - *Validation Status:* `pending` | `Implemented` | `Blocked: [reason]` | `Verification Failed` | `Failed` | `Done`
 
 ---
 
@@ -128,7 +178,7 @@
 
 ## 4. Return — Summary & Handover
 
-> **Agent guidance:** fill this section only when every execution task is `✅ Validated` and marked
+> **Agent guidance:** fill this section only when every execution task is `Done` and marked
 > `[x]`. It is the official record of what was done, why, and what the dev should be aware of going
 > forward.
 

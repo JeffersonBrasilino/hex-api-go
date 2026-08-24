@@ -1,57 +1,39 @@
-# Relatório de Avaliação: `spec-prd-v2` — iteração 1
+# Relatório de Avaliação: `sdd-prd-script` — iteração 1
 
 ## Pontuação Geral
 
 | Configuração | Taxa de Aprovação Média |
 |---|---|
-| with_skill | 0.917 |
-| without_skill | 0.602 |
-| **delta** | **+0.315** |
+| with_skill | 1.000 |
+| without_skill | 0.700 |
+| **delta** | **+0.300** |
 | **value_tier** | **moderado** |
 
 ## Custo estimado
 
 | Configuração | Total (USD) | Média por avaliação (USD) | Modelo |
 |---|---|---|---|
-| with_skill | $0.080004 | $0.008000 | claude-sonnet-4-6 |
-| without_skill | $0.063108 | $0.006311 | claude-sonnet-4-6 |
-| **custo adicional da skill** | **$0.016896** | — | — |
-
-## Por Avaliação
-
-| Slug | with_skill | without_skill | delta |
-|---|---|---|---|
-| eval-sem-contexto-a-skill-pergunta-o-problema-funcionalidade | 1.000 | 0.800 | +0.200 |
-| eval-com-contexto-a-skill-entrevista-uma-pergunta-por-vez | 1.000 | 0.600 | +0.400 |
-| eval-implementacao-de-codigo-esta-fora-do-escopo | 1.000 | 0.750 | +0.250 |
-| eval-gate-de-aprovacao-impede-gerar-prd-sem-aprovacao | 1.000 | 1.000 | +0.000 |
-| eval-resumo-de-aprovacao-segue-o-formato-padronizado | 1.000 | 0.200 | +0.800 |
-| eval-nao-salva-arquivos-na-raiz-do-projeto | 1.000 | 0.667 | +0.333 |
-| eval-prd-gerado-contem-secoes-obrigatorias-e-fora-de-escopo | 0.667 | 0.333 | +0.334 |
-| eval-criterios-de-aceitacao-usam-dado-quando-entao | 0.750 | 0.500 | +0.250 |
-| eval-explora-privacidade-lgpd-quando-ha-dados-pessoais | 0.750 | 0.500 | +0.250 |
-| eval-notas-nao-sao-criadas-no-bootstrap-e-nao-sobrescrevem | 1.000 | 0.667 | +0.333 |
+| with_skill | $0.846390 | $0.169278 | claude-sonnet-5 |
+| without_skill | $0.624615 | $0.124923 | claude-sonnet-5 |
+| **custo adicional da skill** | **$0.221775** | — | — |
 
 ## Skill agrega valor claro (delta ≥ 0.40, ordem decrescente)
 
 | Slug | Delta | Motivo |
 |---|---|---|
-| eval-resumo-de-aprovacao-segue-o-formato-padronizado | +0.800 | Sem skill o modelo descreve o resumo em vez de apresentá-lo; com skill segue o formato padronizado exato |
-| eval-com-contexto-a-skill-entrevista-uma-pergunta-por-vez | +0.400 | Sem skill o modelo não oferece resposta recomendada e responde em inglês; com skill ambos são atendidos |
+| eval-parse-intake-cjs-lgpd-scan-cjs-run-on-intake-but-gaps-nenhum | 0.50 (1.0 vs 0.5) | Sem a skill, o modelo falhou em mencionar explicitamente a execução de parse-intake.cjs e não deixou claro que a Fase 2 (entrevista do PM) deve rodar mesmo quando GAPS: nenhum. |
+| eval-approval-gate-step-2-still-required-before-prd-md-is-written | 0.50 (1.0 vs 0.5) | Sem a skill, faltaram os passos explícitos de parse-intake.cjs/lgpd-scan.cjs/entrevista do PM e o formato padronizado exato do resumo de aprovação. |
 
 ## Baseline confirmado (ambos ≥ 0.95)
 
-- `eval-gate-de-aprovacao-impede-gerar-prd-sem-aprovacao` (1.000 / 1.000) — o comportamento de bloqueio do gate de aprovação é robusto independentemente da skill.
+- eval-lgpd-dimensions-asked-one-at-a-time-each-with-a-recommended (with_skill 1.0, without_skill 1.0)
 
 ## Lacunas da skill (with_skill < 1.0)
 
-| Slug | Asserção falha | Correção sugerida |
-|---|---|---|
-| eval-prd-gerado-contem-secoes-obrigatorias-e-fora-de-escopo | RNFs listados como texto plano, não no formato `RNF-0X` | Adicionar instrução explícita no SKILL.md exigindo identificadores `RNF-0X` na seção 5 do PRD |
-| eval-prd-gerado-contem-secoes-obrigatorias-e-fora-de-escopo | Caminho `docs/auth/reset-password/PRD.md` não aparece na resposta | Instruir o modelo a confirmar o caminho completo do arquivo na mensagem ao usuário (Step 3) |
-| eval-criterios-de-aceitacao-usam-dado-quando-entao | Critérios apresentados sem mencionar gate de aprovação obrigatório antes do PRD | Reforçar no Step 1 que o gate (Step 2) é obrigatório mesmo durante iteração de critérios |
-| eval-explora-privacidade-lgpd-quando-ha-dados-pessoais | Três dimensões LGPD descritas de uma vez em vez de uma pergunta por turno | Adicionar regra explícita: cada dimensão LGPD deve ser explorada em mensagens separadas, uma por vez |
+Nenhuma. A configuração with_skill obteve pontuação máxima (1.0) em todas as 5 avaliações, sem falhas registradas nas asserções.
+
+Observação: dois casos ficaram abaixo do limiar de valor claro (delta ≥ 0.40) por apresentarem delta de 0.25 — eval-validate-prd-cjs-and-detect-implementation-detail-cjs-both-g (1.0 vs 0.75, sem_skill falhou em capturar o detalhe de implementação removido na seção Contexto Técnico do NOTES.md) e eval-technical-detail-volunteered-mid-interview-triggers-merge-no (1.0 vs 0.75, sem_skill foi vago sobre capturar o detalhe imediatamente via merge-notes.cjs em vez de adiar). Ambos reforçam, ainda que abaixo do limiar formal, a disciplina adicional trazida pela skill.
 
 ## Recomendação
 
-A skill agrega valor moderado (+0.315) e precisa de iteração focada em 4 lacunas pontuais: formato `RNF-0X`, confirmação do caminho de saída, disciplina do gate durante iteração de critérios BDD, e sequenciamento das perguntas LGPD.
+Skill pronta: com with_skill atingindo pontuação perfeita (1.0) e um delta moderado (0.300) explicado por lacunas genuínas do baseline em ordenação de execução de scripts, rigor no tratamento de LGPD e disciplina de captura no NOTES.md, as falhas observadas em without_skill validam exatamente que o fluxo explícito e orientado por scripts da skill é o que previne essas omissões.

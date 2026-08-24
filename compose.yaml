@@ -12,7 +12,7 @@ services:
     ports:
       - "${APP_PORT}:${APP_PORT}"
       - "6060:6060"
-    mem_limit: 1g
+    mem_limit: 4g
     depends_on:
       - db
     networks:
@@ -26,6 +26,7 @@ services:
         BASE_IMAGE_BUILDER: golang
         GOARCH: arm64
         GOARM:
+    profiles: [ "app-monitoring" ]
     image: lazyteam/lazydocker
     container_name: lazydocker
     stdin_open: true
@@ -84,6 +85,7 @@ services:
   otel-collector:
     image: otel/opentelemetry-collector-contrib:0.144.0
     container_name: otel-collector
+    profiles: [ "app-monitoring" ]
     command:
       - --config=/etc/otelcol-contrib/config.yaml
     volumes:
@@ -161,6 +163,7 @@ services:
     image: grafana/pyroscope:latest
     hostname: pyroscope
     container_name: pyroscope
+    profiles: [ "app-monitoring" ]
     ports:
       - "4040:4040"
     networks:
@@ -182,6 +185,29 @@ services:
       - /var/lib/postgresql:/var/lib/postgresql
     ports:
       - "15432:5432"
+    networks:
+      - api
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes --requirepass 123456
+    networks:
+      - api
+
+  cacheadmin:
+    image: robinn/phpcacheadmin
+    ports:
+      - "8090:80"
+    environment:
+      - PCA_REDIS_0_HOST=redis
+      - PCA_REDIS_0_PORT=6379
+      - PCA_REDIS_0_PASSWORD=123456
+    depends_on:
+      - redis
     networks:
       - api
 

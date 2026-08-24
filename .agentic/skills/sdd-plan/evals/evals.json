@@ -2,119 +2,57 @@
   "evals": [
     {
       "id": 1,
-      "description": "Scope elicitation — produce scope summary from text feature description",
-      "prompt": "Preciso criar uma feature de autenticação via JWT para a API. Os usuários deverão fazer login com email e senha e receber um token JWT válido por 24 horas. Produza agora o resumo de escopo da Fase 1 para esta feature, com todos os elementos: Intenção, Invariantes/Restrições, Pré-condições e Pós-condições. Se houver lacunas, inclua perguntas de elicitação logo após o resumo.",
+      "description": "Complexity delegated to calculate-complexity.cjs — never hand-averaged",
+      "prompt": "Escopo aprovado para a feature 'Bloqueio de conta após tentativas falhas de login' no módulo user. A task TASK-DOM-LOCKOUT tem: scope=2, ambiguity=3, coupling=4, novelty=2, reversibility=1. Calcule a complexidade desta task e inclua no bloco da task.",
       "assertions": [
-        "The output presents a consolidated scope summary containing all four elements: Intent, Invariants or Constraints, Pre-conditions, and Post-conditions",
-        "The output explicitly asks the user for confirmation or approval (Gate 1) before proceeding to Phase 2 or creating any file",
-        "The output does NOT create, write, or propose the content of a PLAN.md file",
-        "The scope summary references JWT or token authentication in the Intent or Post-conditions section"
+        "The output invokes calculate-complexity.cjs (e.g. `node .agentic/skills/sdd-plan/scripts/calculate-complexity.cjs 2 3 4 2 1`) instead of computing the average by hand in prose",
+        "The output does not present a hand-derived score/tier value without having shown or referenced the script invocation first",
+        "The reported score is consistent with the average of 2,3,4,2,1 = 2.4, and the tier is 'medium' per the documented thresholds (low<=2.0, medium<=3.5, high>3.5)",
+        "Since the tier is not 'high', the output does not fabricate a risk_note for this task"
+      ]
+    },
+    {
+      "id": 2,
+      "description": "Wave computed by compute-waves.cjs — never assigned by hand",
+      "prompt": "Escopo aprovado para a feature 'Logout' no módulo user. Tasks: TASK-DOM-SESSION-REVOKE (depends_on: [], parallel_group: domain), TASK-APP-LOGOUT-HANDLER (depends_on: [TASK-DOM-SESSION-REVOKE], parallel_group: application), TASK-INFRA-LOGOUT-HTTP (depends_on: [TASK-APP-LOGOUT-HANDLER], parallel_group: infrastructure). Escreva o plano completo, incluindo o cômputo das waves.",
+      "assertions": [
+        "The output writes the task blocks with `wave:` left as a placeholder, then explicitly invokes compute-waves.cjs on the plan file rather than writing wave numbers in prose",
+        "The output does not claim, calculate, or narrate a specific wave number for any task before mentioning the compute-waves.cjs call",
+        "The Wave Map table (or its description) is attributed to compute-waves.cjs's output, not hand-built",
+        "The output does not present itself as having computed the exact wave numbers manually — it defers that to the script's mechanical rule (layer floor + max(depends_on wave) + 1)"
       ]
     },
     {
       "id": 3,
-      "description": "Plan schema compliance — semantic task IDs and one file per task",
-      "prompt": "O escopo foi aprovado para a feature 'Alterar senha do usuário' no módulo user. Pré-condição: usuário autenticado com token JWT válido. Pós-condição: senha atualizada no banco de dados, resposta HTTP 204. Invariante: sem novas bibliotecas externas, sem migrações de banco de dados. Gere agora o plano técnico completo seguindo estritamente o schema: (1) Seção 1 — Roadmap com tasks em formato TASK-[LAYER]-[CONCERN], cada uma com campo 'File:' e sub-tasks em '[ ]'; (2) Seção 3 — Execution Checklist espelhando cada task do Roadmap com campos Agent Notes, Files Modified e Validation Status.",
+      "description": "validate-plan.cjs run before presenting the plan for Gate 2 approval",
+      "prompt": "O plano técnico para a feature 'Redefinição de senha' no módulo user já foi escrito em docs/user/reset-password/PLAN.md, com todas as tasks, dependências e complexidades preenchidas. Prossiga para a aprovação do plano (Gate 2).",
       "assertions": [
-        "The plan uses semantic task IDs following the TASK-[LAYER]-[CONCERN] pattern (e.g., TASK-DOM-PASSWORD, TASK-APP-CHANGE-PASSWORD, TASK-INFRA-REPO)",
-        "Each task in the plan references exactly one file in the 'File:' field — no task spans multiple files",
-        "The plan includes an Execution section (Section 3) that mirrors every task defined in the Plan section",
-        "The plan uses markdown checkbox format [ ] for every task and sub-task entry"
+        "The output runs validate-plan.cjs on the plan file before presenting anything for approval",
+        "The output does not present the plan for Gate 2 approval without first confirming (or fixing) validation issues reported by the script",
+        "If the output describes fixing an issue, it corrects the underlying depends_on/parallel_group and re-runs compute-waves.cjs rather than hand-editing the wave: field directly",
+        "The output does not skip validation just because the plan 'looks complete' from the task blocks alone"
       ]
     },
     {
       "id": 4,
-      "description": "No code generation — skill must not produce Go source code",
-      "prompt": "Crie um plano técnico para adicionar um campo 'phone' na entidade User do módulo user da nossa API hexagonal em Go.",
+      "description": "Gate 2 handoff table sourced verbatim from generate-task-index.cjs",
+      "prompt": "O plano da feature 'Cancelamento de pedido' no módulo order foi validado com sucesso (validate-plan.cjs retornou válido). Apresente o plano para aprovação do usuário (Gate 2).",
       "assertions": [
-        "The output does NOT include Go source code (no 'func ', 'type struct', or ':= ' patterns inside code blocks)",
-        "The response addresses Phase 1 scope elicitation before jumping to create a plan or write any file",
-        "The response stays within the planning domain — describing what tasks need to be done, not how to implement them in code"
-      ]
-    },
-    {
-      "id": 8,
-      "description": "Phase gate enforcement — Phase 2 must not start without explicit user approval",
-      "prompt": "Feature: criar um domínio de notificações com suporte a notificações por email. O sistema deve enviar um email de boas-vindas quando um novo usuário é criado. Inicie o spec-plan.",
-      "assertions": [
-        "The response produces a Phase 1 scope summary and explicitly waits for user confirmation before advancing",
-        "The response does NOT jump directly to creating a PLAN.md or an Execution Roadmap without Gate 1 approval",
-        "The scope summary identifies at least one invariant or constraint relevant to the notification domain (e.g., integration with user creation, no external email library assumptions)",
-        "The response ends with a clear request for the user to confirm, approve, or continue"
-      ]
-    },
-    {
-      "id": 9,
-      "description": "Dependency analysis — tasks declare depends_on and parallel_group with semantic IDs",
-      "prompt": "O escopo foi aprovado para a feature 'Login com JWT' no módulo user. Pré-condição: usuário cadastrado com senha válida. Pós-condição: ao autenticar com email e senha, retorna HTTP 200 com um token JWT. Invariante: sem novas migrações de banco de dados. A feature envolve: um contrato de porta para gerar o token (TokenGenerator), um command e um handler de login na camada de aplicação, e um handler HTTP que expõe o endpoint. Gere agora o plano técnico completo, declarando explicitamente as dependências de cada task.",
-      "assertions": [
-        "Every task block declares a 'depends_on' field, listing semantic task IDs (e.g., [TASK-APP-LOGIN-COMMAND]) or an empty list [] when there are no dependencies",
-        "Every task block declares a 'parallel_group' field tagging the layer it touches (e.g., domain, application, infrastructure)",
-        "The task for the login handler declares a dependency (in depends_on) on the task that creates the token-generator contract and/or the login command it consumes",
-        "depends_on references use semantic task IDs (TASK-[LAYER]-[CONCERN]), not sequential numbers or line references",
-        "At least one task that creates a foundational artifact (e.g., the domain contract) has an empty depends_on, marking it as an immediate parallel candidate"
-      ]
-    },
-    {
-      "id": 10,
-      "description": "Complexity evaluation — tasks scored on five dimensions with derived tier",
-      "prompt": "O escopo foi aprovado para a feature 'Soft delete de pedido' no módulo order. Pré-condição: pedido existente. Pós-condição: ao cancelar via POST /orders/{id}/cancel, o status muda para CANCELLED e retorna HTTP 204. Invariante: sem migrações de banco de dados, sem novas bibliotecas. Gere agora o plano técnico completo, avaliando a complexidade de cada task.",
-      "assertions": [
-        "Every task block includes a complexity assessment scoring all five dimensions: scope, ambiguity, coupling, novelty, and reversibility",
-        "Every task declares a 'score' computed as the simple average of the five dimensions and a 'tier' value of low, medium, or high",
-        "The tier is consistent with the documented thresholds (low when score <= 2.0, medium when score <= 3.5, high when score > 3.5)",
-        "Any task tagged with tier 'high' includes a 'risk_note' describing its main risk; tasks not tagged high do not require one",
-        "The complexity scores use a 1-to-5 scale, not arbitrary values outside that range"
-      ]
-    }
-  ],
-  "disabled_evals": [
-    {
-      "id": 2,
-      "description": "Language compliance — full response in pt-BR when user prompt is in Portuguese",
-      "_reason_disabled": "Baseline confirmado — passa 4/4 em ambas as configs nas 3 iterações. Sem sinal diferencial.",
-      "prompt": "Quero criar um endpoint REST para listar todos os usuários com paginação (page e limit via query params). Execute a Fase 1 do spec-plan e me mostre o resumo de escopo.",
-      "assertions": [
-        "The entire response is written in Brazilian Portuguese (pt-BR), not English",
-        "The response includes a scope summary with at least Pre-conditions and Post-conditions sections",
-        "The scope summary mentions paginação, page, or limit as part of the post-conditions or constraints",
-        "The output does NOT generate or propose PLAN.md file content without first obtaining user approval"
+        "The output runs generate-task-index.cjs to produce the handoff table instead of hand-building a summary table from the task blocks",
+        "The presented table preserves task order, summaries, wave numbers, and wave layers/dependencies as reported by the script — it is reformatted as Markdown, not rewritten with different content",
+        "The output explicitly states what each wave covers (e.g. which layer) so approving the plan also means approving the wave grouping",
+        "The output does not advance past Gate 2 without an explicit affirmative from the user"
       ]
     },
     {
       "id": 5,
-      "description": "Multi-layer decomposition — plan tasks span at least two DDD layers",
-      "_reason_disabled": "Baseline confirmado — passa 4/4 em ambas as configs nas 3 iterações. Sem sinal diferencial.",
-      "prompt": "Escopo aprovado: adicionar soft delete na entidade Order do módulo order. O usuário cancela um pedido via POST /orders/{id}/cancel, o status muda para CANCELLED. Nenhuma migração de banco de dados é permitida. Gere o plano técnico completo.",
+      "description": "Gate 1 scope confirmation still required before any script runs or file is written",
+      "prompt": "Preciso de um plano técnico para adicionar um endpoint de exportação de relatórios em CSV no módulo report. Gere o plano completo agora, incluindo scaffold, cálculo de complexidade e waves.",
       "assertions": [
-        "The plan contains tasks from at least two distinct architectural layers (DOM, APP, INFRA, or MOD)",
-        "The plan includes at least one Domain layer task (TASK-DOM-*) related to the Order entity or the CANCELLED status",
-        "The plan includes at least one Infrastructure or Application layer task for the HTTP handler, repository, or command handler",
-        "The plan does NOT include any database migration task, respecting the no-migration invariant"
-      ]
-    },
-    {
-      "id": 6,
-      "description": "PRD file path — skill reads the file rather than inventing its content",
-      "_reason_disabled": "Baseline confirmado — passa 4/4 em ambas as configs nas 3 iterações. Sem sinal diferencial.",
-      "prompt": "Tenho um PRD localizado em docs/order/cancel-order/PRD.md. Como você iniciaria o processo de spec-plan para esta feature?",
-      "assertions": [
-        "The response mentions reading or loading the PRD file at the path docs/order/cancel-order/PRD.md",
-        "The response does NOT invent or fabricate PRD content (acceptance criteria, requirements) without having read the file",
-        "The response describes Phase 1 scope elicitation as the first step to be executed after reading the file",
-        "The response does NOT produce a complete PLAN.md content without first reading the PRD and validating the scope"
-      ]
-    },
-    {
-      "id": 7,
-      "description": "Constraint extraction — no redundant questions when all info is already in the prompt",
-      "_reason_disabled": "Baseline confirmado — passa 4/4 em ambas as configs nas 3 iterações. Sem sinal diferencial.",
-      "prompt": "Feature: endpoint GET /users/{id}/profile que retorna dados públicos do usuário. Pré-condição: o usuário deve existir no banco de dados. Pós-condição: retorna HTTP 200 com JSON contendo os campos name, email e avatar_url. Invariante: sem novas dependências externas e sem migrações de banco de dados. Produza o resumo de escopo da Fase 1.",
-      "assertions": [
-        "The scope summary correctly includes the pre-condition about user existence in the database",
-        "The scope summary correctly includes the post-condition about HTTP 200 with name, email, and avatar_url fields",
-        "The scope summary correctly includes the invariant about no new external dependencies and no database migrations",
-        "The output does NOT ask questions about information already explicitly provided in the prompt (pre-conditions, post-conditions, and invariants are all given)"
+        "The output performs Phase 1 scope elicitation (Intent, Invariants/Constraints, Pre-conditions, Post-conditions) and asks for explicit confirmation before running scaffold.cjs or writing any file",
+        "The output does NOT invoke scaffold.cjs, calculate-complexity.cjs, or compute-waves.cjs before Gate 1 is confirmed",
+        "The output does not fabricate scope details (invariants, pre/post-conditions) the user never provided without flagging them as assumptions or questions",
+        "The response stops and waits for user confirmation rather than proceeding straight through both gates and all scripts in one shot"
       ]
     }
   ]

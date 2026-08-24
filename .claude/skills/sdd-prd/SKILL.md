@@ -8,4 +8,4 @@ description: >
   resolve ambiguity, gets approval on a standardized summary, then writes PRD.md (no implementation
   detail). Asks for the problem/feature context first if it was not provided.
 ---
-Load the full skill by reading `.agentic/skills/sdd-prd/SKILL.md` before proceeding with any task. Its `references/` files (prd-template.md, notes-template.md) resolve relative to that directory.
+Load the full skill by reading `.agentic/skills/sdd-prd/SKILL.md` before proceeding with any task. Its `references/` files (prd-template.md, notes-template.md) and `scripts/` resolve relative to that directory.

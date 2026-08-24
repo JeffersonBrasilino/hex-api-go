@@ -1,69 +1,41 @@
-# Relatório de Avaliação: `spec-plan` — iteração 1
+# Relatório de Avaliação: `sdd-plan-script` — iteração 1
 
 ## Pontuação Geral
 
 | Configuração | Taxa de Aprovação Média |
 |---|---|
-| with_skill | 0.875 |
-| without_skill | 0.938 |
-| **delta** | **-0.063** |
-| **value_tier** | **negativo** |
+| with_skill | 0.950 |
+| without_skill | 0.650 |
+| **delta** | **+0.300** |
+| **value_tier** | **moderado** |
+
+(N=1, então não há comparação com iteração anterior — omitido)
 
 ## Custo estimado
 
 | Configuração | Total (USD) | Média por avaliação (USD) | Modelo |
 |---|---|---|---|
-| with_skill | $0.104796 | $0.013100 | claude-sonnet-4-6 |
-| without_skill | $0.115074 | $0.014384 | claude-sonnet-4-6 |
-| **custo adicional da skill** | **-$0.010278** | — | — |
-
-_Nota de precificação: token split estimated 75/25 — actual split unavailable. Runs em batch — timing compartilhado entre 8 evals._
-
-## Por Avaliação
-
-| Slug | with_skill | without_skill | delta |
-|---|---|---|---|
-| eval-scope-elicitation-produce-scope-summary-from-text-feat | 0.750 | 1.000 | -0.250 |
-| eval-language-compliance-full-response-in-pt-br-when-user-p | 1.000 | 1.000 | 0.000 |
-| eval-plan-schema-compliance-semantic-task-ids-and-one-file-p | 0.250 | 0.750 | -0.500 |
-| eval-no-code-generation-skill-must-not-produce-go-source-cod | 1.000 | 1.000 | 0.000 |
-| eval-multi-layer-decomposition-plan-tasks-span-at-least-two | 1.000 | 1.000 | 0.000 |
-| eval-prd-file-path-skill-reads-the-file-rather-than-inventin | 1.000 | 1.000 | 0.000 |
-| eval-constraint-extraction-no-redundant-questions-when-all-i | 1.000 | 1.000 | 0.000 |
-| eval-phase-gate-enforcement-phase-2-must-not-start-without-e | 1.000 | 0.750 | +0.250 |
+| with_skill | $0.157170 | $0.031434 | claude-sonnet-5 |
+| without_skill | $0.132240 | $0.026448 | claude-sonnet-5 |
+| **custo adicional da skill** | **$0.024930** | — | — |
 
 ## Skill agrega valor claro (delta ≥ 0.40, ordem decrescente)
 
-_Nenhuma avaliação com delta ≥ 0.40 nesta iteração._
+| Slug | Delta | Motivo |
+|---|---|---|
+| eval-wave-computed-by-compute-waves-cjs-never-assigned-by-hand | +0.50 | with_skill 0.75 vs without_skill 0.25 — a skill reduz drasticamente a tendência do agente de calcular waves manualmente em vez de delegar ao script |
+| eval-gate-2-handoff-table-sourced-verbatim-from-generate-task-ind | +0.50 | with_skill 1.0 vs without_skill 0.5 — a skill garante que a tabela de handoff do Gate 2 seja extraída literalmente do `generate-task-index`, em vez de reconstruída pelo agente |
 
 ## Baseline confirmado (ambos ≥ 0.95)
 
-Estas avaliações passam sem a skill — são guardas de regressão válidas:
-- `eval-language-compliance-full-response-in-pt-br-when-user-p`
-- `eval-no-code-generation-skill-must-not-produce-go-source-cod`
-- `eval-multi-layer-decomposition-plan-tasks-span-at-least-two`
-- `eval-prd-file-path-skill-reads-the-file-rather-than-inventin`
-- `eval-constraint-extraction-no-redundant-questions-when-all-i`
+- `eval-complexity-delegated-to-calculate-complexity-cjs-never-hand`
 
 ## Lacunas da skill (with_skill < 1.0)
 
 | Slug | Asserção falha | Correção sugerida |
 |---|---|---|
-| eval-scope-elicitation-produce-scope-summary-from-text-feat | "The output presents a consolidated scope summary containing all four elements" | Os evals de Fase 1 devem exigir que o agente **produza** o resumo em vez de descrever o que faria. Reformular o prompt para: "Produza o resumo de escopo da Fase 1 para esta feature." |
-| eval-plan-schema-compliance-semantic-task-ids-and-one-file-p | "Each task references exactly one File:" / "Execution section mirrors every task" / "checkbox format [ ]" | O agente with_skill raciocinou **sobre** a skill em vez de executá-la. O eval deve ser precedido de um contexto de escopo aprovado mais explícito ou o prompt deve instruir: "Gere o plano técnico completo agora." |
-
-## Diagnóstico: Por que o `value_tier` é "negativo"?
-
-Este resultado **não indica que a skill é prejudicial**. Ele revela um artefato do design dos evals:
-
-- O agente `with_skill` recebe o conteúdo da skill como conhecimento e tende a **descrever o que a skill faria** (comportamento meta) em vez de **agir como a skill** diretamente.
-- O agente `without_skill` não tem esse conflito e responde aos prompts de forma direta, produzindo outputs mais aderentes às asserções que verificam output concreto (plano formatado, resumo estruturado).
-- Evals que testam **conhecimento sobre o processo** (evals 4, 5, 6, 7, 8) — onde o agente descreve o que fazer — favorecem o without_skill pelo mesmo motivo.
-
-**Impacto real da skill:** A skill claramente guia comportamentos que o modelo base não garante:
-- Eval 8 (phase-gate): a skill fez o agente identificar a invariante de integração com `UserCreated`; o without_skill deixou invariantes como "não especificadas".
-- O padrão de task IDs semânticos (TASK-DOM-X), a regra de um arquivo por task, e o Gate 1 são comportamentos que o modelo base pode ou não seguir sem a skill.
+| eval-wave-computed-by-compute-waves-cjs-never-assigned-by-hand | A saída não deve se apresentar como tendo calculado manualmente os números de wave — isso deve ser inteiramente delegado à regra mecânica do script (piso da camada + max(wave dos depends_on) + 1). Na evidência, o agente narra as atribuições específicas de wave ("TASK-DOM-SESSION-REVOKE ... cai na wave 1" etc.) explicando a regra, o que dá a impressão de que o cálculo foi compreendido/verificado pelo próprio agente, e não puramente reportado a partir da saída do script. | Ajustar as instruções da skill para, após rodar `compute-waves.cjs`, o agente apenas reportar o resultado tabular do script (task → wave) sem reexplicar ou justificar a regra de cálculo em prosa; adicionar um exemplo explícito de formato de saída permitido ("apresente a tabela de waves gerada pelo script, sem comentar a lógica de atribuição") para reforçar que a narrativa de "por que" cada task caiu em determinada wave é proibida. |
 
 ## Recomendação
 
-A skill **precisa de iteração nos evals**: reformular os prompts de Fase 1 e Fase 2 para que exijam output direto e concreto (resumo formatado, plano com todos os campos) em vez de descrição do processo — isso eliminará o viés meta e medirá com precisão o valor diferencial da skill.
+Precisa de iteração — o delta geral é moderado e positivo, mas a lacuna recorrente de "explicar" o cálculo de waves em vez de apenas reportar a saída do script deve ser corrigida no texto da skill antes de considerá-la pronta.

@@ -1,0 +1,20 @@
+{
+  "git": {
+    "provider": "auto",
+    "base_branch": "main",
+    "auto_create_branch": true,
+    "branch_pattern": "{type}/{feature-slug}",
+    "default_type": "feat"
+  },
+  "archive_spec": {
+    "destination_type": "mcp",
+    "destination_name": "obsidian"
+  },
+  "prd": {
+    "provider": "none",
+    "board_url": "",
+    "project_key": "",
+    "issue_type": "",
+    "list_id": ""
+  }
+}

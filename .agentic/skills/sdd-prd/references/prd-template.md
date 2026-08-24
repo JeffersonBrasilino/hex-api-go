@@ -14,6 +14,7 @@ libraries, layers, or contracts).
 | **Última Atualização** | [YYYY-MM-DD]                   |
 | **Status**             | Draft / Em Revisão / Aprovado  |
 | **Versão**             | [Versão]                       |
+| **Tipo**               | feat / fix / refactor / perf / chore / docs / test / build / ci |
 
 ## 1. Visão Geral
 

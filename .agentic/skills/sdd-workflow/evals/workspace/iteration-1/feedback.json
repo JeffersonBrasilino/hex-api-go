@@ -1,6 +1,7 @@
 {
-  "eval-bootstrap-initialize-pipeline-when-state-md-does-not-ex": "",
-  "eval-phase-routing-prd-plan-advance-when-prd-md-is-detected": "",
-  "eval-wave-confirmation-gate-must-wait-for-user-approval-befo": "",
-  "eval-done-phase-show-completion-summary-with-artifact-paths": ""
+  "eval-bootstrap-detect-state-cjs-write-state-cjs-initialize-state": "",
+  "eval-plan-md-checkboxes-marked-via-update-plan-cjs-never-hand-edi": "",
+  "eval-retry-counter-updated-via-write-state-cjs-increment-retry-ne": "",
+  "eval-wave-computed-via-compute-wave-cjs-from-the-persisted-wave-f": "",
+  "eval-wave-confirmation-gate-still-enforced-before-spawning-subage": ""
 }

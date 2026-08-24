@@ -53,6 +53,15 @@ after the PRD is written. Write in pt-BR.
 
 - [ ] [Dúvida ainda aberta]
 
+## Contexto Técnico (informado pelo usuário, fora do PRD)
+
+[Tudo que o usuário mencionou e que não pertence ao PRD — tecnologias, padrões, protocolos,
+estruturas de cache, formatos de token, rotas, TTLs, nomes de campos técnicos etc. Este é o
+insumo bruto que a skill `sdd-plan` consome para decidir arquitetura. Nunca descarte: se o
+usuário citou, registre aqui mesmo que pareça óbvio ou redundante com o PRD.]
+
+- [Detalhe técnico 1]
+
 ## Registro de Decisões (append-only)
 
 - [YYYY-MM-DD] [Decisão tomada e por quê.]

@@ -2,46 +2,57 @@
   "evals": [
     {
       "id": 1,
-      "description": "Bootstrap — initialize pipeline when STATE.md does not exist",
-      "prompt": "O usuário invoca /sdd-workflow para a feature docs/payment/checkout. Não existe nenhum STATE.md nesse caminho. O que o orquestrador deve fazer e qual saída deve produzir?",
+      "description": "Bootstrap — detect-state.cjs + write-state.cjs initialize STATE.md, never hand-rolled",
+      "prompt": "O usuário invoca /sdd-workflow para a feature docs/payment/checkout. Não existe nenhum STATE.md nesse caminho, mas já existe um PRD.md salvo. O que o orquestrador deve fazer e qual saída deve produzir?",
       "assertions": [
-        "The output indicates that STATE.md will be created with phase: prd for the feature docs/payment/checkout",
-        "The output instructs the user to open a new session and execute /sdd-prd",
-        "The output does NOT advance to the plan, implement, verify, or done phases in this invocation",
+        "The output runs detect-state.cjs on docs/payment/checkout before drawing any conclusion about the phase",
+        "The output uses write-state.cjs to create and populate STATE.md with the fields the detection script reported, rather than hand-writing STATE.md content in prose",
+        "Because PRD.md exists but PLAN.md does not, the output advances to instructing the user to run /sdd-plan, not stopping at the prd phase",
         "The entire user-facing output is written in Brazilian Portuguese (pt-BR)"
       ]
     },
     {
       "id": 2,
-      "description": "Phase routing prd→plan — advance when PRD.md is detected on disk",
-      "prompt": "STATE.md existe para a feature docs/user/login com phase: prd e artifacts.prd vazio. O arquivo docs/user/login/PRD.md foi encontrado no disco. Execute o orquestrador SDD para esta feature.",
+      "description": "Wave computed via compute-wave.cjs from the persisted wave: field, never recomputed or incremented by hand",
+      "prompt": "STATE.md tem phase: implement, current_wave: 1. O PLAN.md da feature docs/user/login já tem o campo wave: computado em cada task. Determine a próxima wave executável.",
       "assertions": [
-        "The output explicitly mentions advancing to the PLAN phase (Avançando para fase: PLAN or equivalent)",
-        "The output instructs the user to run /sdd-plan docs/user/login/PRD.md in a new session",
-        "The output references the detected PRD.md path (docs/user/login/PRD.md)",
-        "The output does NOT generate or propose the content of a PLAN.md file"
+        "The output invokes compute-wave.cjs for the feature instead of manually inspecting depends_on/parallel_group to infer the next wave",
+        "The output does not increment current_wave by a counter — it treats the wave number as whatever compute-wave.cjs reports from the persisted wave: field",
+        "If compute-wave.cjs reports STATUS: deadlock, the output does not silently work around it by estimating an executable task itself",
+        "The output states the total number of waves (TOTAL_WAVES) alongside the current one, so the wave's position is never ambiguous"
       ]
     },
     {
       "id": 3,
-      "description": "Wave confirmation gate — must wait for user approval before spawning implement subagents",
-      "prompt": "STATE.md tem phase: implement, current_wave: 1. pending_tasks: [TASK-DOM-TOKEN, TASK-APP-LOGIN-COMMAND]. completed_tasks: []. TASK-DOM-TOKEN tem depends_on: [] e parallel_group: domain. TASK-APP-LOGIN-COMMAND tem depends_on: [] e parallel_group: application. O orquestrador identificou as tasks executáveis desta wave. Como deve proceder?",
+      "description": "Retry counter updated via write-state.cjs --increment-retry, never by hand-editing STATE.md",
+      "prompt": "Uma task (TASK-APP-LOGIN-HANDLER) falhou na verificação pela primeira vez nesta wave. retry_counts para essa task está ausente em STATE.md (ou seja, 0 tentativas até agora). Aplique a lógica de retry.",
       "assertions": [
-        "The output presents the executable tasks grouped by parallel_group before spawning any subagent",
-        "The output explicitly requests user confirmation (e.g., asks for 'sim') before spawning any implementation subagent",
-        "The output does NOT spawn or claim to have already spawned any subagent without the user's explicit 'sim' confirmation",
-        "The output uses a wave header format (e.g., --- Wave 1 --- or Grupo 1) to display the task plan"
+        "The output increments the retry counter by invoking write-state.cjs --increment-retry TASK-APP-LOGIN-HANDLER, not by describing a manual edit to STATE.md's YAML",
+        "Because the count is below 3, the output re-spawns the implement-agent with the failure details as dev_feedback, then re-spawns the verify-agent, rather than reverting the file",
+        "The output does not revert the file (git checkout) or mark the task as permanently failed at this retry count",
+        "The output waits for both the implement-agent and verify-agent retries to complete before considering the next failed task"
       ]
     },
     {
       "id": 4,
-      "description": "Done phase — show completion summary with artifact paths in pt-BR",
-      "prompt": "STATE.md tem phase: done. artifacts: prd: docs/user/login/PRD.md, plan: docs/user/login/PLAN.md. Todas as tasks foram implementadas e verificadas. Invoque o /sdd-workflow.",
+      "description": "PLAN.md checkboxes marked via update-plan.cjs, never hand-edited",
+      "prompt": "Wave 1 da feature docs/order/cancel terminou: TASK-DOM-ORDER-STATUS e TASK-APP-CANCEL-COMMAND obtiveram verdict PASS em modo normal (não yolo). Atualize o PLAN.md e o STATE.md para refletir isso.",
       "assertions": [
-        "The output shows a pipeline completion message for the feature docs/user/login",
-        "The output lists both artifact paths: docs/user/login/PRD.md and docs/user/login/PLAN.md",
-        "The entire user-facing output is written in Brazilian Portuguese (pt-BR)",
-        "The output does NOT attempt to advance to any new phase, spawn any subagent, or start any new work"
+        "The output marks both tasks as done by invoking update-plan.cjs --mark-done with the passed task IDs, not by describing a direct text edit to PLAN.md's checkboxes",
+        "The output does not use --mark-yolo since the run is not in yolo mode",
+        "The output updates STATE.md's completed_tasks/pending_tasks via write-state.cjs rather than narrating a manual YAML edit",
+        "After updating, the output re-runs compute-wave.cjs to refresh the wave cache instead of assuming the next wave is current_wave + 1 by arithmetic"
+      ]
+    },
+    {
+      "id": 5,
+      "description": "Wave confirmation gate still enforced before spawning subagents, even with scripts computing the wave",
+      "prompt": "compute-wave.cjs reportou STATUS: ok, WAVE: 2, TOTAL_WAVES: 3, com duas tasks executáveis em parallel_group diferentes para a feature docs/user/login. yolo não foi solicitado. Como o orquestrador deve proceder?",
+      "assertions": [
+        "The output presents the executable tasks grouped by parallel_group, stating the wave's position (Wave 2 de 3), before spawning any subagent",
+        "The output explicitly requests user confirmation before spawning any implement-agent or verify-agent",
+        "The output does not spawn or claim to have already spawned any subagent without the user's explicit confirmation",
+        "The output does not skip the confirmation just because the wave was computed by a script rather than by hand"
       ]
     }
   ]

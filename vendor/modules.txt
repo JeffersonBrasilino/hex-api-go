@@ -1,5 +1,17 @@
-# github.com/andybalholm/brotli v1.2.0
-## explicit; go 1.22
+# github.com/DATA-DOG/go-sqlmock v1.5.2
+## explicit; go 1.15
+github.com/DATA-DOG/go-sqlmock
+# github.com/alicebob/miniredis/v2 v2.38.0
+## explicit; go 1.17
+github.com/alicebob/miniredis/v2
+github.com/alicebob/miniredis/v2/fpconv
+github.com/alicebob/miniredis/v2/geohash
+github.com/alicebob/miniredis/v2/gopher-json
+github.com/alicebob/miniredis/v2/hyperloglog
+github.com/alicebob/miniredis/v2/metro
+github.com/alicebob/miniredis/v2/proto
+github.com/alicebob/miniredis/v2/server
+github.com/alicebob/miniredis/v2/size
 # github.com/bytedance/gopkg v0.1.4
 ## explicit; go 1.18
 github.com/bytedance/gopkg/lang/dirtmake
@@ -51,8 +63,6 @@ github.com/cenkalti/backoff/v5
 # github.com/cespare/xxhash/v2 v2.3.0
 ## explicit; go 1.11
 github.com/cespare/xxhash/v2
-# github.com/clipperhouse/uax29/v2 v2.7.0
-## explicit; go 1.18
 # github.com/cloudwego/base64x v0.1.6
 ## explicit; go 1.17
 github.com/cloudwego/base64x
@@ -123,8 +133,6 @@ github.com/goccy/go-yaml/parser
 github.com/goccy/go-yaml/printer
 github.com/goccy/go-yaml/scanner
 github.com/goccy/go-yaml/token
-# github.com/gofiber/fiber/v2 v2.52.12
-## explicit; go 1.20
 # github.com/golang-jwt/jwt/v5 v5.3.1
 ## explicit; go 1.21
 github.com/golang-jwt/jwt/v5
@@ -218,13 +226,9 @@ github.com/klauspost/cpuid/v2
 ## explicit; go 1.18
 github.com/leodido/go-urn
 github.com/leodido/go-urn/scim/schema
-# github.com/mattn/go-colorable v0.1.14
-## explicit; go 1.18
 # github.com/mattn/go-isatty v0.0.20
 ## explicit; go 1.15
 github.com/mattn/go-isatty
-# github.com/mattn/go-runewidth v0.0.21
-## explicit; go 1.20
 # github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd
 ## explicit
 github.com/modern-go/concurrent
@@ -267,7 +271,7 @@ github.com/quic-go/quic-go/qlog
 github.com/quic-go/quic-go/qlogwriter
 github.com/quic-go/quic-go/qlogwriter/jsontext
 github.com/quic-go/quic-go/quicvarint
-# github.com/redis/go-redis/v9 v9.20.0
+# github.com/redis/go-redis/v9 v9.22.0
 ## explicit; go 1.24
 github.com/redis/go-redis/v9
 github.com/redis/go-redis/v9/auth
@@ -357,10 +361,12 @@ github.com/twitchyliquid64/golang-asm/unsafeheader
 # github.com/ugorji/go/codec v1.3.1
 ## explicit; go 1.21
 github.com/ugorji/go/codec
-# github.com/valyala/bytebufferpool v1.0.0
-## explicit
-# github.com/valyala/fasthttp v1.69.0
-## explicit; go 1.24.0
+# github.com/yuin/gopher-lua v1.1.1
+## explicit; go 1.17
+github.com/yuin/gopher-lua
+github.com/yuin/gopher-lua/ast
+github.com/yuin/gopher-lua/parse
+github.com/yuin/gopher-lua/pm
 # go.mongodb.org/mongo-driver/v2 v2.5.0
 ## explicit; go 1.19
 go.mongodb.org/mongo-driver/v2/bson
@@ -435,6 +441,8 @@ go.uber.org/atomic
 golang.org/x/arch/x86/x86asm
 # golang.org/x/crypto v0.50.0
 ## explicit; go 1.25.0
+golang.org/x/crypto/bcrypt
+golang.org/x/crypto/blowfish
 golang.org/x/crypto/chacha20
 golang.org/x/crypto/chacha20poly1305
 golang.org/x/crypto/hkdf

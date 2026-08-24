@@ -7,10 +7,13 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 
 	"github.com/gin-gonic/gin"
 	"github.com/grafana/pyroscope-go"
+	"github.com/redis/go-redis/v9"
+
 	gomes "github.com/jeffersonbrasilino/gomes"
 	"github.com/jeffersonbrasilino/hex-api-go/internal/user"
 	"github.com/jeffersonbrasilino/hex-api-go/pkg"
@@ -30,12 +33,14 @@ func main() {
 	defer stop()
 
 	dbConn := connectToDatabase()
+	redisClient := connectToRedis()
+	jwtSecret := os.Getenv("JWT_SECRET")
 	//tp := initOtelTraceProvider()
 	//initPyroscope()
 
 	//bootstrap modules
 	modules := []pkg.Module{
-		user.NewUserModule(httpServer, dbConn),
+		user.NewUserModule(httpServer, dbConn, redisClient, jwtSecret),
 	}
 
 	for _, module := range modules {
@@ -84,6 +89,24 @@ func connectToDatabase() *gorm.DB {
 	}
 
 	return dbConn
+}
+
+func connectToRedis() *redis.Client {
+	port, err := strconv.Atoi(os.Getenv("REDIS_PORT"))
+	if err != nil {
+		panic(fmt.Errorf("invalid REDIS_PORT: %w", err))
+	}
+	
+	db, err := strconv.Atoi(os.Getenv("REDIS_DB"))
+	if err != nil {
+		panic(fmt.Errorf("invalid REDIS_DB: %w", err))
+	}
+	
+	return redis.NewClient(&redis.Options{
+		Addr:     fmt.Sprintf("%s:%d", os.Getenv("REDIS_HOST"), port),
+		Password: os.Getenv("REDIS_PASSWORD"),
+		DB:       db,
+	})
 }
 
 func initOtelTraceProvider() *trace.TracerProvider {

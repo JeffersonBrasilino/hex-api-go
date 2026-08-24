@@ -1,0 +1,59 @@
+{
+  "evals": [
+    {
+      "id": 1,
+      "description": "Complexity delegated to calculate-complexity.cjs — never hand-averaged",
+      "prompt": "Escopo aprovado para a feature 'Bloqueio de conta após tentativas falhas de login' no módulo user. A task TASK-DOM-LOCKOUT tem: scope=2, ambiguity=3, coupling=4, novelty=2, reversibility=1. Calcule a complexidade desta task e inclua no bloco da task.",
+      "assertions": [
+        "The output invokes calculate-complexity.cjs (e.g. `node .agentic/skills/sdd-plan/scripts/calculate-complexity.cjs 2 3 4 2 1`) instead of computing the average by hand in prose",
+        "The output does not present a hand-derived score/tier value without having shown or referenced the script invocation first",
+        "The reported score is consistent with the average of 2,3,4,2,1 = 2.4, and the tier is 'medium' per the documented thresholds (low<=2.0, medium<=3.5, high>3.5)",
+        "Since the tier is not 'high', the output does not fabricate a risk_note for this task"
+      ]
+    },
+    {
+      "id": 2,
+      "description": "Wave computed by compute-waves.cjs — never assigned by hand",
+      "prompt": "Escopo aprovado para a feature 'Logout' no módulo user. Tasks: TASK-DOM-SESSION-REVOKE (depends_on: [], parallel_group: domain), TASK-APP-LOGOUT-HANDLER (depends_on: [TASK-DOM-SESSION-REVOKE], parallel_group: application), TASK-INFRA-LOGOUT-HTTP (depends_on: [TASK-APP-LOGOUT-HANDLER], parallel_group: infrastructure). Escreva o plano completo, incluindo o cômputo das waves.",
+      "assertions": [
+        "The output writes the task blocks with `wave:` left as a placeholder, then explicitly invokes compute-waves.cjs on the plan file rather than writing wave numbers in prose",
+        "The output does not claim, calculate, or narrate a specific wave number for any task before mentioning the compute-waves.cjs call",
+        "The Wave Map table (or its description) is attributed to compute-waves.cjs's output, not hand-built",
+        "The output does not present itself as having computed the exact wave numbers manually — it defers that to the script's mechanical rule (layer floor + max(depends_on wave) + 1)"
+      ]
+    },
+    {
+      "id": 3,
+      "description": "validate-plan.cjs run before presenting the plan for Gate 2 approval",
+      "prompt": "O plano técnico para a feature 'Redefinição de senha' no módulo user já foi escrito em docs/user/reset-password/PLAN.md, com todas as tasks, dependências e complexidades preenchidas. Prossiga para a aprovação do plano (Gate 2).",
+      "assertions": [
+        "The output runs validate-plan.cjs on the plan file before presenting anything for approval",
+        "The output does not present the plan for Gate 2 approval without first confirming (or fixing) validation issues reported by the script",
+        "If the output describes fixing an issue, it corrects the underlying depends_on/parallel_group and re-runs compute-waves.cjs rather than hand-editing the wave: field directly",
+        "The output does not skip validation just because the plan 'looks complete' from the task blocks alone"
+      ]
+    },
+    {
+      "id": 4,
+      "description": "Gate 2 handoff table sourced verbatim from generate-task-index.cjs",
+      "prompt": "O plano da feature 'Cancelamento de pedido' no módulo order foi validado com sucesso (validate-plan.cjs retornou válido). Apresente o plano para aprovação do usuário (Gate 2).",
+      "assertions": [
+        "The output runs generate-task-index.cjs to produce the handoff table instead of hand-building a summary table from the task blocks",
+        "The presented table preserves task order, summaries, wave numbers, and wave layers/dependencies as reported by the script — it is reformatted as Markdown, not rewritten with different content",
+        "The output explicitly states what each wave covers (e.g. which layer) so approving the plan also means approving the wave grouping",
+        "The output does not advance past Gate 2 without an explicit affirmative from the user"
+      ]
+    },
+    {
+      "id": 5,
+      "description": "Gate 1 scope confirmation still required before any script runs or file is written",
+      "prompt": "Preciso de um plano técnico para adicionar um endpoint de exportação de relatórios em CSV no módulo report. Gere o plano completo agora, incluindo scaffold, cálculo de complexidade e waves.",
+      "assertions": [
+        "The output performs Phase 1 scope elicitation (Intent, Invariants/Constraints, Pre-conditions, Post-conditions) and asks for explicit confirmation before running scaffold.cjs or writing any file",
+        "The output does NOT invoke scaffold.cjs, calculate-complexity.cjs, or compute-waves.cjs before Gate 1 is confirmed",
+        "The output does not fabricate scope details (invariants, pre/post-conditions) the user never provided without flagging them as assumptions or questions",
+        "The response stops and waits for user confirmation rather than proceeding straight through both gates and all scripts in one shot"
+      ]
+    }
+  ]
+}

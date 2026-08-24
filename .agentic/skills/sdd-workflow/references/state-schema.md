@@ -16,7 +16,7 @@ artifacts:
   plan:  ""                       # filled when PLAN.md is detected
 
 implement:
-  current_wave: 1
+  current_wave: 1                 # CACHE ONLY — see "current_wave is a cache" below
   completed_tasks: []             # IDs confirmed by dev after each wave
   pending_tasks:   []             # IDs extracted from PLAN.md at the plan→implement transition
   current_wave_groups: []         # parallel_groups being executed in the current wave (for resume)
@@ -24,6 +24,15 @@ implement:
 verify:
   retry_counts: {}                # map task_id → attempt count (max 3)
   failed_tasks: []                # objects: {id, reason} — tasks that exhausted retries
+  prd_gate:                       # status of the once-per-wave verify-wave-prd gate
+    wave: null                    # which wave this status refers to
+    status: pending                # pending | passed | failed | skipped
+
+pr:
+  status: not_started             # not_started | blocked_missing_tool |
+                                   # blocked_protected_branch | created | failed
+  url: ""                         # filled once the PR/MR is created
+  branch: ""                      # filled once prepare-pr.cjs decides/creates the branch
 ```
 
 ## Rules
@@ -38,23 +47,57 @@ verify:
   correction cycle. Never reset after increment.
 - `failed_tasks` is populated when a task reaches 3 failed verify attempts. Each entry is an
   object `{id: "TASK-ID", reason: "..."}`. Tasks in this list are never re-executed.
+- `prd_gate` tracks the once-per-wave `verify-wave-prd` gate: `status` moves
+  `pending` → `passed`/`failed`/`skipped` as the wave's gate resolves. A task only reaches
+  `completed_tasks` after both its own `verify-code`
+  checklist **and** this gate pass (or the gate is `skipped` because the wave has no checkable
+  behavior). If the gate finds a defect traced to an **already-completed, earlier-wave** task, that
+  task is moved back out of `completed_tasks` into `pending_tasks` (`--remove-completed` /
+  `--add-pending`) for a correction cycle — this is the one case where a task leaves
+  `completed_tasks` after entering it.
 - Never overwrite the entire STATE.md; update only the changed fields.
+- `pr` is bookkeeping for the `done`-phase PR/MR gate (`prepare-pr.cjs` / `pr-writer`), not derived
+  from disk. `status` only reaches `created` once a PR/MR actually exists — `blocked_missing_tool`
+  and `blocked_protected_branch` are resumable stops, not failures, and a re-run of
+  `/sdd-workflow` re-enters this gate automatically while `status` is anything but `created`.
+  `archive-spec` is only spawned after `status` reaches `created`.
+
+## `current_wave` is a cache, not the source of truth
+
+Wave numbers are decided once, at plan time, by `sdd-plan`'s `compute-waves.cjs`, and written
+into each task's `**Wave:**` field in `PLAN.md` — never in `STATE.md`. `implement.current_wave` here
+is only a display cache of the last value `compute-wave.cjs` reported; `sdd-workflow` never
+increments it by arithmetic (`N+1`) and never trusts it as authoritative. Every real decision —
+"what is the next wave", "is this task in this wave" — is recomputed fresh from `PLAN.md`'s `wave:`
+fields and `implement.completed_tasks` each time `compute-wave.cjs` runs. If this field and the
+plan's actual `wave:` fields ever disagree (e.g. after a manual edit), the plan wins.
 
 ## Wave group logic
 
-Within a single wave, tasks are split by `parallel_group`. Each group runs as an independent
-subagent. Groups within the same wave touch different files, so there is no conflict risk.
+A wave is a strict boundary: nothing in wave N+1 starts before every task in wave N is in
+`completed_tasks`. Within a single wave, tasks are additionally split by `parallel_group` — each
+group runs as an independent subagent, and groups within the same wave run sequentially (their tasks
+run in parallel within the group). A wave commonly contains more than one `parallel_group` when
+several layers all depend on nothing later than the previous wave — that is expected, not a bug. What
+must never happen is a task from a genuinely later wave executing early.
 
-Example — Wave 1 of a login feature:
+Example — a login feature's wave map (as computed by `compute-waves.cjs`, domain/config floor=1,
+application floor=2, infrastructure/module floor=3):
 
 ```
-Wave 1
-  group "domain"      → 7 tasks (all contract files)       → subagent A
-  group "application" → 5 tasks (command DTOs only)        → subagent B
+Wave 1 — camadas: domain, config     → 7 domain contract tasks + 2 config tasks   → 2 subagents (groups), sequential
+Wave 2 — camadas: application        → 5 command DTO tasks (depends_on: [], but application floor=2)
+Wave 3 — camadas: application, infrastructure, tests → handlers + adapters + their unit tests,
+                                        since they all depend only on waves 1-2
 ```
 
-Both subagents are spawned sequentially and their results are collected before presenting
-to the dev for approval.
+Domain contracts (wave 1) and application command DTOs (wave 2) are never bundled into the same wave
+even though the DTOs have `depends_on: []` — the application layer's floor keeps them a wave apart.
+This is the property that makes `implement-wave=1` execute only the domain/config layer, never the
+application layer alongside it.
+
+All subagents within a wave's groups are spawned sequentially per group (parallel within the group)
+and their results are collected before presenting to the dev for approval.
 
 ## Filled example (verify phase, 1 failed task after 3 retries)
 
@@ -98,11 +141,11 @@ artifacts:
   plan:  docs/user/login/PLAN.md
 
 implement:
-  current_wave: 2
+  current_wave: 2                 # cache — the plan's wave: fields are the source of truth
   current_wave_groups:
     - application
-    - infrastructure
   completed_tasks:
+    # Wave 1 (floor: domain=1) — fully done, so wave 2 is now executable.
     - TASK-DOM-LOGIN-DATASOURCE
     - TASK-DOM-LOGIN-SESSION-REPO
     - TASK-DOM-REFRESH-SESSION-REPO
@@ -110,12 +153,14 @@ implement:
     - TASK-DOM-REVOKE-SESSION-REPO
     - TASK-DOM-TOKEN-SERVICE
     - TASK-DOM-RATE-LIMITER
+  pending_tasks:
+    # Wave 2 (floor: application=2) — in progress, group "application" above.
     - TASK-APP-LOGIN-COMMAND
     - TASK-APP-REFRESH-COMMAND
     - TASK-APP-LOGOUT-COMMAND
     - TASK-APP-REVOKEONE-COMMAND
     - TASK-APP-REVOKEALL-COMMAND
-  pending_tasks:
+    # Wave 3+ (depends_on wave-2 commands, or floor: infrastructure=3) — not yet executable.
     - TASK-APP-LOGIN-HANDLER
     - TASK-APP-REFRESH-HANDLER
     - TASK-APP-LOGOUT-HANDLER

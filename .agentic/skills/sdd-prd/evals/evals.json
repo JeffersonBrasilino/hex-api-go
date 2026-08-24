@@ -1,0 +1,59 @@
+{
+  "evals": [
+    {
+      "id": 1,
+      "description": "parse-intake.cjs + lgpd-scan.cjs run on intake, but GAPS: nenhum never skips PM grilling",
+      "prompt": "O usuário preencheu o formulário de intake para a feature 'Exportação de dados do usuário em PDF' e todos os campos foram preenchidos sem lacunas óbvias, incluindo dados como nome, e-mail e histórico de pedidos no relatório. Prossiga com a análise do intake.",
+      "assertions": [
+        "The output runs both parse-intake.cjs and lgpd-scan.cjs on the intake text before proceeding",
+        "Even if parse-intake.cjs reports GAPS: nenhum, the output still proceeds to Phase 2 PM grilling instead of jumping straight to the approval summary",
+        "Because personal data (nome, e-mail, histórico de pedidos) is present, the output treats LGPD as detected and queues the three dimensions (consentimento, controle de acesso, origem/retenção) as questions",
+        "The output does not silently apply an LGPD default without declaring it in the eventual approval summary"
+      ]
+    },
+    {
+      "id": 2,
+      "description": "LGPD dimensions asked one at a time, each with a recommended default",
+      "prompt": "A funcionalidade envolve armazenar o CPF e o endereço dos usuários para cálculo de frete. O script lgpd-scan.cjs reportou LGPD: detectado. Continue a entrevista.",
+      "assertions": [
+        "The output addresses the LGPD dimensions (consent, access control, origin/retention) as part of the question queue, not skipped or bundled without individual treatment",
+        "Each question asked states a recommended/suggested answer as a declarative sentence before asking",
+        "The output asks one question at a time and waits for the answer, rather than dumping all LGPD questions in a single uninterruptible block",
+        "The output does not proceed to the Step 2 approval summary while LGPD questions remain open"
+      ]
+    },
+    {
+      "id": 3,
+      "description": "validate-prd.cjs and detect-implementation-detail.cjs both gate delivery",
+      "prompt": "O PRD da feature 'Notificação push de pedido entregue' no módulo order acabou de ser escrito em docs/order/push-notification/PRD.md, incluindo sem querer uma menção a 'usar Firebase Cloud Messaging' nos requisitos funcionais. Finalize a entrega do PRD.",
+      "assertions": [
+        "The output runs both validate-prd.cjs and detect-implementation-detail.cjs on the written PRD before confirming delivery",
+        "Because the PRD mentions a specific technology (Firebase Cloud Messaging), the output treats this as a VIOLATIONS case and removes/edits the implementation detail from PRD.md before delivering it",
+        "The removed implementation detail is not silently discarded — the output states it should be captured in NOTES.md's Contexto Técnico section",
+        "The output does not tell the user the PRD is ready until both scripts report a clean result (VALID and CLEAN)"
+      ]
+    },
+    {
+      "id": 4,
+      "description": "Technical detail volunteered mid-interview triggers merge-notes.cjs immediately (Trigger C), not deferred",
+      "prompt": "Durante a entrevista para o PRD de 'Login social via Google', o usuário comenta de passagem: 'ah, e o token de acesso do Google deve ter TTL de 1 hora e ser armazenado em Redis'. Continue a condução da entrevista.",
+      "assertions": [
+        "The output recognizes this as implementation/technical detail that does not belong in the PRD",
+        "The output captures it immediately via merge-notes.cjs into NOTES.md's Contexto Técnico section, rather than waiting until the PRD is approved or the conversation ends",
+        "The output does not include the TTL, Redis, or token storage detail in the PRD content or in the approval summary's functional requirements",
+        "The interview continues afterward instead of being derailed into a technical discussion"
+      ]
+    },
+    {
+      "id": 5,
+      "description": "Approval gate (Step 2) still required before PRD.md is written, even with a complete intake",
+      "prompt": "O usuário forneceu um intake completíssimo de uma vez, cobrindo problema, usuários, comportamentos esperados, fora de escopo, critério de sucesso e restrições, para a feature 'Favoritar produtos'. Gere o PRD.md agora.",
+      "assertions": [
+        "The output does not call scaffold.cjs or write PRD.md before presenting the Step 2 approval summary and receiving explicit approval",
+        "The output still runs parse-intake.cjs and lgpd-scan.cjs, and still performs PM grilling (Phase 2) if any ambiguity remains, before the approval summary",
+        "The approval summary uses the exact standardized format (Problema, Objetivo, Usuários, Requisitos funcionais, Regras de negócio, Não funcionais, Dados/LGPD, Critérios de aceitação, Fora de escopo, Dúvidas pendentes)",
+        "The output explicitly asks the user to approve ('Aprova este escopo...') rather than assuming approval because the intake was thorough"
+      ]
+    }
+  ]
+}

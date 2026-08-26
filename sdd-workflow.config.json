@@ -7,14 +7,14 @@
     "default_type": "feat"
   },
   "archive_spec": {
-    "destination_type": "mcp",
-    "destination_name": "obsidian"
+    "destination_type": "none",
+    "destination_name": ""
   },
   "prd": {
-    "provider": "none",
-    "board_url": "",
+    "provider": "github",
+    "board_url": "https://github.com/users/JeffersonBrasilino/projects/3",
     "project_key": "",
-    "issue_type": "",
-    "list_id": ""
+    "list_id": "",
+    "repo": "https://github.com/JeffersonBrasilino/hex-api-go"
   }
 }

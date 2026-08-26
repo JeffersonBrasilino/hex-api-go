@@ -6,7 +6,7 @@ product-focused: describe **behavior and intent**, never implementation (no arch
 libraries, layers, or contracts).
 
 ```markdown
-# [Título da Funcionalidade] — Documento de Requisitos do Produto (PRD)
+# [Título da Funcionalidade]
 
 | Campo                  | Valor                          |
 |------------------------|--------------------------------|

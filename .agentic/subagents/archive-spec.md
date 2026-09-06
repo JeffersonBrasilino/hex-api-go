@@ -35,25 +35,25 @@ remote copy is confirmed written.
 
 ## Destination
 
-Destination type: {destination_type}   <!-- "mcp" | "skill" | "none" -->
-Destination name: {destination_name}   <!-- e.g. "obsidian" -->
+Read `sdd-workflow.config.json` from the repo root (if present) for its `archive_spec` section's
+`destination_type` (`"mcp"` | `"skill"` | `"none"`) and `destination_name`. Default to
+`destination_type: "mcp"`, `destination_name: "obsidian"` if the file, the section, or either field
+is missing.
 
-- If `{destination_type}` is `mcp`: look for MCP tools whose name contains `{destination_name}`
+- If `destination_type` is `mcp`: look for MCP tools whose name contains `destination_name`
   (e.g. `mcp__{destination_name}__*`) in your available tools — use whichever of those lets you
   create/write a note given a title and Markdown content.
-- If `{destination_type}` is `skill`: look for a skill named `{destination_name}` in your available
+- If `destination_type` is `skill`: look for a skill named `destination_name` in your available
   skills and invoke it to perform the write — it may implement its own rules or a custom send
   mechanism instead of calling an MCP tool directly. Follow whatever inputs that skill expects for
   title/content per note.
-- If `{destination_type}` is `none`: do not attempt any destination. Stop and report
+- If `destination_type` is `none`: do not attempt any destination. Stop and report
   `STATUS: no-destination-available` immediately, without touching any local file.
 
-The destination is intentionally not hardcoded — it comes from `sdd-workflow.config.json`'s
-`archive_spec` section, resolved by the orchestrator before spawning this agent. If the resolved
-`{destination_type}`/`{destination_name}` names an MCP tool or skill that is not actually available
-in this session, do not fall back to guessing another mechanism or silently skipping. Stop and
-report `STATUS: no-destination-available` (see Final report) so the orchestrator can inform the
-user; do not delete any local file in that case.
+If the resolved `destination_type`/`destination_name` names an MCP tool or skill that is not
+actually available in this session, do not fall back to guessing another mechanism or silently
+skipping. Stop and report `STATUS: no-destination-available` (see Final report) so the orchestrator
+can inform the user; do not delete any local file in that case.
 
 ## Files to archive
 
@@ -107,8 +107,6 @@ Report exactly one of:
 | `{prd_path}` | `STATE.md.artifacts.prd` |
 | `{plan_path}` | `STATE.md.artifacts.plan` |
 | `{notes_path}` | `STATE.md.artifacts.notes` — omit the line entirely if empty |
-| `{destination_type}` | `sdd-workflow.config.json`'s `archive_spec.destination_type` — default `mcp` if the file or section is absent |
-| `{destination_name}` | `sdd-workflow.config.json`'s `archive_spec.destination_name` — default `obsidian` if the file or section is absent |
 
 ## What the orchestrator does with the report
 

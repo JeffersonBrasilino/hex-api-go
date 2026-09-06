@@ -6,6 +6,9 @@ pprof/
 anotations.md
 .DS_Store
 
+# sdd-workflow - configuração local por projeto, nunca versionada
+.agentic/skills/sdd-workflow/assets/sdd-workflow.config.json
+
 # Eval skill - artefatos gerados por rodada
 .agentic/skills/*/evals/workspace/**/with_skill/
 .agentic/skills/*/evals/workspace/**/without_skill/

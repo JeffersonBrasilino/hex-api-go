@@ -101,7 +101,7 @@ Mode: reasoning only, no writes to disk.
   1. Resolve `{provider}`: infer it from the reference itself when it's a full URL (e.g. an
      `atlassian.net` host → `jira`, a `github.com/.../issues/...` URL → `github`, a `trello.com`
      board/card URL → `trello`). If the reference is a bare ID/key instead (e.g. `PROJ-123`) with
-     no host to infer from, read `sdd-workflow.config.json`'s `prd` section (repo root) for
+     no host to infer from, read `.agentic/skills/sdd-workflow/assets/sdd-workflow.config.json`'s `prd` section for
      `provider`/`board_url`/`project_key` — the same config `sdd-prd` used to create the
      card in the first place — and use those to resolve the provider and, if needed, compose the
      full lookup (e.g. `board_url` + the bare key). Defaults when the file/section/field is absent:

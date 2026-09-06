@@ -35,10 +35,10 @@ remote copy is confirmed written.
 
 ## Destination
 
-Read `sdd-workflow.config.json` from the repo root (if present) for its `archive_spec` section's
-`destination_type` (`"mcp"` | `"skill"` | `"none"`) and `destination_name`. Default to
-`destination_type: "mcp"`, `destination_name: "obsidian"` if the file, the section, or either field
-is missing.
+Read `.agentic/skills/sdd-workflow/assets/sdd-workflow.config.json` (if present) for its `archive_spec` section's
+`destination_type` (`"mcp"` | `"skill"` | `"path"` | `"none"`) and `destination_name`. Default to
+`destination_type: "none"`, `destination_name: ""` if the file, the section, or either field is
+missing.
 
 - If `destination_type` is `mcp`: look for MCP tools whose name contains `destination_name`
   (e.g. `mcp__{destination_name}__*`) in your available tools — use whichever of those lets you
@@ -47,13 +47,18 @@ is missing.
   skills and invoke it to perform the write — it may implement its own rules or a custom send
   mechanism instead of calling an MCP tool directly. Follow whatever inputs that skill expects for
   title/content per note.
+- If `destination_type` is `path`: `destination_name` is a local filesystem folder (absolute or
+  relative to the repo root), outside `docs/` — e.g. a personal notes directory that isn't part of
+  the codebase. No MCP tool or skill is involved; you write files directly. Create the folder (and
+  any missing parent directories) if it doesn't exist yet.
 - If `destination_type` is `none`: do not attempt any destination. Stop and report
   `STATUS: no-destination-available` immediately, without touching any local file.
 
 If the resolved `destination_type`/`destination_name` names an MCP tool or skill that is not
 actually available in this session, do not fall back to guessing another mechanism or silently
 skipping. Stop and report `STATUS: no-destination-available` (see Final report) so the orchestrator
-can inform the user; do not delete any local file in that case.
+can inform the user; do not delete any local file in that case. This does not apply to `path` — a
+missing folder is created, never treated as unavailable.
 
 ## Files to archive
 
@@ -63,7 +68,7 @@ Feature: {feature_path}
 - PLAN:  {plan_path}
 - NOTES: {notes_path}   <!-- omit if NOTES.md does not exist for this feature -->
 
-## Steps
+## Steps — `destination_type` is `mcp` or `skill`
 
 1. Read each file above in full.
 2. Create one note per file in the destination vault, using the file's own content verbatim (do
@@ -84,17 +89,41 @@ If any note fails to write (tool error, timeout, auth failure), stop before dele
 local — a partial archive with deleted local files is a data-loss bug, not an acceptable partial
 success. Report which files were and weren't archived.
 
+## Steps — `destination_type` is `path`
+
+No vault, no linking format, no external tool — this is a plain filesystem move to
+`destination_name`, outside the repo's version control.
+
+1. Strip the leading `docs/` segment from `{feature_path}` to get `{feature_rel_path}` (e.g.
+   `docs/user/login` → `user/login`) — `destination_name` is itself the new docs root, so keeping
+   `docs/` would nest it redundantly (`{destination_name}/docs/...`). Create
+   `{destination_name}/{feature_rel_path}` (mkdir -p style) if it doesn't already exist, so the
+   feature's module/feature folder structure is preserved at the destination and multiple features
+   never collide.
+2. Copy each file above into `{destination_name}/{feature_rel_path}` under its original filename
+   (`PRD.md`, `PLAN.md`, `NOTES.md`).
+3. Confirm each copy landed at the destination (file exists, non-empty, same byte size as the
+   source) before touching the source.
+4. Only after every copy in step 2 is confirmed: delete the local files listed above
+   (`{prd_path}`, `{plan_path}`, and `{notes_path}` if present) from the repo working tree.
+5. Leave every other file under `{feature_path}` untouched — in particular, do not delete or modify
+   `STATE.md` yourself; the orchestrator handles it.
+
+If any copy fails (permission error, disk full, path unwritable), stop before deleting **anything**
+local — same data-loss rule as the vault case. Report which files were and weren't archived.
+
 ## Final report
 
 Report exactly one of:
 
 - `STATUS: archived` — every artifact was written to the destination and the corresponding local
-  files were deleted. List the destination note titles created.
+  files were deleted. List the destination note titles created (`mcp`/`skill`) or the destination
+  file paths (`path`).
 - `STATUS: partial-failure` — some artifacts were written, others failed. List which succeeded
   (and were deleted) and which failed (and were left in place, untouched). Include the raw error
   for each failure.
-- `STATUS: no-destination-available` — no Obsidian (or other archiver) MCP tool was found. No files
-  were touched.
+- `STATUS: no-destination-available` — no Obsidian (or other archiver) MCP tool/skill was found, or
+  `destination_type` was `none`. No files were touched. (Not applicable to `path` — see above.)
 ```
 
 ---

@@ -220,7 +220,8 @@ After explicit approval:
    - If `INVALID` or `VIOLATIONS`: fix the reported issues before proceeding.
    - If `VALID` and `CLEAN`: continue.
 
-5. **Resolve the destination** — read the `prd` section of `sdd-workflow.config.json` (repo root).
+5. **Resolve the destination** — read the `prd` section of
+   `.agentic/skills/sdd-workflow/assets/sdd-workflow.config.json`.
    Defaults when the file, the section, or a field is absent: `provider: "none"`, `board_url: ""`,
    `project_key: ""`, `list_id: ""`, `repo: ""`.
 
@@ -318,7 +319,8 @@ the Write tool, consolidating current state. Never discard prior content.
 
 - PRD structure → `references/prd-template.md` (loaded by `scaffold.cjs` automatically).
 - Notes structure → `references/notes-template.md` (loaded by `scaffold.cjs` automatically).
-- Destination config → `sdd-workflow.config.json`'s `prd` section (repo root), read in Step 3.5.
+- Destination config → `.agentic/skills/sdd-workflow/assets/sdd-workflow.config.json`'s `prd`
+  section, read in Step 3.5.
   Defaults when absent: `provider: "none"`, `board_url: ""`, `project_key: ""`, `list_id: ""`,
   `repo: ""`. `project_key` is Jira-specific (e.g. project key); `list_id` is Trello-specific (e.g.
   target list on the board); both are opaque passthrough, unused by other providers. `repo` is

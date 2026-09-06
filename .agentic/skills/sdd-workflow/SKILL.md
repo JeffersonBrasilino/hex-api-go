@@ -5,7 +5,7 @@ description: >
   prd -> plan -> implement -> verify -> done, keeping each interactive phase isolated in its own
   session. Use when: starting a new feature from scratch, checking pipeline status, or advancing to
   the next phase. Triggers: "/sdd-workflow", "next phase", "advance pipeline", "sdd status".
-allowed-tools: [Bash, Read, Write]
+allowed-tools: [Bash, Read, Write, AskUserQuestion]
 ---
 
 # SDD Workflow
@@ -27,6 +27,7 @@ load just the one file that matches the detected phase, never the others.
 |--------|-------------|-----------------|-----------------|
 | `detect-state.cjs` | Step 1 — detecção de fase a partir dos artefatos em disco | `PHASE` + artefatos + tasks | — |
 | `write-state.cjs` | gravar/atualizar STATE.md (todas as fases) | Campos atualizados vs. preservados | Fase/campo inválido |
+| `write-config.cjs` | Step 2 — gravar `assets/sdd-workflow.config.json` a partir da entrevista | `STATUS: written` + path | Valor de enum inválido |
 | `compute-wave.cjs` | fase `implement` — computar a próxima wave executável | `WAVE`/`TOTAL_WAVES` (do campo `wave:` persistido) + tabela de tasks | Deadlock detectado |
 | `update-plan.cjs` | fase `implement` — marcar checkboxes e Status do PLAN.md | Tasks marcadas / já corretas | TASK-ID não encontrado / Status inválido |
 
@@ -55,6 +56,10 @@ silenciosamente.
   wave boundaries yourself.
 - **Language: pt-BR** for all messages to the user. *(strict)*
 - **Never write code.** Implementation belongs to the subagent. *(strict)*
+- **Local config lives in `assets/`, never at the repo root.** All pipeline settings (git/archive/
+  PRD destinations) come from `.agentic/skills/sdd-workflow/assets/sdd-workflow.config.json` —
+  gitignored, project-specific, created once via Step 2's interview. Never re-ask for it once it
+  exists unless the user explicitly requests reconfiguration. *(strict)*
 
 ## Step 0 — Detect feature
 
@@ -103,8 +108,14 @@ Omit any flag whose value the detection script reported as `(none)` or that wasn
 This call only touches the fields named by the flags passed — `retry_counts`, `failed_tasks`, and
 `current_wave_groups` survive untouched automatically.
 
-Then go directly to **Step 3 — Phase routing** using this freshly detected `phase` — do not stop
-here even if this required fast-forwarding through multiple phases in one invocation.
+Then go directly to **Step 2 — Ensure local config exists** — do not stop here even if this
+required fast-forwarding through multiple phases in one invocation.
+
+## Step 2 — Ensure local config exists
+
+Load [references/setup-config.md](references/setup-config.md) and follow it. It checks whether
+`assets/sdd-workflow.config.json` already exists (skip silently if so and the user isn't asking to
+reconfigure), otherwise runs a short interview and writes it. Then continue to Step 3.
 
 ## Step 3 — Phase routing
 

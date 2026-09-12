@@ -54,8 +54,8 @@ flowchart LR
 
 | Skill | Responsabilidade | Quando usar |
 |-------|-----------------|-------------|
-| `/sdd-workflow` | Orquestrador do pipeline; lê `STATE.md` e direciona a próxima ação | Sempre que avançar ou retomar o pipeline |
-| `/sdd-prd` | Conduz entrevista com o usuário e gera `PRD.md` | Fase `prd` |
+| `/sdd-workflow` | Orquestrador do pipeline; lê `STATE.md` e direciona a próxima ação; na primeira execução também garante que a config local exista (ver "Configuração" abaixo) | Sempre que avançar ou retomar o pipeline |
+| `/sdd-prd` | Conduz entrevista com o usuário e gera o PRD — local (`PRD.md`) ou como card em uma plataforma externa (Jira/GitHub/Trello), conforme a seção `prd` da config | Fase `prd` |
 | `/sdd-plan` | Lê `PRD.md` e gera `PLAN.md` com tasks, waves e dependências | Fase `plan` |
 
 ### Subagents (autônomos — spawned pelo orquestrador)
@@ -69,7 +69,7 @@ implement-agents e M verify-code agents em paralelo, um por task.
 | verify-code | `.agentic/subagents/verify-code.md` | Verifica uma task contra build, testes, PLAN.md e arquitetura (não PRD) | 1x por task |
 | verify-wave-prd | `.agentic/subagents/verify-wave-prd.md` | Verifica conformidade com o PRD.md do conjunto de tasks já `Verified` da wave | 1x por wave |
 | pr-writer | `.agentic/subagents/pr-writer.md` | Escreve título/descrição do PR/MR e o abre via `gh`/`glab` — branch/commit/push já foram feitos deterministicamente por `prepare-pr.cjs` antes deste spawn | 1x por feature (fase `done`) |
-| archive-spec | `.agentic/subagents/archive-spec.md` | Move `PRD.md`/`PLAN.md`/`NOTES.md` para um destino externo (ex: Obsidian) e remove os locais | 1x por feature (fase `done`, após o PR gate) |
+| archive-spec | `.agentic/subagents/archive-spec.md` | Move `PRD.md`/`PLAN.md`/`NOTES.md` para um destino externo (MCP, skill ou pasta local) e remove os locais | 1x por feature (fase `done`, após o PR gate) |
 
 `verify-code` é o antigo `verify-agent`, renomeado — a checagem de PRD saiu do checklist por task
 e virou um gate único por wave (`verify-wave-prd`), rodado depois que toda a wave termina o
@@ -82,21 +82,31 @@ do PRD e vereditos de baixo sinal.
 
 ```
 docs/{module}/{feature}/
-├── PRD.md        ← requisitos de produto (gerado por /sdd-prd)
+├── PRD.md        ← requisitos de produto local (gerado por /sdd-prd), ausente se o PRD foi publicado como card
+├── PRD.cache.md  ← cache local de um PRD cujo origem é um card (gerado por /sdd-plan), regenerável
 ├── PLAN.md       ← plano técnico com tasks, waves e grupos (gerado por /sdd-plan)
 ├── NOTES.md      ← notas opcionais detectadas automaticamente
 └── STATE.md      ← fonte única de verdade do orquestrador
 
-sdd-workflow.config.json   ← config do pipeline (raiz do repo), ver "Configuração" abaixo
+.agentic/skills/sdd-workflow/assets/sdd-workflow.config.json   ← config local do pipeline (gitignored), ver "Configuração" abaixo
 ```
 
 ---
 
-### Configuração (`sdd-workflow.config.json`)
+### Configuração (`.agentic/skills/sdd-workflow/assets/sdd-workflow.config.json`)
 
-Arquivo opcional na **raiz do repo**, versionado — customiza o comportamento de git/PR do pipeline
-sem exigir que um LLM interprete prosa a cada execução. Se ausente, `prepare-pr.cjs` usa os defaults
-abaixo (um clone novo do chassi funciona sem setup):
+Arquivo **local por projeto**, gitignorado (nunca versionado — cada clone/projeto configura o seu).
+Fica em `assets/` dentro da própria skill, não na raiz do repo. `sdd-plan`, `sdd-prd`,
+`prepare-pr.cjs` e `archive-spec` leem esse mesmo arquivo.
+
+Ele não é escrito manualmente: o próprio `/sdd-workflow` garante sua existência no **Step 2** de
+toda invocação (`references/setup-config.md`) — se o arquivo já existe e o usuário não pediu para
+reconfigurar, o passo é pulado em silêncio; se está ausente (primeira execução no projeto) ou o
+usuário pede explicitamente para reconfigurar ("reconfigurar sdd-workflow", "trocar branch base",
+"mudar destino do PRD"), roda uma entrevista curta via `AskUserQuestion` e grava o arquivo com
+`write-config.cjs`. Numa reconfiguração, os valores atuais do arquivo viram os defaults mostrados
+na entrevista. Um clone novo do chassi ainda funciona sem setup manual — a entrevista roda sozinha
+na primeira vez.
 
 ```json
 {
@@ -108,8 +118,15 @@ abaixo (um clone novo do chassi funciona sem setup):
     "default_type": "feat"
   },
   "archive_spec": {
-    "destination_type": "mcp",
-    "destination_name": "obsidian"
+    "destination_type": "none",
+    "destination_name": ""
+  },
+  "prd": {
+    "provider": "none",
+    "board_url": "",
+    "project_key": "",
+    "list_id": "",
+    "repo": ""
   }
 }
 ```
@@ -124,17 +141,32 @@ abaixo (um clone novo do chassi funciona sem setup):
 
 `archive_spec` customiza para onde o agente `archive-spec` envia `PRD.md`/`PLAN.md`/`NOTES.md` ao
 concluir a fase `done`. Se a seção (ou o arquivo inteiro) estiver ausente, o orquestrador usa os
-defaults acima (Obsidian via MCP), preservando o comportamento original.
+defaults abaixo — arquivamento **desativado** por padrão, preservando os artefatos em `docs/`.
 
 | Campo | Default | Descrição |
 |-------|---------|-----------|
-| `destination_type` | `mcp` | `mcp` \| `skill` \| `none`. `mcp` procura uma tool `mcp__{destination_name}__*` na sessão; `skill` invoca a skill chamada `{destination_name}` (útil quando o envio segue regras próprias ou uma mecânica customizada que não faz sentido chamar o MCP diretamente); `none` desativa o arquivamento — o agente reporta `no-destination-available` sem tentar nada. |
-| `destination_name` | `obsidian` | Nome do MCP (sem o prefixo `mcp__`) ou da skill, dependendo de `destination_type`. |
+| `destination_type` | `none` | `mcp` \| `skill` \| `path` \| `none`. `mcp` procura uma tool `mcp__{destination_name}__*` na sessão; `skill` invoca a skill chamada `{destination_name}` (útil quando o envio segue regras próprias ou uma mecânica customizada que não faz sentido chamar o MCP diretamente); `path` copia os arquivos para uma pasta local fora de `docs/` (sem MCP/skill envolvido — ver detalhe no subagent `archive-spec` abaixo); `none` desativa o arquivamento — o agente reporta `no-destination-available` sem tentar nada. |
+| `destination_name` | `""` | Nome do MCP (sem o prefixo `mcp__`) ou da skill, para `mcp`/`skill`; caminho da pasta destino (absoluto ou relativo à raiz do repo, ex: `~/notes/arquivados`) para `path`. |
 
 Se `destination_type`/`destination_name` apontar para um MCP ou skill que não está disponível na
 sessão, o agente `archive-spec` não tenta adivinhar outro mecanismo: reporta
 `STATUS: no-destination-available`, avisa o usuário e **não apaga nenhum arquivo local** — a
-mecânica original (manter os artefatos em `docs/`) é preservada.
+mecânica original (manter os artefatos em `docs/`) é preservada. Essa regra não vale para `path`:
+uma pasta ausente é criada automaticamente, nunca tratada como indisponível.
+
+`prd` customiza para onde `/sdd-prd` envia o PRD ao ser aprovado — ver seção "Fase PRD" abaixo para
+o fluxo completo.
+
+| Campo | Default | Descrição |
+|-------|---------|-----------|
+| `provider` | `none` | `jira` \| `github` \| `trello` \| `none`. `none` mantém `PRD.md` local (comportamento original); qualquer outro valor faz do card na plataforma o único artefato permanente — `PRD.md` é apagado após a criação do card. |
+| `board_url` | `""` | URL do board/projeto na plataforma configurada. Só relevante quando `provider` ≠ `none`. |
+| `project_key` | `""` | Opaco, específico do Jira (chave do projeto) — repassado sem validação de formato. |
+| `list_id` | `""` | Opaco, específico do Trello (lista alvo no board) — repassado sem validação de formato. |
+| `repo` | `""` | Específico do GitHub (`owner/repo`). Se configurado com `provider: "github"`, o card vira uma issue real nesse repositório, linkada ao `board_url`, em vez de um item avulso no board. |
+
+`issue_type` do card **não** vem da config — é perguntado ao usuário a cada PRD (Step 3.5 de
+`/sdd-prd`), porque varia por PRD, não por projeto.
 
 ### Type — Conventional Commits
 
@@ -168,7 +200,7 @@ feature: {module}/{feature-name}
 phase: prd                        # prd | plan | implement | verify | done
 
 artifacts:
-  prd:   ""                       # preenchido quando PRD.md é detectado
+  prd:   ""                       # PRD.md (local) ou PRD.cache.md (materializado de um card)
   notes: ""                       # preenchido quando NOTES.md é detectado
   plan:  ""                       # preenchido quando PLAN.md é detectado
 
@@ -213,6 +245,11 @@ pr:
 
 ### Fase PRD
 
+`/sdd-prd` é uma ferramenta **standalone** para o time de produto, não orquestrada pelo pipeline —
+`/sdd-workflow` não instrui o usuário a rodá-la. Quando nenhum artefato de PRD existe ainda
+(`PRD.md` nem `PRD.cache.md`), o orquestrador só pergunta qual é a origem do PRD e para; a origem
+pode ser um arquivo local ou um link/referência de card (Jira/GitHub/Trello):
+
 ```mermaid
 sequenceDiagram
     participant U as Usuário
@@ -220,19 +257,35 @@ sequenceDiagram
     participant P as /sdd-prd
 
     U->>W: /sdd-workflow docs/user/login
-    W->>W: STATE.md não existe → Bootstrap
-    W-->>U: Abra nova sessão e execute /sdd-prd
-    U->>P: /sdd-prd (nova sessão)
-    P->>U: Entrevista guiada
-    U->>P: Respostas
-    P->>P: Gera PRD.md
-    P-->>U: PRD aprovado e salvo
-    U->>W: /sdd-workflow (volta à sessão original)
-    W->>W: Detecta PRD.md → phase: plan
-    W-->>U: Abra nova sessão e execute /sdd-plan
+    W->>W: STATE.md não existe → Bootstrap<br/>Nenhum PRD.md/PRD.cache.md em disco
+    W-->>U: Qual é a origem do PRD?<br/>(caminho local ou link de card)
+
+    alt Usuário ainda não tem PRD
+        U->>P: /sdd-prd (nova sessão, opcional)
+        P->>U: Entrevista guiada
+        U->>P: Respostas
+        P->>P: Gera PRD.md (local) ou card externo<br/>(conforme sdd-workflow.config.json's `prd`)
+        P-->>U: PRD aprovado
+    end
+
+    U->>W: /sdd-workflow docs/user/login/PRD.md<br/>(ou o link do card)
+    alt Origem é arquivo local
+        W->>W: Confirma que o arquivo existe
+    else Origem é card
+        W-->>U: Invoque /sdd-plan {link} — a própria<br/>skill de plano busca e normaliza o card
+    end
+    W-->>U: Execute /sdd-plan {path ou link}
 ```
 
-**Transição:** `PRD.md` detectado em disco → `phase: plan`.
+**Transição:** o passo de detecção de estado (`detect-state.cjs`) não cria `phase: plan` sozinho —
+ele avança quando encontra `PRD.md` **ou** `PRD.cache.md` em disco (o segundo é o cache local que
+`sdd-plan` materializa a partir de um card, ver "Fase Plan" abaixo).
+
+Se `sdd-workflow.config.json`'s seção `prd` tiver `provider` diferente de `none`, `/sdd-prd` publica
+o PRD como card na plataforma configurada e **apaga** o `PRD.md` local — o card passa a ser o único
+artefato permanente (ver "Configuração" acima). Nesse caso a origem passada para `/sdd-workflow`/
+`/sdd-plan` é o link do card, não um caminho de arquivo. `NOTES.md` continua sempre local,
+independente do destino do PRD.
 
 ---
 
@@ -256,6 +309,14 @@ sequenceDiagram
 ```
 
 **Transição:** `PLAN.md` detectado em disco → extrai todos os IDs de tasks para `pending_tasks` → `phase: implement`.
+
+**Entrada por card:** se `/sdd-plan` recebe um link/referência de card em vez de um caminho local,
+ela mesma busca e normaliza o conteúdo (via MCP do provider ou sua CLI, mesmo padrão de detecção do
+`sdd-prd`), valida completude (Problema, Usuários, RF, Critérios de Aceitação) e materializa o
+resultado como `docs/{module}/{feature}/PRD.cache.md` — um artefato derivado, regenerável a cada
+execução, nunca a fonte de verdade (o card é). Esse arquivo é registrado em
+`STATE.md.artifacts.prd` do mesmo jeito que um `PRD.md` local seria; as fases seguintes não
+precisam saber se o PRD por trás é permanente ou um cache.
 
 ---
 
@@ -628,7 +689,7 @@ sequenceDiagram
 
     U->>W: /sdd-workflow docs/user/login
     W->>W: Bootstrap → STATE.md criado (phase: prd)
-    W-->>U: Execute /sdd-prd em nova sessão
+    W-->>U: Qual é a origem do PRD? (arquivo local ou card)
 
     U->>PRD: /sdd-prd (nova sessão)
     PRD->>U: Entrevista

@@ -70,7 +70,7 @@ const issues  = [];
 
 const missingSections = REQUIRED_SECTIONS.filter(s => !content.includes(s));
 
-const placeholders = (content.match(/\[[^\]]+\]/g) || [])
+const placeholders = (content.match(/\[[^\]]+\](?!\()/g) || [])
   .filter(p => !/não se aplica|n\/a/i.test(p));
 
 const acSection  = content.match(/## 8\. Critérios de Aceitação([\s\S]*?)(?=## 9\.|$)/);

@@ -65,4 +65,9 @@ usuário citou, registre aqui mesmo que pareça óbvio ou redundante com o PRD.]
 ## Registro de Decisões (append-only)
 
 - [YYYY-MM-DD] [Decisão tomada e por quê.]
+
+## Correlations
+
+- [PRD](./PRD.md) <!-- omit this line if PRD.md does not exist yet -->
+- [PLAN](./PLAN.md) <!-- PLAN.md may not exist yet; link it anyway, it will resolve once created -->
 ```

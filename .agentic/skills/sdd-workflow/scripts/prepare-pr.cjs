@@ -99,7 +99,7 @@ function commandExists(cmd) {
 
 // --- config -------------------------------------------------------------
 
-const CONFIG_PATH = path.join(process.cwd(), 'sdd-workflow.config.json');
+const CONFIG_PATH = path.join(__dirname, '..', 'assets', 'sdd-workflow.config.json');
 const DEFAULT_CONFIG = {
   git: {
     provider: 'auto',

@@ -56,48 +56,27 @@ All scripts support `--help`. Exit code `2` in all scripts = usage/runtime error
 
 - Writing code, tests, or any implementation artifact → out of scope
 - Technical/architecture decisions or the implementation plan → use `sdd-plan` skill
-- Deep codebase/domain context → only when truly needed, delegate to a research subagent (see
-  "Domain research" below) — never load `ddd-module-knowledge` into this conversation directly
+- Any codebase/domain lookup → the PO/stakeholder is not expected to know or verify existing
+  codebase behavior, and this skill never consults it (not even indirectly via a subagent).
+  `sdd-plan` is the one that analyzes the codebase, against the approved PRD.
 
 ## Principles
 
 These are calibrated on purpose — follow the prescriptive ones strictly, use judgment on the rest.
 
-- **Act as the PM — never narrate.** Ask the actual question. Do not write "I would ask…" or
-  "the skill would…". You *are* the role.
+- **Act as the PM.** Ask questions directly, in first person — never narrate what you would ask.
 - **Language: always pt-BR** for every message, question, summary, and file content. *(strict)*
 - **Token economy.** Keep chat messages short and direct. The intake form collects most context in
   one shot — do not revert to one-question-at-a-time after reading it.
 - **No implementation detail in the PRD.** No architecture, file paths, libraries, or layer/contract
   decisions. *(strict)*
-- **Product knowledge first.** You usually do not need the codebase to write a good PRD. When a
-  requirement depends on existing domain behavior, delegate the lookup to a research subagent
-  instead of consulting `ddd-module-knowledge` yourself — see "Domain research" below. *(strict)*
-
-## Domain research
-
-The PM interview is interactive (waits for the user's answer every turn) — it must stay in this
-conversation. Codebase/domain lookups are not interactive and can be noisy (multiple files,
-grep passes), so they run isolated in a subagent instead of loading `ddd-module-knowledge` here.
-
-Trigger: a requirement in the intake or in PM grilling (Step 1b) depends on **existing** domain
-behavior you don't already know — e.g. "does a session already carry a `deviceId`?", "is there
-already a concept of role/permission in the `user` module?".
-
-Dispatch with the Agent tool:
-
-- `subagent_type: general-purpose`
-- `run_in_background: false` — the PM grilling question that depends on the answer is blocked
-  until it returns; do not ask the user something you can resolve yourself while waiting.
-- Prompt: state the single domain question in plain terms, and instruct the agent to load the
-  `ddd-module-knowledge` skill before answering. Ask for a short factual answer only (existing
-  behavior found, or "not found") — not a design recommendation, not implementation detail.
-
-Use the returned answer to resolve the ambiguity — either drop the question from your grilling
-queue (if the codebase already answers it) or turn it into a sharper question for the user (if the
-codebase is silent and it's a real product decision). Never copy file paths, types, or code from
-the subagent's answer into `PRD.md` — that would violate "no implementation detail in the PRD"; if
-worth keeping, it goes in `NOTES.md`'s "Contexto Técnico" (Trigger C).
+- **Product-level questions only.** A PRD is not a technical document, so nothing in this interview
+  should be framed as verifying existing system/codebase behavior — that is `sdd-plan`'s job once
+  it analyzes the approved PRD. Ask about desired product behavior and business intent instead
+  (e.g. "quando um pedido é iniciado, um identificador de sessão deve ser criado — isso já existe
+  hoje ou é algo novo que este PRD está pedindo?" rather than "a sessão já carrega um deviceId?").
+  If the PO genuinely can't answer at the product level, record it as an open question in the
+  approval summary's "Dúvidas pendentes" and let `sdd-plan` resolve it against the code. *(strict)*
 
 ## Workflow
 
@@ -225,7 +204,7 @@ After explicit approval:
    ```
    The script creates `docs/<module>/<feature>/` with `PRD.md` and `NOTES.md` pre-initialised.
    This folder is always created locally — it is where `NOTES.md` lives regardless of where the
-   PRD content ends up (see Step 3.6 below).
+   PRD content ends up (see Step 3.7 below).
 
 3. Write the full PRD content into `docs/<module>/<feature>/PRD.md`, following
    `references/prd-template.md` exactly, in pt-BR.
@@ -240,49 +219,86 @@ After explicit approval:
    - If `INVALID` or `VIOLATIONS`: fix the reported issues before proceeding.
    - If `VALID` and `CLEAN`: continue.
 
-5. **Resolve the destination** — read the `prd` section of `sdd-workflow.config.json` (repo root).
+5. **Review gate.** Update the `**Status**:` line in `PRD.md` from `Draft` to `Em Revisão`, then
+   present this summary (pt-BR) and wait for explicit approval:
+
+   ```
+   ## 🔍 PRD em revisão — [Funcionalidade]
+
+   **Objetivo:** [1 frase — o que este PRD entrega e por quê]
+   **Escopo:** [RFs principais, resumidos em tópicos]
+   **Fora de escopo:** [1 linha]
+   **Critérios de aceitação:** [quantos cenários, cobrem happy-path + erro?]
+
+   Aprova este PRD? Responda "aprovar" ou aponte os ajustes.
+   ```
+
+   - On a requested change: edit `PRD.md`, re-run `validate-prd.cjs` and
+     `detect-implementation-detail.cjs`, then re-present the summary. Repeat until approved.
+   - On explicit approval (any clear affirmative — "ok", "aprovado", "sim", "pode seguir", etc.):
+     immediately update the `**Status**:` line from `Em Revisão` to `Aprovado`. This write is part
+     of the approval step itself — the file never sits approved-but-stale. *(strict)*
+   - Do not proceed to destination resolution before this gate closes with `Aprovado`. *(strict)*
+
+6. **Resolve the destination** — read the `prd` section of
+   `.agentic/skills/sdd-workflow/assets/sdd-workflow.config.json`.
    Defaults when the file, the section, or a field is absent: `provider: "none"`, `board_url: ""`,
-   `project_key: ""`, `issue_type: ""`, `list_id: ""`.
+   `project_key: ""`, `list_id: ""`, `repo: ""`.
 
    - **`provider` is `"none"`** (default): keep `docs/<module>/<feature>/PRD.md` as-is — it is the
-     permanent artifact. Confirm to the user: `PRD gerado em docs/<module>/<feature>/PRD.md`.
+     permanent artifact. Confirm to the user: `PRD aprovado em docs/<module>/<feature>/PRD.md`.
    - **`provider` is `"jira" | "github" | "trello"`**: the card is the only permanent artifact —
      `PRD.md` is not kept locally.
-     1. Look for an MCP tool whose name contains the provider (e.g. `mcp__jira__*`,
-        `mcp__github__*`, `mcp__trello__*`) among the tools available in this session — same
-        detection pattern `archive-spec` uses for `destination_type: mcp`. If none of those tools
-        is available, fall back to the provider's CLI (e.g. `gh` for `github`) if present.
-     2. If neither an MCP tool nor a CLI for the configured provider is available: stop, tell the
+     1. Ask the user the card's **issue type** — this varies per PRD, so it is never read from
+        config. Offer the choices `Bug | Feature | Discovery | Tech History`, and let the user type
+        a custom value if none fits. This becomes the `issue_type` used below.
+     2. Look for an MCP tool whose name contains the provider (e.g. `mcp__jira__*`,
+        `mcp__github__*`, `mcp__trello__*`) among the tools available in this session — config here
+        only names the provider, not a specific tool, so this step still discovers by prefix (unlike
+        `archive-spec`'s `destination_type: mcp`, which takes an exact tool name from config). If
+        none of those tools is available, fall back to the provider's CLI (e.g. `gh` for `github`)
+        if present.
+     3. If neither an MCP tool nor a CLI for the configured provider is available: stop, tell the
         user the configured `prd.provider` has no usable integration in this session, and ask
         whether to save `PRD.md` locally instead for this run or fix the environment first. Do not
         silently fall back to local save.
-     3. Otherwise, create one card/issue in `board_url` (using `project_key`/`issue_type`/`list_id`
-        as opaque, provider-specific passthrough — do not validate their format) with the full
-        `docs/<module>/<feature>/PRD.md` content as the card body, verbatim.
-     4. Confirm the tool actually created the card (check its response, not just absence of error)
+     4. Create the card:
+        - If `repo` is configured **and** `provider` is `"github"`: create a real issue in that
+          repository (`owner/repo`, e.g. `gh issue create --repo <repo>`) with the full
+          `docs/<module>/<feature>/PRD.md` content as the issue body, applying `issue_type` from
+          step 1 (e.g. as a label), then link that issue to the project board at `board_url` (e.g.
+          `gh project item-add <project_number> --owner <owner> --url <issue_url>`). This produces
+          a card backed by a tracked repository issue instead of a standalone board item — needed
+          to reference the work from commits/PRs in that repo.
+        - Otherwise (no `repo` configured, or a provider other than `github`): create one card/item
+          directly on `board_url` (using `issue_type` from step 1 plus `project_key`/`list_id` as
+          opaque, provider-specific passthrough — do not validate their format) with the full
+          `docs/<module>/<feature>/PRD.md` content as the card body, verbatim. For `github` without
+          `repo`, this is a draft item on the project board with no linked repository issue.
+     5. Confirm the tool actually created the card (check its response, not just absence of error)
         before touching any local file.
-     5. Delete the local `docs/<module>/<feature>/PRD.md` — the card is now the sole record.
-     6. Confirm to the user: `PRD criado em {provider}: {card_url_or_id}`.
+     6. Delete the local `docs/<module>/<feature>/PRD.md` — the card is now the sole record.
+     7. Confirm to the user: `PRD aprovado, criado em {provider}: {card_url_or_id}`.
 
-6. Persist `NOTES.md` (see "Decision notes" section below — this is the post-approval trigger).
+7. Persist `NOTES.md` (see "Decision notes" section below — this is the post-approval trigger).
    Always local, regardless of the destination resolved above.
 
-### Step 4 — Review & deliver
+### Step 4 — Deliver
 
-- **Local (`provider: "none"`)**: give the user the `PRD.md` path and ask them to review it. If
-  they request changes, edit `PRD.md`, re-run validate + detect scripts, fix any issues. Close
-  with: `PRD pronto em docs/<...>/PRD.md. Próximo passo: invoque a skill sdd-plan com esse
-  caminho.`
-- **Card (`provider` configured)**: give the user the card URL/ID and ask them to review it there.
-  Further edits happen on the card itself, not in this session. Close with: `PRD pronto em
-  {provider}: {card_url_or_id}. Próximo passo: invoque a skill sdd-plan com esse link.`
+The PRD is already reviewed and `Aprovado` from the Step 3.5 gate — this step only hands it off.
+
+- **Local (`provider: "none"`)**: close with `PRD aprovado em docs/<...>/PRD.md. Próximo passo:
+  invoque a skill sdd-plan com esse caminho.`
+- **Card (`provider` configured)**: close with `PRD aprovado em {provider}: {card_url_or_id}.
+  Próximo passo: invoque a skill sdd-plan com esse link.` Further edits happen on the card itself,
+  not in this session.
 
 ## Decision notes (NOTES.md)
 
 `NOTES.md` is a durable decision record. Created only on these triggers:
 
 - **Trigger A** — context about to be compacted / conversation grown long.
-- **Trigger B** — after PRD approval (Step 3).
+- **Trigger B** — after PRD approval (Step 3.5 review gate).
 - **Trigger C** — the user volunteers implementation/technical detail at any point (intake,
   grilling, or later) that does not belong in the PRD (tech stack, patterns, cache type, token
   format, routes, TTLs, field names, protocols). Capture it **immediately** into the "Contexto
@@ -325,7 +341,13 @@ the Write tool, consolidating current state. Never discard prior content.
 
 - PRD structure → `references/prd-template.md` (loaded by `scaffold.cjs` automatically).
 - Notes structure → `references/notes-template.md` (loaded by `scaffold.cjs` automatically).
-- Destination config → `sdd-workflow.config.json`'s `prd` section (repo root), read in Step 3.5.
-  Defaults when absent: `provider: "none"`, `board_url: ""`, `project_key: ""`, `issue_type: ""`,
-  `list_id: ""`. `issue_type` is Jira-specific (e.g. issue type name); `list_id` is Trello-specific
-  (e.g. target list on the board); both are opaque passthrough, unused by other providers.
+- Destination config → `.agentic/skills/sdd-workflow/assets/sdd-workflow.config.json`'s `prd`
+  section, read in Step 3.6.
+  Defaults when absent: `provider: "none"`, `board_url: ""`, `project_key: ""`, `list_id: ""`,
+  `repo: ""`. `project_key` is Jira-specific (e.g. project key); `list_id` is Trello-specific (e.g.
+  target list on the board); both are opaque passthrough, unused by other providers. `repo` is
+  GitHub-specific (`owner/repo`) — when set, the card is created as a real repository issue linked
+  to the board instead of a standalone draft item; ignored by other providers. `issue_type` is
+  never read from config — it is asked to the user interactively in Step 3.6 (choices `Bug |
+  Feature | Discovery | Tech History`, or free text) because it varies per PRD, not per project
+  setup.

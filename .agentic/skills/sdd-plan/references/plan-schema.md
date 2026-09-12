@@ -213,3 +213,8 @@ addressed. Write this as if handing over to another engineer.]
 - [ ] All post-conditions from the approved Scope are met.
 - [ ] All modified files were covered by tests.
 - [ ] This Return section was only filled after full dev validation.
+
+## Correlations
+
+- [PRD](./PRD.md)
+- [NOTES](./NOTES.md) <!-- omit this line if NOTES.md does not exist for this feature -->

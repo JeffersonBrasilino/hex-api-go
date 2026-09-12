@@ -29,8 +29,9 @@ Flags (all optional, defaults shown):
   --default-type <feat|fix|refactor|perf|chore|docs|test|build|ci>  (feat)
   --archive-destination-type <mcp|skill|path|none> (none)
   --archive-destination-name <name>                ("")
-                                                    (MCP/skill name for mcp|skill;
-                                                     folder path for path; "" for none)
+                                                    (exact MCP tool name for mcp, e.g.
+                                                     mcp__obsidian__create_note; skill name for
+                                                     skill; folder path for path; "" for none)
   --prd-provider <jira|github|trello|none>         (none)
   --prd-board-url <url>                            ("")
   --prd-project-key <key>                          ("")
@@ -113,6 +114,16 @@ if (!VALID_COMMIT_TYPES.includes(config.git.default_type)) {
 }
 if (!VALID_ARCHIVE_TYPES.includes(config.archive_spec.destination_type)) {
   fail1([`Error: archive_spec.destination_type "${config.archive_spec.destination_type}" is not valid.`, `Expected: one of ${VALID_ARCHIVE_TYPES.join(' | ')}`]);
+}
+if (config.archive_spec.destination_type === 'mcp') {
+  const name = config.archive_spec.destination_name;
+  const MCP_TOOL_NAME_RE = /^mcp__[^_]+(?:_[^_]+)*__[^_]+(?:_[^_]+)*$/;
+  if (!MCP_TOOL_NAME_RE.test(name)) {
+    fail1([
+      `Error: archive_spec.destination_name "${name}" is not a valid MCP tool name.`,
+      'Expected: the exact tool name, e.g. mcp__obsidian__create_note (not just the server prefix).',
+    ]);
+  }
 }
 if (!VALID_PRD_PROVIDERS.includes(config.prd.provider)) {
   fail1([`Error: prd.provider "${config.prd.provider}" is not valid.`, `Expected: one of ${VALID_PRD_PROVIDERS.join(' | ')}`]);

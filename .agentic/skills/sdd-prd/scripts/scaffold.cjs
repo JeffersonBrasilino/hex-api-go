@@ -98,7 +98,7 @@ try {
     const content = extractTemplateBlock(raw)
       .replace('[YYYY-MM-DD]', today)
       .replace('[Nome]', 'Jefferson Brasilino')
-      .replace('Draft / Em Revisão / Aprovado', 'Draft')
+      .replace('Status**: Draft / Em Revisão / Aprovado', 'Status**: Draft')
       .replace('[Versão]', '0.1')
       .replace('feat / fix / refactor / perf / chore / docs / test / build / ci', 'feat');
     fs.writeFileSync(prdPath, content, 'utf8');

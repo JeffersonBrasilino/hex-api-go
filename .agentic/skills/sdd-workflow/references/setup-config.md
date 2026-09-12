@@ -38,7 +38,16 @@ user picked `none`.
 6. `archive_spec.destination_type` — `mcp` | `skill` | `path` | `none`. Default: `none`.
 7. `archive_spec.destination_name` — significado depende do tipo acima; só perguntar se não for
    `none`:
-   - `mcp` | `skill`: nome do MCP/skill de destino (ex: `obsidian`).
+   - `mcp`: nome **exato** da tool MCP de destino, com o prefixo completo (ex:
+     `mcp__obsidian__create_note`) — não apenas o nome do servidor. Isso evita o subagent ter que
+     adivinhar qual tool usar quando o servidor expõe várias (`create_note`, `update_note`,
+     `search`, etc.). O `{servidor}` desse prefixo é literalmente a chave que o usuário deu ao MCP
+     em `mcpServers` (config do Claude Code) — um nome customizado, não um valor fixo do fornecedor
+     do MCP. Por isso, **peça para o usuário confirmar o nome exato como aparece na lista de tools
+     disponíveis da sessão atual** (ex: `/mcp`) em vez de digitar de memória a partir do nome do
+     servidor — renomear a chave do servidor ou caracteres especiais nela podem alterar o prefixo
+     de forma imprevisível.
+   - `skill`: nome da skill de destino (ex: `obsidian`).
    - `path`: caminho de uma pasta local (absoluto ou relativo à raiz do repo) fora de `docs/`, para
      onde os arquivos são movidos (ex: `~/notes/arquivados`). Criada automaticamente se não existir.
    Default: `""`.

@@ -26,16 +26,35 @@ After presenting the summary above, run the PR gate (Step 3.1 below). Only once 
 `created` or `skipped` does the archive step run — this happens on every arrival at `done`, even
 with failed tasks:
 
+If `sdd-workflow.config.json`'s `archive_spec.destination_type` is `mcp`, check that the exact tool
+named in `destination_name` is actually reachable in this session (e.g. via `ToolSearch` with
+`select:{destination_name}`) **before** spawning `archive-spec` — no point paying for a subagent
+spawn just to have it report back that the tool is missing. If it is not found, skip the spawn
+entirely, append `Spec não arquivada: tool MCP "{destination_name}" indisponível nesta sessão.` to
+the summary, and leave every local file untouched (same outcome as the subagent's own
+`no-destination-available`). Otherwise, proceed:
+
+Before spawning the subagent, read whatever fields you still need from `STATE.md` (`artifacts.prd`,
+`artifacts.plan`, `artifacts.notes`), then delete `{feature_path}/STATE.md` — it is pipeline-only
+bookkeeping with no value once the PR gate has resolved, and must never reach the archive
+destination. Deleting it here, before `archive-spec` runs, means a failure past this point (a
+partial archive, an unavailable MCP tool) can no longer be resumed by a later `/sdd-workflow
+{feature_path}` invocation — `detect-state.cjs` has nothing left to detect. This is accepted: the
+summary already shown to the user covers the pipeline outcome, and the "What the orchestrator does
+with the report" contract below tells the user explicitly when a manual follow-up is needed instead
+of relying on resume.
+
 Load [archive-spec](.agentic/subagents/archive-spec.md) and inject:
 - `{feature_path}` → the feature path for this pipeline
-- `{prd_path}` → `STATE.md.artifacts.prd`
-- `{plan_path}` → `STATE.md.artifacts.plan`
-- `{notes_path}` → `STATE.md.artifacts.notes` (omit the line if empty)
+- `{prd_path}` → the `artifacts.prd` value read above
+- `{plan_path}` → the `artifacts.plan` value read above
+- `{notes_path}` → the `artifacts.notes` value read above (omit the line if empty)
 
 Wait for its report and follow the contract in archive-spec.md ("What the orchestrator does with
-the report"): on `archived`, delete `{feature_path}/STATE.md` and remove `{feature_path}` if now
-empty, then append `Spec arquivada e removida de docs/.`; otherwise append the agent's report
-verbatim and leave local files untouched (`phase` stays `done` either way).
+the report"): on `archived`, remove `{feature_path}` if now empty, then append `Spec arquivada e
+removida de docs/.`; otherwise append the agent's report verbatim, note that `STATE.md` has already
+been removed so this feature can't be resumed automatically, and tell the user to re-run archiving
+manually once the blocker is resolved (`phase` stays `done` either way).
 
 ## Step 3.1 — PR gate (runs before archive-spec)
 

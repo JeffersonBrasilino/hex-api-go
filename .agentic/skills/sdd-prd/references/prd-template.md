@@ -1,6 +1,6 @@
 #### Product Requirements Document (PRD) — Template
 
-Universal schema for every PRD produced by `spec-prd-v2`. Fill every section; if a section does not
+Universal schema for every PRD produced by this skill. Fill every section; if a section does not
 apply, write "Não se aplica" and a one-line reason — do not delete it. Write in pt-BR. Keep it
 product-focused: describe **behavior and intent**, never implementation (no architecture, files,
 libraries, layers, or contracts).
@@ -8,13 +8,11 @@ libraries, layers, or contracts).
 ```markdown
 # [Título da Funcionalidade]
 
-| Campo                  | Valor                          |
-|------------------------|--------------------------------|
-| **Autor**              | [Nome]                         |
-| **Última Atualização** | [YYYY-MM-DD]                   |
-| **Status**             | Draft / Em Revisão / Aprovado  |
-| **Versão**             | [Versão]                       |
-| **Tipo**               | feat / fix / refactor / perf / chore / docs / test / build / ci |
+**Autor**: [Nome]
+**Última Atualização**: [YYYY-MM-DD]
+**Status**: Draft / Em Revisão / Aprovado
+**Versão**: [Versão]
+**Tipo**: feat / fix / refactor / perf / chore / docs / test / build / ci
 
 ## 1. Visão Geral
 
@@ -97,4 +95,9 @@ feliz e ao menos 1 de erro/borda. Cada cenário tem nome.]
 [Melhorias conhecidas e funcionalidades relacionadas fora deste lançamento, mas que valem rastrear.]
 
 - [Consideração 1]
+
+## Correlations
+
+- [PLAN](./PLAN.md) <!-- PLAN.md is produced later by sdd-plan; link it anyway, it will resolve once created -->
+- [NOTES](./NOTES.md) <!-- omit this line if NOTES.md does not exist for this feature -->
 ```

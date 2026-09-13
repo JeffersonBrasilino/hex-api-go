@@ -75,3 +75,36 @@ func TestNewUserBlockedError(t *testing.T) {
 		var _ error = domain.NewUserBlockedError("user blocked error")
 	})
 }
+
+// TestNewAccessDeniedError verifies that NewAccessDeniedError builds an
+// *AccessDeniedError whose Error() returns the provided message and that the
+// returned value satisfies the error interface.
+func TestNewAccessDeniedError(t *testing.T) {
+	t.Run("should create error with given message", func(t *testing.T) {
+		t.Parallel()
+		message := "access denied due to insufficient permissions"
+		err := domain.NewAccessDeniedError(message)
+		if err == nil {
+			t.Fatal("NewAccessDeniedError should not return nil")
+		}
+		if err.Error() != message {
+			t.Errorf("Error() = %q, want %q", err.Error(), message)
+		}
+	})
+
+	t.Run("should create error with empty message", func(t *testing.T) {
+		t.Parallel()
+		err := domain.NewAccessDeniedError("")
+		if err == nil {
+			t.Fatal("NewAccessDeniedError should not return nil")
+		}
+		if err.Error() != "" {
+			t.Errorf("Error() = %q, want empty string", err.Error())
+		}
+	})
+
+	t.Run("should implement error interface", func(t *testing.T) {
+		t.Parallel()
+		var _ error = domain.NewAccessDeniedError("access denied error")
+	})
+}

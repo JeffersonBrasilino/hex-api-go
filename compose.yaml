@@ -12,6 +12,7 @@ services:
     ports:
       - "${APP_PORT}:${APP_PORT}"
       - "6060:6060"
+      - "2345:2345" # delve port
     mem_limit: 4g
     depends_on:
       - db

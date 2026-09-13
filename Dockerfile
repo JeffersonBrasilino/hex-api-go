@@ -1,7 +1,10 @@
 # 1. Dev Stage (Hot Reload)
 FROM golang:1.25-alpine3.22 AS dev
 WORKDIR /app
+
+RUN go install github.com/go-delve/delve/cmd/dlv@latest
 RUN go install github.com/air-verse/air@v1.63.0
+
 CMD ["/go/bin/air"]
 
 # 2. Builder Stage (Compilation Edge)

@@ -68,7 +68,7 @@ func (u *userModule) Register(ctx context.Context) error {
 	u.jwtAdapter = database.NewJwtAdapter()
 	u.tokenGenerator = u.jwtAdapter
 	u.sessionStore = database.NewRedisAdapter(u.redisClient)
-	u.permissionRepository = database.NewPermissionCacheRepository(u.redisClient, u.db)
+	u.permissionRepository = database.NewPermissionRepository(u.redisClient, u.db)
 
 	u.registerActions()
 	u.httpLib.Use(http.AuthorizationMiddleware())

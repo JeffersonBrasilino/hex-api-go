@@ -1,6 +1,6 @@
 // Permission cache repository tests.
 //
-// Intent: exercise the PermissionCacheRepository's cache-aside pattern,
+// Intent: exercise the PermissionRepository's cache-aside pattern,
 // testing the Redis caching logic with miniredis and the real Postgres JOIN
 // fallback (mocked via go-sqlmock, following the convention established in
 // gorm_user_repository_test.go).
@@ -56,8 +56,8 @@ func newMockedPostgresDB(t *testing.T) (*gorm.DB, sqlmock.Sqlmock) {
 	return gdb, mock
 }
 
-// TestPermissionCacheRepository_RolesWithAccess tests the cache-aside pattern.
-func TestPermissionCacheRepository_RolesWithAccess(t *testing.T) {
+// TestPermissionRepository_RolesWithAccess tests the cache-aside pattern.
+func TestPermissionRepository_RolesWithAccess(t *testing.T) {
 	t.Run("cache hit returns stored roles", func(t *testing.T) {
 		t.Parallel()
 
@@ -70,7 +70,7 @@ func TestPermissionCacheRepository_RolesWithAccess(t *testing.T) {
 		// Pre-populate Redis with roles.
 		rdb.SAdd(ctx, key, "admin", "operator")
 
-		repo := database.NewPermissionCacheRepository(rdb, db)
+		repo := database.NewPermissionRepository(rdb, db)
 		roles, err := repo.RolesWithAccess(ctx, "GET", "/users")
 
 		if err != nil {
@@ -101,7 +101,7 @@ func TestPermissionCacheRepository_RolesWithAccess(t *testing.T) {
 		// Pre-populate Redis with the empty sentinel.
 		rdb.SAdd(ctx, key, "__EMPTY__")
 
-		repo := database.NewPermissionCacheRepository(rdb, db)
+		repo := database.NewPermissionRepository(rdb, db)
 		roles, err := repo.RolesWithAccess(ctx, "GET", "/public")
 
 		if err != nil {
@@ -123,7 +123,7 @@ func TestPermissionCacheRepository_RolesWithAccess(t *testing.T) {
 			WithArgs("DELETE:/items", 1, 1, 1).
 			WillReturnRows(sqlmock.NewRows([]string{"name"}))
 
-		repo := database.NewPermissionCacheRepository(rdb, db)
+		repo := database.NewPermissionRepository(rdb, db)
 
 		// First call: cache miss, fallback to Postgres JOIN (unmapped route, no rows).
 		roles, err := repo.RolesWithAccess(ctx, "DELETE", "/items")
@@ -162,7 +162,7 @@ func TestPermissionCacheRepository_RolesWithAccess(t *testing.T) {
 				AddRow("admin").
 				AddRow("operator"))
 
-		repo := database.NewPermissionCacheRepository(rdb, db)
+		repo := database.NewPermissionRepository(rdb, db)
 
 		roles, err := repo.RolesWithAccess(ctx, "GET", "/orders")
 
@@ -204,7 +204,7 @@ func TestPermissionCacheRepository_RolesWithAccess(t *testing.T) {
 			WithArgs("POST:/broken", 1, 1, 1).
 			WillReturnError(errors.New("connection reset by peer"))
 
-		repo := database.NewPermissionCacheRepository(rdb, db)
+		repo := database.NewPermissionRepository(rdb, db)
 
 		roles, err := repo.RolesWithAccess(ctx, "POST", "/broken")
 
@@ -245,7 +245,7 @@ func TestPermissionCacheRepository_RolesWithAccess(t *testing.T) {
 			})
 			db := &gorm.DB{}
 
-			repo := database.NewPermissionCacheRepository(unreachableClient, db)
+			repo := database.NewPermissionRepository(unreachableClient, db)
 			roles, err := repo.RolesWithAccess(context.Background(), "GET", "/protected")
 
 			if err == nil {
@@ -277,7 +277,7 @@ func TestPermissionCacheRepository_RolesWithAccess(t *testing.T) {
 		// Pre-populate with multiple roles, no sentinel.
 		rdb.SAdd(ctx, key, "editor", "reviewer")
 
-		repo := database.NewPermissionCacheRepository(rdb, db)
+		repo := database.NewPermissionRepository(rdb, db)
 		roles, err := repo.RolesWithAccess(ctx, "POST", "/content")
 
 		if err != nil {
@@ -308,7 +308,7 @@ func TestPermissionCacheRepository_RolesWithAccess(t *testing.T) {
 		// Pre-populate with a single role.
 		rdb.SAdd(ctx, key, "admin")
 
-		repo := database.NewPermissionCacheRepository(rdb, db)
+		repo := database.NewPermissionRepository(rdb, db)
 		roles, err := repo.RolesWithAccess(ctx, "DELETE", "/users/123")
 
 		if err != nil {
@@ -330,7 +330,7 @@ func TestPermissionCacheRepository_RolesWithAccess(t *testing.T) {
 			WithArgs("GET:/test", 1, 1, 1).
 			WillReturnRows(sqlmock.NewRows([]string{"name"}))
 
-		repo := database.NewPermissionCacheRepository(rdb, db)
+		repo := database.NewPermissionRepository(rdb, db)
 
 		// Calling with a valid context should succeed (no panic or error) and reach
 		// the Postgres JOIN fallback on cache miss.

@@ -1,8 +1,8 @@
-// Permission cache repository.
+// Permission repository.
 //
-// Intent: implement the domain's contract.PermissionRepository using a cache-aside
-// pattern with Redis as the primary store and Postgres as the fallback store for
-// RBAC permission checking.
+// Intent: implement the domain's contract.PermissionRepository, managing two
+// backing stores — Redis as the primary, low-latency lookup and Postgres as
+// the source of truth queried on cache miss — for RBAC permission checking.
 // Objective: efficiently check which roles have access to a given HTTP route
 // (method + path), storing results in Redis with a sentinel value (__EMPTY__)
 // for empty permission sets, and propagating infrastructure errors to enforce
@@ -30,14 +30,14 @@ const emptyPermissionSentinel = "__EMPTY__"
 // (ApiRoutes.Status, UserGroupsPermissions.Status, UsersGroups.Status).
 const activeStatus = 1
 
-// PermissionCacheRepository implements contract.PermissionRepository using
+// PermissionRepository implements contract.PermissionRepository using
 // Redis cache-aside with Postgres as the fallback store.
-type PermissionCacheRepository struct {
+type PermissionRepository struct {
 	redis *redis.Client
 	db    *gorm.DB
 }
 
-// NewPermissionCacheRepository creates a PermissionCacheRepository.
+// NewPermissionRepository creates a PermissionRepository.
 //
 // Intent: construct a ready-to-use permission repository combining Redis cache
 // and Postgres persistence for RBAC access control.
@@ -45,12 +45,12 @@ type PermissionCacheRepository struct {
 //   - rdb: the Redis client used for caching role sets by route.
 //   - db: the GORM database connection used as fallback for permission lookups.
 //
-// Returns: a *PermissionCacheRepository satisfying contract.PermissionRepository.
-func NewPermissionCacheRepository(
+// Returns: a *PermissionRepository satisfying contract.PermissionRepository.
+func NewPermissionRepository(
 	rdb *redis.Client,
 	db *gorm.DB,
-) *PermissionCacheRepository {
-	return &PermissionCacheRepository{
+) *PermissionRepository {
+	return &PermissionRepository{
 		redis: rdb,
 		db:    db,
 	}
@@ -92,7 +92,7 @@ func permissionRouteKey(method, path string) string {
 //   - On Postgres error: return a DependencyError (fail closed).
 //   - Redis error on read: return a DependencyError (fail closed).
 //   - Double failure (Redis error AND Postgres error): return a DependencyError.
-func (r *PermissionCacheRepository) RolesWithAccess(
+func (r *PermissionRepository) RolesWithAccess(
 	ctx context.Context,
 	method, path string,
 ) ([]string, error) {
@@ -178,7 +178,7 @@ func (r *PermissionCacheRepository) RolesWithAccess(
 // Status filtering: only Status == activeStatus (1) rows are considered
 // active on ApiRoutes, UserGroupsPermissions and UsersGroups, matching the
 // `default:1` soft-enable convention in gorm_model.go.
-func (r *PermissionCacheRepository) rolesWithAccessFromPostgres(
+func (r *PermissionRepository) rolesWithAccessFromPostgres(
 	ctx context.Context,
 	method, path string,
 ) ([]string, error) {

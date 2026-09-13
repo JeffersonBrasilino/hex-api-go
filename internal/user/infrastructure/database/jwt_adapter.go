@@ -113,3 +113,27 @@ func (a *JwtAdapter) ParseRefreshToken(tokenString string) (sessionId string, er
 
 	return claims.ID, nil
 }
+
+// ParseAccessToken decodes an access JWT and extracts its user ID and groups.
+//
+// Intent: validate the token's signature and expiration, then recover the user id (as `sub`) and
+// group names it carries, for permission checking to verify the user's authorization.
+// Parameters:
+//   - tokenString: the access JWT to decode.
+//
+// Returns: the user id and groups carried by the token, or an error if the token is malformed,
+// has an invalid signature, or is expired.
+func (a *JwtAdapter) ParseAccessToken(tokenString string) (userId string, groups []string, err error) {
+	claims := &accessTokenClaims{}
+	token, err := jwt.ParseWithClaims(tokenString, claims, func(t *jwt.Token) (any, error) {
+		return a.secret(), nil
+	})
+	if err != nil {
+		return "", nil, err
+	}
+	if !token.Valid {
+		return "", nil, errors.New("invalid access token")
+	}
+
+	return claims.Subject, claims.Groups, nil
+}

@@ -97,8 +97,8 @@ func (s *stubLoginAttemptStore) Reset(ctx context.Context, username string) erro
 
 // stubLoginSessionStore is a hand-rolled test double implementing contract.LoginSessionStore.
 type stubLoginSessionStore struct {
-	saveErr          error
-	saveCalledSessId string
+	saveErr                error
+	saveCalledSessId       string
 	saveCalledRefreshToken string
 }
 
@@ -390,11 +390,14 @@ func TestHandler_Handle(t *testing.T) {
 		if payload["accessToken"] != "access-token" {
 			t.Fatalf("Handle should return the generated access token, got: %q", payload["accessToken"])
 		}
-		if payload["refreshToken"] != "refresh-token" {
-			t.Fatalf("Handle should return the generated refresh token, got: %q", payload["refreshToken"])
+		if payload["refreshToken"] == "" {
+			t.Fatal("Handle should return a non-empty refreshToken")
 		}
-		if payload["sessionId"] == "" {
-			t.Fatal("Handle should return a non-empty sessionId")
+		if payload["refreshToken"] == "refresh-token" {
+			t.Fatal("Handle should not leak the real refresh token to the client — hybrid token design exposes only the opaque sessionId under the refreshToken key")
+		}
+		if payload["refreshToken"] != sessionStore.saveCalledSessId {
+			t.Fatalf("Handle should return the sessionId used to save the session as refreshToken, got: %q, want: %q", payload["refreshToken"], sessionStore.saveCalledSessId)
 		}
 		if attemptStore.resetCalls != 1 {
 			t.Fatalf("Handle should reset the attempt counter exactly once, got: %d", attemptStore.resetCalls)

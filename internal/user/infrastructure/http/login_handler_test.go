@@ -4,13 +4,12 @@
 // Objective: cover request binding failure, the 429 lockout mapping, the generic error mapping,
 // and the successful session-issuance response.
 //
-// Bus bootstrap: gomes.CommandBus() is a process-wide singleton that can only be started once
-// (github.com/jeffersonbrasilino/gomes/gomes.go — Start() errors if called a second time), so this
-// file's TestMain bootstraps it once for the whole http_test package, registering stub action
-// handlers for login, logout, and revokeSession — shared by login_handler_test.go,
-// logout_handler_test.go, and revoke_session_handler_test.go. Each stub's behavior is a pure
-// function of the command payload (no shared mutable state), so subtests across all three files
-// remain safe to run with t.Parallel().
+// Bus bootstrap: gomes.CommandBus() is backed by a process-wide singleton that can only be
+// started once (github.com/jeffersonbrasilino/gomes/gomes.go — Start() errors if called a second
+// time), so this file's TestMain bootstraps it once for the whole http_test package, registering
+// stub action handlers for login and revokeSession — shared by login_handler_test.go and
+// revoke_session_handler_test.go. Each stub's behavior is a pure function of the command payload
+// (no shared mutable state), so subtests across both files remain safe to run with t.Parallel().
 package http_test
 
 import (
@@ -18,15 +17,32 @@ import (
 	"context"
 	"encoding/json"
 	"net/http/httptest"
+	"os"
 	"testing"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jeffersonbrasilino/ddgo"
+	gomes "github.com/jeffersonbrasilino/gomes"
 	"github.com/jeffersonbrasilino/hex-api-go/internal/user/application/command/login"
 	"github.com/jeffersonbrasilino/hex-api-go/internal/user/application/command/revokesession"
 	"github.com/jeffersonbrasilino/hex-api-go/internal/user/domain"
 	httpHandler "github.com/jeffersonbrasilino/hex-api-go/internal/user/infrastructure/http"
 )
+
+// TestMain registers the stub action handlers on the default command bus and starts the message
+// system once for the whole package, before any test runs.
+func TestMain(m *testing.M) {
+	if err := gomes.AddActionHandler[*login.Command, any](&stubLoginActionHandler{}); err != nil {
+		panic(err)
+	}
+	if err := gomes.AddActionHandler[*revokesession.Command, any](&stubRevokeSessionActionHandler{}); err != nil {
+		panic(err)
+	}
+	if err := gomes.Start(); err != nil {
+		panic(err)
+	}
+	os.Exit(m.Run())
+}
 
 // blockedLoginUsername, invalidLoginUsername select the stubLoginActionHandler's deterministic
 // outcome by username, so tests can run in parallel without mutating shared state.
@@ -46,10 +62,11 @@ func (h *stubLoginActionHandler) Handle(ctx context.Context, cmd *login.Command)
 	case invalidLoginUsername:
 		return nil, ddgo.NewValidationError("Credenciais inválidas")
 	default:
+		// Hybrid token: mirrors application/command/login.Handler's real shape — the client only
+		// ever gets the opaque sessionId under "refreshToken", never the real refresh token.
 		return map[string]string{
 			"accessToken":  "access-token-value",
-			"refreshToken": "refresh-token-value",
-			"sessionId":    "session-id-value",
+			"refreshToken": "session-id-value",
 		}, nil
 	}
 }
@@ -143,11 +160,8 @@ func TestLoginHandler(t *testing.T) {
 		if payload["accessToken"] != "access-token-value" {
 			t.Fatalf("expected accessToken in the response, got: %v", payload)
 		}
-		if payload["refreshToken"] != "refresh-token-value" {
-			t.Fatalf("expected refreshToken in the response, got: %v", payload)
-		}
-		if payload["sessionId"] != "session-id-value" {
-			t.Fatalf("expected sessionId in the response, got: %v", payload)
+		if payload["refreshToken"] != "session-id-value" {
+			t.Fatalf("expected the opaque sessionId under refreshToken in the response, got: %v", payload)
 		}
 	})
 }

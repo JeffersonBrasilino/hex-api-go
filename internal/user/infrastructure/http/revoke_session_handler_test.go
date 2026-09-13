@@ -5,7 +5,7 @@
 // Objective: cover the 404 not-found mapping and the successful revocation response.
 //
 // The shared command bus and the stubRevokeSessionActionHandler registered on it are bootstrapped
-// once by TestMain in login_handler_test.go — see that file's package doc for why.
+// once by TestMain in login_handler_test.go — see that file's package doc and TestMain for why.
 package http_test
 
 import (

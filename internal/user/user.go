@@ -17,6 +17,7 @@ import (
 	"github.com/jeffersonbrasilino/hex-api-go/internal/user/application/command/createuser"
 	"github.com/jeffersonbrasilino/hex-api-go/internal/user/application/command/login"
 	"github.com/jeffersonbrasilino/hex-api-go/internal/user/application/command/revokesession"
+	"github.com/jeffersonbrasilino/hex-api-go/internal/user/application/query/checkpermission"
 	"github.com/jeffersonbrasilino/hex-api-go/internal/user/domain/contract"
 	"github.com/jeffersonbrasilino/hex-api-go/internal/user/infrastructure/database"
 	"github.com/jeffersonbrasilino/hex-api-go/internal/user/infrastructure/http"
@@ -28,16 +29,18 @@ import (
 // Redis client, JWT signing secret) and the instantiated contracts shared across the module's
 // command handlers.
 type userModule struct {
-	httpLib         *gin.Engine
-	db              *gorm.DB
-	redisClient     *redis.Client
-	jwtSecret       string
-	repository      contract.UserRepository
-	dataSource      contract.UserDataSource
-	loginRepository contract.LoginRepository
-	passwordHasher  contract.PasswordHasher
-	tokenGenerator  contract.TokenGenerator
-	sessionStore    *database.RedisAdapter
+	httpLib              *gin.Engine
+	db                   *gorm.DB
+	redisClient          *redis.Client
+	jwtSecret            string
+	repository           contract.UserRepository
+	dataSource           contract.UserDataSource
+	loginRepository      contract.LoginRepository
+	passwordHasher       contract.PasswordHasher
+	tokenGenerator       contract.TokenGenerator
+	sessionStore         *database.RedisAdapter
+	jwtAdapter           *database.JwtAdapter
+	permissionRepository contract.PermissionRepository
 }
 
 // NewUserModule is the constructor called by main.go.
@@ -62,10 +65,13 @@ func (u *userModule) Register(ctx context.Context) error {
 	u.repository = gormRepository
 	u.loginRepository = gormRepository
 	u.passwordHasher = database.NewBcryptAdapter()
-	u.tokenGenerator = database.NewJwtAdapter()
+	u.jwtAdapter = database.NewJwtAdapter()
+	u.tokenGenerator = u.jwtAdapter
 	u.sessionStore = database.NewRedisAdapter(u.redisClient)
+	u.permissionRepository = database.NewPermissionRepository(u.redisClient, u.db)
 
 	u.registerActions()
+	u.httpLib.Use(http.AuthorizationMiddleware())
 	u.WithHttpProtocol()
 	return nil
 }
@@ -80,7 +86,7 @@ func (u *userModule) WithHttpProtocol() *userModule {
 	return u
 }
 
-// registerActions maps CQRS commands to their respective handlers.
+// registerActions maps CQRS commands/queries to their respective handlers.
 func (u *userModule) registerActions() {
 	gomes.AddActionHandler(createuser.NewComandHandler(u.repository, u.passwordHasher))
 	gomes.AddActionHandler(login.NewCommandHandler(
@@ -91,4 +97,5 @@ func (u *userModule) registerActions() {
 		u.sessionStore,
 	))
 	gomes.AddActionHandler(revokesession.NewCommandHandler(u.sessionStore))
+	gomes.AddActionHandler(checkpermission.NewQueryHandler(u.jwtAdapter, u.permissionRepository))
 }

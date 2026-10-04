@@ -19,17 +19,32 @@ import "github.com/jeffersonbrasilino/hex-api-go/internal/user/domain"
 // domain.NewPerson or domain.NewUser is discarded (nil) since the persisted data is assumed
 // already valid.
 func toDomain(user *Users) *domain.User {
+	
 	person, _ := domain.NewPerson(&domain.PersonProps{
 		UuId:      user.Person.Uuid,
 		Name:      user.Person.Name,
 		BirthDate: user.Person.BirthDate,
 	})
+	
+	var userGroups = make([]*domain.UserGroup, 0, len(user.UserGroupsUsers))
+	for _, ug := range user.UserGroupsUsers {
+		if ug.UserGroup.Uuid == "" {
+			continue
+		}
+
+		userGroup, _ := domain.NewUserGroup(&domain.UserGroupProps{
+			UuId: ug.UserGroup.Uuid,
+			Name: ug.UserGroup.Name,
+		})
+		userGroups = append(userGroups, userGroup)
+	}
 
 	domainUser, _ := domain.NewUser(&domain.UserProps{
-		UuId:     user.Uuid,
-		Username: user.Username,
-		Password: domain.NewPasswordFromHash(user.Password),
-		Person:   person,
+		UuId:       user.Uuid,
+		Username:   user.Username,
+		Password:   domain.NewPasswordFromHash(user.Password),
+		Person:     person,
+		UserGroups: userGroups,
 	})
 
 	return domainUser

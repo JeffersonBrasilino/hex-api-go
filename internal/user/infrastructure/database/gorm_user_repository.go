@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log/slog"
 	"os"
 
 	"github.com/jeffersonbrasilino/ddgo"
@@ -19,13 +18,12 @@ type GormUserRepository struct {
 
 func NewGormUserRepository(db *gorm.DB) *GormUserRepository {
 
-	if os.Getenv("GORM_AUTO_MIGRATE") == "1" {
-		//db.SetupJoinTable(&Users{}, "UserGroups", &UserGroupUser{})
+	/* if os.Getenv("GORM_AUTO_MIGRATE") == "1" {
 		err := db.AutoMigrate(&Users{}, &Person{}, &UsersGroups{}, &PersonContacts{}, &PersonContactsType{}, &UserGroupsPermissions{}, &UsersDevice{}, &UserGroupUser{})
 		if err != nil {
 			slog.Error("[GormUserRepository]", "error", err)
 		}
-	}
+	} */
 
 	if os.Getenv("APP_ENV") == "local" {
 		db = db.Debug()
@@ -98,9 +96,24 @@ func (r *GormUserRepository) Create(ctx context.Context, user *domain.User) erro
 //
 // Returns: the matching *domain.User, or a ddgo.NotFoundError if no user matches, or a
 // ddgo.InternalError if the query fails for any other reason.
-func (r *GormUserRepository) FindByUsernameOrDocument(ctx context.Context, identifier string) (*domain.User, error) {
+func (r *GormUserRepository) FindByUsernameOrDocument(
+	ctx context.Context,
+	identifier string,
+) (*domain.User, error) {
 	entity, err := gorm.G[Users](r.db).
-		Joins(clause.Has("Person"), nil).
+		Joins(clause.InnerJoin.Association("Person"), nil).
+		Preload("UserGroupsUsers", func(
+			db gorm.PreloadBuilder,
+		) error {
+			db.Where("status = ?", 1)
+			return nil
+		}).
+		Preload("UserGroupsUsers.UserGroup", func(
+			db gorm.PreloadBuilder,
+		) error {
+			db.Where("status = ?", 1)
+			return nil
+		}).
 		Where("username = ? OR document = ?", identifier, identifier).
 		First(ctx)
 	if err != nil {

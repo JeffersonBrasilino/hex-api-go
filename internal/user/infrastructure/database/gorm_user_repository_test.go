@@ -62,6 +62,10 @@ func newMockedRepository(t *testing.T) (*database.GormUserRepository, sqlmock.Sq
 func TestGormUserRepository_FindByUsernameOrDocument(t *testing.T) {
 	const joinQuery = `SELECT .+ FROM "hex-api-go"\."users" INNER JOIN "hex-api-go"\."persons" "Person" ON .+ WHERE \(username = \$1 OR document = \$2\).*`
 
+	// userGroupUsersPreloadQuery matches the Preload("UserGroupsUsers", ...) query GORM issues
+	// after the main Users/Person query succeeds, filtering the join table by the active status.
+	const userGroupUsersPreloadQuery = `SELECT \* FROM "hex-api-go"\."user_group_users" WHERE "user_group_users"\."user_id" = \$1 AND status = \$2.*`
+
 	t.Run("should return the domain.User when found by username", func(t *testing.T) {
 		t.Parallel()
 		repo, mock := newMockedRepository(t)
@@ -73,6 +77,9 @@ func TestGormUserRepository_FindByUsernameOrDocument(t *testing.T) {
 			"person-uuid", "John Doe", "12345678900", "1990-01-01", 1,
 		)
 		mock.ExpectQuery(joinQuery).WithArgs(identifier, identifier, 1).WillReturnRows(rows)
+		mock.ExpectQuery(userGroupUsersPreloadQuery).
+			WithArgs(1, 1).
+			WillReturnRows(sqlmock.NewRows([]string{"id", "user_id", "user_group_id", "uuid", "main", "status"}))
 
 		user, err := repo.FindByUsernameOrDocument(t.Context(), identifier)
 
@@ -110,6 +117,9 @@ func TestGormUserRepository_FindByUsernameOrDocument(t *testing.T) {
 			"person-uuid-2", "Ana Silva", identifier, "1985-05-05", 1,
 		)
 		mock.ExpectQuery(joinQuery).WithArgs(identifier, identifier, 1).WillReturnRows(rows)
+		mock.ExpectQuery(userGroupUsersPreloadQuery).
+			WithArgs(2, 1).
+			WillReturnRows(sqlmock.NewRows([]string{"id", "user_id", "user_group_id", "uuid", "main", "status"}))
 
 		user, err := repo.FindByUsernameOrDocument(t.Context(), identifier)
 

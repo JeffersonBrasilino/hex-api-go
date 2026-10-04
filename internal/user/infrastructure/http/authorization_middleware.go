@@ -4,9 +4,9 @@
 // access token from the Authorization header, checking user permissions against
 // the requested resource (HTTP method + path), and allowing or denying access
 // based on the permission check result.
-// Objective: provide a global middleware that intercepts all HTTP requests,
-// validates access tokens, and dispatches permission checks through the command
-// bus (never calling domain or repository directly), mapping errors to
+// Objective: provide a middleware, registered on protected router groups/routes,
+// that validates access tokens and dispatches permission checks through the
+// command bus (never calling domain or repository directly), mapping errors to
 // standardized HTTP status codes (401 for invalid tokens, 403 for access
 // denied, others via generic error mapping).
 package http
@@ -46,10 +46,13 @@ var authorizationTrace = otel.InitTrace("authorization-middleware")
 //   - Returns the generic error mapping for any other infrastructure failure.
 //   - Calls c.Next() and continues the chain on success (access allowed or public
 //     route).
+//   - Aborts the chain (c.Abort()) on every error branch, so an infrastructure
+//     failure never falls through to the protected route handler.
 //
-// Behavior: This middleware is meant to be applied globally before any route handlers,
-// intercepting all requests — including unauthenticated ones hitting a genuinely public
-// route (e.g. login) — and enforcing access control uniformly via the bus.
+// Behavior: This middleware must be registered explicitly on the router
+// groups/routes that require access control — never globally — to avoid
+// checking permissions for public routes (e.g. login) that need no such
+// overhead.
 func AuthorizationMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx, span := authorizationTrace.Start(
@@ -79,17 +82,23 @@ func AuthorizationMiddleware() gin.HandlerFunc {
 		})
 
 		if err != nil {
-			// Map domain errors to HTTP status codes.
+			// Map domain errors to HTTP status codes. c.Abort() is required in every
+			// branch: Gin's handler chain is driven by an outer for-loop in Next() that
+			// keeps invoking subsequent handlers once this one returns, regardless of
+			// whether c.Next() was called here — only c.Abort() stops it.
 			if _, ok := err.(*domain.InvalidSessionError); ok {
 				httpLib.ErrorWithCode(c, http.StatusUnauthorized, err)
+				c.Abort()
 				return
 			}
 			if _, ok := err.(*domain.AccessDeniedError); ok {
 				httpLib.ErrorWithCode(c, http.StatusForbidden, err)
+				c.Abort()
 				return
 			}
 			// All other errors (infrastructure failures) use generic mapping.
-			httpLib.Error(c, err)
+			c.Error(err)
+			c.Abort()
 			return
 		}
 

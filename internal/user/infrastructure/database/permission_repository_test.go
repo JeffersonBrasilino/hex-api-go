@@ -4,11 +4,11 @@
 // testing the Redis caching logic with miniredis and the real Postgres JOIN
 // fallback (mocked via go-sqlmock, following the convention established in
 // gorm_user_repository_test.go).
-// Objective: verify cache hit (with and without sentinel), cache miss
-// triggering the Postgres JOIN fallback (mapped route returns roles, unmapped
-// route returns empty and caches the __EMPTY__ sentinel), Postgres query
-// errors (fail-closed DependencyError), Redis errors, and fail-closed
-// semantics (deny all on infrastructure failure).
+// Objective: verify cache hit, cache miss triggering the Postgres JOIN
+// fallback (mapped route returns roles and caches them; unmapped route
+// returns empty and is never cached), Postgres query errors (fail-closed
+// DependencyError), Redis errors, and fail-closed semantics (deny all on
+// infrastructure failure).
 package database_test
 
 import (
@@ -24,15 +24,22 @@ import (
 	"gorm.io/gorm"
 )
 
-// rolesJoinQuery matches the Postgres JOIN emitted by rolesWithAccessFromPostgres:
-// UserGroupsPermissions -> UsersGroups (role name) and
-// UserGroupsPermissions -> ApiRoutes (route match), filtered by
-// activeStatus (1) on all three tables.
-const rolesJoinQuery = `SELECT DISTINCT "hex-api-go"\."users_groups"\."name" ` +
+// rolesJoinQuery matches the Postgres JOIN emitted by rolesWithAccessFromPostgres via the
+// gorm.G[UserGroupsPermissions] generics API: UserGroupsPermissions -> ApiRoute (route match)
+// and UserGroupsPermissions -> UserGroup (role uuid), filtered by activeStatus (1) on all three
+// tables. Argument order follows the Joins declaration order, then the base Where calls:
+// ApiRoute.status, ApiRoute.route, UserGroup.status, action, status.
+const rolesJoinQuery = `SELECT .+ ` +
 	`FROM "hex-api-go"\."user_groups_permissions" ` +
-	`JOIN "hex-api-go"\."users_groups" ON .+ ` +
-	`JOIN "hex-api-go"\."api_routes" ON .+ ` +
+	`INNER JOIN "hex-api-go"\."api_routes" "ApiRoute" ON .+ ` +
+	`INNER JOIN "hex-api-go"\."users_groups" "UserGroup" ON .+ ` +
 	`WHERE .+`
+
+// rolesQueryColumns names the columns rolesWithAccessFromPostgres selects: the base entity's
+// minimal "id" (unused, kept only because the generics Select requires at least one column),
+// ApiRoute's "id" (unused, joined only to filter by route/status) and UserGroup's "uuid" (the
+// role identifier returned to the caller).
+var rolesQueryColumns = []string{"id", "ApiRoute__id", "UserGroup__uuid"}
 
 // newMockedPostgresDB opens GORM against a sqlmock-controlled database/sql.DB, following the
 // same convention as newMockedRepository in gorm_user_repository_test.go, so the Postgres JOIN
@@ -65,7 +72,7 @@ func TestPermissionRepository_RolesWithAccess(t *testing.T) {
 		db := &gorm.DB{} // Not used in this test
 
 		ctx := context.Background()
-		key := "auth:route:GET:/users"
+		key := "userGroups:permissions:GET:/users"
 
 		// Pre-populate Redis with roles.
 		rdb.SAdd(ctx, key, "admin", "operator")
@@ -96,10 +103,10 @@ func TestPermissionRepository_RolesWithAccess(t *testing.T) {
 		db := &gorm.DB{} // Not used
 
 		ctx := context.Background()
-		key := "auth:route:GET:/public"
+		key := "userGroups:permissions:GET:/public"
 
-		// Pre-populate Redis with the empty sentinel.
-		rdb.SAdd(ctx, key, "__EMPTY__")
+		// Pre-populate Redis with a mapped role.
+		rdb.SAdd(ctx, key, "admin")
 
 		repo := database.NewPermissionRepository(rdb, db)
 		roles, err := repo.RolesWithAccess(ctx, "GET", "/public")
@@ -107,12 +114,12 @@ func TestPermissionRepository_RolesWithAccess(t *testing.T) {
 		if err != nil {
 			t.Fatalf("expected no error, got: %v", err)
 		}
-		if len(roles) != 0 {
-			t.Fatalf("expected 0 roles for public route, got: %d (%v)", len(roles), roles)
+		if len(roles) != 1 || roles[0] != "admin" {
+			t.Fatalf("expected roles {admin}, got: %v", roles)
 		}
 	})
 
-	t.Run("cache miss, unmapped route: JOIN returns empty and caches __EMPTY__", func(t *testing.T) {
+	t.Run("cache miss, unmapped route: JOIN returns empty and is never cached", func(t *testing.T) {
 		t.Parallel()
 
 		rdb := newTestRedisClient(t)
@@ -120,8 +127,8 @@ func TestPermissionRepository_RolesWithAccess(t *testing.T) {
 		ctx := context.Background()
 
 		mock.ExpectQuery(rolesJoinQuery).
-			WithArgs("DELETE:/items", 1, 1, 1).
-			WillReturnRows(sqlmock.NewRows([]string{"name"}))
+			WithArgs(1, "/items", 1, "DELETE", 1).
+			WillReturnRows(sqlmock.NewRows(rolesQueryColumns))
 
 		repo := database.NewPermissionRepository(rdb, db)
 
@@ -138,14 +145,14 @@ func TestPermissionRepository_RolesWithAccess(t *testing.T) {
 			t.Errorf("unmet sqlmock expectations: %v", err)
 		}
 
-		// The empty result must have been cached as the sentinel, so a follow-up call
-		// hits Redis and never queries Postgres again.
-		members, err := rdb.SMembers(ctx, "auth:route:DELETE:/items").Result()
+		// The empty result must never be cached — there's no sentinel anymore, and
+		// caching it would let a misconfiguration outlive its fix until the key expires.
+		exists, err := rdb.Exists(ctx, "userGroups:permissions:DELETE:/items").Result()
 		if err != nil {
-			t.Fatalf("expected sentinel to be cached, got Redis error: %v", err)
+			t.Fatalf("unexpected Redis error checking cache: %v", err)
 		}
-		if len(members) != 1 || members[0] != "__EMPTY__" {
-			t.Fatalf("expected cached sentinel __EMPTY__, got: %v", members)
+		if exists != 0 {
+			t.Fatalf("expected no cache entry for an unmapped route, found one")
 		}
 	})
 
@@ -157,10 +164,10 @@ func TestPermissionRepository_RolesWithAccess(t *testing.T) {
 		ctx := context.Background()
 
 		mock.ExpectQuery(rolesJoinQuery).
-			WithArgs("GET:/orders", 1, 1, 1).
-			WillReturnRows(sqlmock.NewRows([]string{"name"}).
-				AddRow("admin").
-				AddRow("operator"))
+			WithArgs(1, "/orders", 1, "GET", 1).
+			WillReturnRows(sqlmock.NewRows(rolesQueryColumns).
+				AddRow(1, 1, "admin").
+				AddRow(2, 1, "operator"))
 
 		repo := database.NewPermissionRepository(rdb, db)
 
@@ -184,7 +191,7 @@ func TestPermissionRepository_RolesWithAccess(t *testing.T) {
 		}
 
 		// Roles must be cached in Redis for subsequent lookups.
-		members, err := rdb.SMembers(ctx, "auth:route:GET:/orders").Result()
+		members, err := rdb.SMembers(ctx, "userGroups:permissions:GET:/orders").Result()
 		if err != nil {
 			t.Fatalf("expected roles to be cached, got Redis error: %v", err)
 		}
@@ -201,7 +208,7 @@ func TestPermissionRepository_RolesWithAccess(t *testing.T) {
 		ctx := context.Background()
 
 		mock.ExpectQuery(rolesJoinQuery).
-			WithArgs("POST:/broken", 1, 1, 1).
+			WithArgs(1, "/broken", 1, "POST", 1).
 			WillReturnError(errors.New("connection reset by peer"))
 
 		repo := database.NewPermissionRepository(rdb, db)
@@ -222,9 +229,9 @@ func TestPermissionRepository_RolesWithAccess(t *testing.T) {
 			t.Errorf("unmet sqlmock expectations: %v", err)
 		}
 
-		// A query error must never poison the cache with the empty sentinel — the
-		// bypass would otherwise persist until the key expires.
-		exists, err := rdb.Exists(ctx, "auth:route:POST:/broken").Result()
+		// A query error must never write a cache entry — an empty/failed lookup
+		// masquerading as "verified" would persist until the key expires.
+		exists, err := rdb.Exists(ctx, "userGroups:permissions:POST:/broken").Result()
 		if err != nil {
 			t.Fatalf("unexpected Redis error checking cache poisoning: %v", err)
 		}
@@ -265,16 +272,16 @@ func TestPermissionRepository_RolesWithAccess(t *testing.T) {
 		})
 	})
 
-	t.Run("cache hit with no sentinel returns the roles", func(t *testing.T) {
+	t.Run("cache hit returns the roles", func(t *testing.T) {
 		t.Parallel()
 
 		rdb := newTestRedisClient(t)
 		db := &gorm.DB{}
 
 		ctx := context.Background()
-		key := "auth:route:POST:/content"
+		key := "userGroups:permissions:POST:/content"
 
-		// Pre-populate with multiple roles, no sentinel.
+		// Pre-populate with multiple roles.
 		rdb.SAdd(ctx, key, "editor", "reviewer")
 
 		repo := database.NewPermissionRepository(rdb, db)
@@ -303,7 +310,7 @@ func TestPermissionRepository_RolesWithAccess(t *testing.T) {
 		db := &gorm.DB{}
 
 		ctx := context.Background()
-		key := "auth:route:DELETE:/users/123"
+		key := "userGroups:permissions:DELETE:/users/123"
 
 		// Pre-populate with a single role.
 		rdb.SAdd(ctx, key, "admin")
@@ -327,8 +334,8 @@ func TestPermissionRepository_RolesWithAccess(t *testing.T) {
 		ctx := context.Background()
 
 		mock.ExpectQuery(rolesJoinQuery).
-			WithArgs("GET:/test", 1, 1, 1).
-			WillReturnRows(sqlmock.NewRows([]string{"name"}))
+			WithArgs(1, "/test", 1, "GET", 1).
+			WillReturnRows(sqlmock.NewRows(rolesQueryColumns))
 
 		repo := database.NewPermissionRepository(rdb, db)
 
@@ -340,7 +347,7 @@ func TestPermissionRepository_RolesWithAccess(t *testing.T) {
 			t.Fatalf("expected no error with valid context, got: %v", err)
 		}
 		if roles == nil {
-			t.Fatal("expected non-nil roles slice for public route")
+			t.Fatal("expected non-nil (empty) roles slice for an unmapped route")
 		}
 		if err := mock.ExpectationsWereMet(); err != nil {
 			t.Errorf("unmet sqlmock expectations: %v", err)

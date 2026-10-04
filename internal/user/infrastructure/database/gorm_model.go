@@ -64,8 +64,10 @@ type UserGroupUser struct {
 	Uuid        string `gorm:"column:uuid;not null"`
 	Main        bool   `gorm:"column:main;not null; default:false"`
 	UserId      uint   `gorm:"column:user_id"`
-	UserGroupId uint   `gorm:"column:user_group_id"`
-	Status      int    `gorm:"column:status;not null; default:1"`
+	User        Users
+	UserGroupId uint `gorm:"column:user_group_id"`
+	UserGroup   UsersGroups
+	Status      int `gorm:"column:status;not null; default:1"`
 }
 
 type UsersDevice struct {
@@ -81,7 +83,7 @@ type UserGroupsPermissions struct {
 	gorm.Model
 	Uuid        string `gorm:"column:uuid;not null"`
 	ApiRouteId  uint   `gorm:"column:api_route_id;not null"`
-	ApiRoutes   ApiRoutes
+	ApiRoute    ApiRoutes
 	Action      string `gorm:"column:action;not null"`
 	UserGroupId uint   `gorm:"column:user_group_id;not null"`
 	UserGroup   UsersGroups
@@ -90,9 +92,9 @@ type UserGroupsPermissions struct {
 
 type ApiRoutes struct {
 	gorm.Model
-	Uuid   string `gorm:"column:uuid;not null"`
-	Route  string `gorm:"column:route;not null"`
-	Status int    `gorm:"column:status;not null; default:1"`
+	Uuid                  string                  `gorm:"column:uuid;not null"`
+	Route                 string                  `gorm:"column:route;not null"`
+	Status                int                     `gorm:"column:status;not null; default:1"`
 	UserGroupsPermissions []UserGroupsPermissions `gorm:"foreignKey:ApiRouteId"`
 }
 

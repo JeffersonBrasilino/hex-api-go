@@ -4,31 +4,27 @@
 // backing stores — Redis as the primary, low-latency lookup and Postgres as
 // the source of truth queried on cache miss — for RBAC permission checking.
 // Objective: efficiently check which roles have access to a given HTTP route
-// (method + path), storing results in Redis with a sentinel value (__EMPTY__)
-// for empty permission sets, and propagating infrastructure errors to enforce
-// fail-closed access control (deny all on double failure).
+// (method + path), caching non-empty role sets in Redis, and propagating
+// infrastructure errors to enforce fail-closed access control (deny all on
+// double failure). An empty result (no permission mapping) is never cached —
+// it is treated by the caller as a misconfigured protected route, a rare,
+// transient condition that should be fixed quickly rather than survive a
+// cache TTL.
 package database
 
 import (
 	"context"
 	"fmt"
+	"slices"
 
 	"github.com/jeffersonbrasilino/ddgo"
 	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 // permissionRouteKeyPrefix namespaces permission role sets in Redis.
-const permissionRouteKeyPrefix = "auth:route:"
-
-// emptyPermissionSentinel is a sentinel value stored in Redis when a route has
-// no permission mappings (public route).
-const emptyPermissionSentinel = "__EMPTY__"
-
-// activeStatus is the only Status value considered active/enabled, matching the
-// `default:1` convention used across gorm_model.go's soft-enable columns
-// (ApiRoutes.Status, UserGroupsPermissions.Status, UsersGroups.Status).
-const activeStatus = 1
+const permissionRouteKeyPrefix = "userGroups:permissions:"
 
 // PermissionRepository implements contract.PermissionRepository using
 // Redis cache-aside with Postgres as the fallback store.
@@ -74,20 +70,24 @@ func permissionRouteKey(method, path string) string {
 //   - path: the resource path being accessed.
 //
 // Returns: a list of role names that have access to the route. An empty list
-// signals a public route (no permission mappings exist). On error, returns nil
-// and a ddgo.DependencyError or ddgo.InternalError (fail-closed — deny all).
+// means no permission mapping exists for this route — the caller treats that
+// as a misconfigured protected route and denies access (this repository is
+// only ever queried for routes the authorization middleware is registered
+// on; genuinely public routes never reach it). On error, returns nil and a
+// ddgo.DependencyError or ddgo.InternalError (fail-closed — deny all).
 //
 // Behavior:
-//   - Cache hit (SMEMBERS returns at least one member):
-//   - If the sentinel __EMPTY__ is present, return an empty list (public).
-//   - Otherwise, return the member set as-is.
+//   - Cache hit (SMEMBERS returns at least one member): return the member set
+//     as-is.
 //   - Cache miss (SMEMBERS returns no members — note that Redis' SMEMBERS
 //     replies with an empty set, not a nil/not-found error, for a key that
 //     does not exist, so the miss is detected by an empty result rather than
 //     by err == redis.Nil):
 //   - Query Postgres for roles with access to this route via
 //     rolesWithAccessFromPostgres.
-//   - On Postgres success: store the result in Redis (or __EMPTY__ if empty),
+//   - On Postgres success: cache the result in Redis only if non-empty (an
+//     empty result is a misconfiguration expected to be fixed promptly, so it
+//     is never cached — there is no sentinel to mark "verified empty"), then
 //     return it.
 //   - On Postgres error: return a DependencyError (fail closed).
 //   - Redis error on read: return a DependencyError (fail closed).
@@ -103,17 +103,16 @@ func (r *PermissionRepository) RolesWithAccess(
 	// by an empty, error-free result rather than by comparing err to redis.Nil.
 	members, err := r.redis.SMembers(ctx, key).Result()
 	if err != nil && err != redis.Nil {
-		// Redis error other than key not found — fail closed.
+		// Redis error other than key not found — fail closed. The raw driver error is
+		// carried up as-is; translating it into a user-facing message is the HTTP
+		// layer's job, not this adapter's.
 		return nil, ddgo.NewDependencyError(
 			fmt.Sprintf("Error querying permission cache: %s", err.Error()),
 		)
 	}
 
 	if len(members) > 0 {
-		// Cache hit. Check for sentinel value.
-		if len(members) == 1 && members[0] == emptyPermissionSentinel {
-			return []string{}, nil
-		}
+		// Cache hit.
 		return members, nil
 	}
 
@@ -127,14 +126,11 @@ func (r *PermissionRepository) RolesWithAccess(
 		)
 	}
 
-	// Cache the result. Store the sentinel if the result is empty.
+	// An empty result means this protected route has no permission mapping — a
+	// misconfiguration the caller denies access for. Don't cache it: there's no
+	// sentinel to distinguish "verified empty" from "not yet checked" in a Redis set,
+	// and caching would let a stale deny outlive the fix once the mapping is added.
 	if len(roles) == 0 {
-		if err := r.redis.SAdd(ctx, key, emptyPermissionSentinel).Err(); err != nil {
-			// Redis write error — return permission result but log the cache miss.
-			// Note: We return the Postgres result (which may be empty) rather than
-			// fail closed, since we successfully retrieved from the primary source.
-			return roles, nil
-		}
 		return []string{}, nil
 	}
 
@@ -152,57 +148,80 @@ func (r *PermissionRepository) RolesWithAccess(
 // given route (method + path).
 //
 // Intent: retrieve the permission mapping for a route from the persistent
-// database as a fallback when Redis cache is empty, joining
-// UserGroupsPermissions -> ApiRoutes (to match the route) and
-// UserGroupsPermissions -> UsersGroups (to resolve the role name).
+// database as a fallback when Redis cache is empty, joining the mapped
+// UserGroupsPermissions entity to its ApiRoute (to match the route) and
+// UserGroup (to resolve the role name) belongs-to associations. Both are
+// to-one relations from UserGroupsPermissions, so Joins is safe here (unlike
+// a has-many association, it maps one row to one nested struct, with no risk
+// of row multiplication — see FindByUsernameOrDocument for the has-many case,
+// which must use Preload instead).
 //
 // Parameters:
 //   - ctx: request-scoped context propagated to GORM.
 //   - method: the HTTP method.
 //   - path: the resource path.
 //
-// Returns: a list of distinct role (UsersGroups.Name) values with access to
+// Returns: a list of distinct role (UsersGroups.Uuid) values with access to
 // the route. An empty, non-nil slice means the route has no permission
 // mappings (genuinely public). An error is returned only when the query
 // itself fails (e.g. connection/driver error) — it is never used to signal
 // "no roles found", which the caller (RolesWithAccess) would otherwise treat
 // as a fail-open bypass.
 //
-// Route format assumption: ApiRoutes.Route is a single string column with no
-// separate HTTP method column. No other usage, seed data, or fixture in the
-// repository documents its stored format, so this method adopts the same
-// convention already used by permissionRouteKey for the Redis key — Route is
-// stored as "{METHOD}:{PATH}" (colon-separated), e.g. "GET:/users/123". This
-// is an explicit assumption, not verified against a real seeded row.
+// Route/method columns: ApiRoutes.Route holds only the path (e.g.
+// "/users/123") and UserGroupsPermissions.Action holds the HTTP verb (e.g.
+// "GET") — they live on different tables, so method and path are matched as
+// two separate WHERE clauses rather than a single concatenated value.
 //
 // Status filtering: only Status == activeStatus (1) rows are considered
 // active on ApiRoutes, UserGroupsPermissions and UsersGroups, matching the
 // `default:1` soft-enable convention in gorm_model.go.
+//
+// Deduplication: since each row is one UserGroupsPermissions (one per
+// method+path+role), the same role can appear more than once if it has
+// multiple matching permission rows; distinctness is enforced in Go rather
+// than via SQL DISTINCT, since Distinct() operates on the base entity's
+// columns, not on a joined association's.
 func (r *PermissionRepository) rolesWithAccessFromPostgres(
 	ctx context.Context,
-	method, path string,
+	method, 
+	path string,
 ) ([]string, error) {
-	route := method + ":" + path
-
-	roles := []string{}
-	err := r.db.WithContext(ctx).
-		Table(`"hex-api-go"."user_groups_permissions"`).
-		Joins(
-			`JOIN "hex-api-go"."users_groups" ON "hex-api-go"."users_groups"."id" = `+
-				`"hex-api-go"."user_groups_permissions"."user_group_id"`,
-		).
-		Joins(
-			`JOIN "hex-api-go"."api_routes" ON "hex-api-go"."api_routes"."id" = `+
-				`"hex-api-go"."user_groups_permissions"."api_route_id"`,
-		).
-		Where(`"hex-api-go"."api_routes"."route" = ?`, route).
-		Where(`"hex-api-go"."api_routes"."status" = ?`, activeStatus).
-		Where(`"hex-api-go"."user_groups_permissions"."status" = ?`, activeStatus).
-		Where(`"hex-api-go"."users_groups"."status" = ?`, activeStatus).
-		Distinct(`"hex-api-go"."users_groups"."name"`).
-		Pluck(`"hex-api-go"."users_groups"."name"`, &roles).Error
+	currentTable := clause.Table{Name: clause.CurrentTable}
+	permissions, err := gorm.G[UserGroupsPermissions](r.db).
+		Joins(clause.InnerJoin.Association("ApiRoute"), func(
+			db gorm.JoinBuilder,
+			joinTable clause.Table,
+			curTable clause.Table,
+		) error {
+			db.Where("?.status = ?", joinTable, 1).
+				Where("?.route = ?", joinTable, path).
+				Select("ID")
+			return nil
+		}).
+		Joins(clause.InnerJoin.Association("UserGroup"), func(
+			db gorm.JoinBuilder,
+			joinTable clause.Table,
+			curTable clause.Table,
+		) error {
+			db.Where("?.status = ?", joinTable, 1).
+				Select("Uuid")
+			return nil
+		}).
+		Where("?.action = ?", currentTable, method).
+		Where("?.status = ?", currentTable, 1).
+		Find(ctx)
 	if err != nil {
 		return nil, err
+	}
+
+	roles := make([]string, 0, len(permissions))
+	for _, permission := range permissions {
+		uuid := permission.UserGroup.Uuid
+		if slices.Contains(roles, uuid) || uuid == "" {
+			continue
+		}
+		roles = append(roles, uuid)
 	}
 
 	return roles, nil

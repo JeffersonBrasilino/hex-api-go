@@ -107,7 +107,7 @@ func (c *Handler) Handle(ctx context.Context, data *Command) (any, error) {
 
 	groups := make([]string, 0, len(user.UserGroups()))
 	for _, group := range user.UserGroups() {
-		groups = append(groups, group.Name())
+		groups = append(groups, group.Uuid())
 	}
 
 	accessToken, errAccessToken := c.tokenGenerator.GenerateAccessToken(user.Uuid(), groups)

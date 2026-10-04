@@ -29,7 +29,8 @@ import (
 // Redis client, JWT signing secret) and the instantiated contracts shared across the module's
 // command handlers.
 type userModule struct {
-	httpLib              *gin.Engine
+	publicRouter         *gin.RouterGroup
+	protectedRouter      *gin.RouterGroup
 	db                   *gorm.DB
 	redisClient          *redis.Client
 	jwtSecret            string
@@ -50,12 +51,13 @@ type userModule struct {
 // secret (backing access/refresh token issuance). Actual construction of the Redis client and
 // resolution of the JWT secret from the environment happen at the call site, outside this
 // module.
-func NewUserModule(httpLib *gin.Engine, db *gorm.DB, redisClient *redis.Client, jwtSecret string) *userModule {
+func NewUserModule(publicRouter *gin.RouterGroup, protectedRouter *gin.RouterGroup, db *gorm.DB, redisClient *redis.Client, jwtSecret string) *userModule {
 	return &userModule{
-		httpLib:     httpLib,
-		db:          db,
-		redisClient: redisClient,
-		jwtSecret:   jwtSecret,
+		publicRouter:    publicRouter,
+		protectedRouter: protectedRouter,
+		db:              db,
+		redisClient:     redisClient,
+		jwtSecret:       jwtSecret,
 	}
 }
 
@@ -71,17 +73,22 @@ func (u *userModule) Register(ctx context.Context) error {
 	u.permissionRepository = database.NewPermissionRepository(u.redisClient, u.db)
 
 	u.registerActions()
-	u.httpLib.Use(http.AuthorizationMiddleware())
 	u.WithHttpProtocol()
 	return nil
 }
 
 // WithHttpProtocol defines HTTP routes specific to this module.
+//
+// AuthorizationMiddleware is registered manually on the protected route group only —
+// never globally — so public routes (login) skip permission-check overhead entirely.
 func (u *userModule) WithHttpProtocol() *userModule {
-	router := u.httpLib.Group("/users")
-	http.CreateUserHandler(router)
-	http.LoginHandler(router)
-	http.RevokeSessionHandler(router)
+	publicRouter := u.publicRouter.Group("/users")
+	http.LoginHandler(publicRouter)
+
+	protectedRouter := u.protectedRouter.Group("/users")
+	http.CreateUserHandler(protectedRouter)
+	http.RevokeSessionHandler(protectedRouter)
+
 	slog.Info("User module started with http", "prefix", "/users")
 	return u
 }

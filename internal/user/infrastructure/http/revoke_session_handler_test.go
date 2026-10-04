@@ -14,12 +14,16 @@ import (
 
 	"github.com/gin-gonic/gin"
 	httpHandler "github.com/jeffersonbrasilino/hex-api-go/internal/user/infrastructure/http"
+	httpLib "github.com/jeffersonbrasilino/hex-api-go/pkg/http"
 )
 
 // newRevokeSessionRouter builds a gin engine with the revoke session route registered, ready to
 // receive test requests.
 func newRevokeSessionRouter() *gin.Engine {
 	router := gin.New()
+	// ErrorHandlerMiddleware renders the errors Error/ErrorWithCode record on the
+	// context — registered globally in main.go, so tests must mirror that setup.
+	router.Use(httpLib.ErrorHandlerMiddleware())
 	group := router.Group("")
 	httpHandler.RevokeSessionHandler(group)
 	return router

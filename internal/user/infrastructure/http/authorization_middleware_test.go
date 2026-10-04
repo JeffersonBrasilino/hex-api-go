@@ -28,6 +28,7 @@ import (
 	"github.com/jeffersonbrasilino/hex-api-go/internal/user/application/query/checkpermission"
 	"github.com/jeffersonbrasilino/hex-api-go/internal/user/domain"
 	httpHandler "github.com/jeffersonbrasilino/hex-api-go/internal/user/infrastructure/http"
+	httpLib "github.com/jeffersonbrasilino/hex-api-go/pkg/http"
 )
 
 // init registers the stub checkpermission query handler once, before any test
@@ -83,6 +84,10 @@ func (h *stubCheckPermissionHandler) Handle(
 // testing the authorization middleware.
 func newAuthRouter() *gin.Engine {
 	router := gin.New()
+
+	// ErrorHandlerMiddleware renders the errors Error/ErrorWithCode record on the
+	// context — registered globally in main.go, so tests must mirror that setup.
+	router.Use(httpLib.ErrorHandlerMiddleware())
 
 	// Apply authorization middleware globally.
 	router.Use(httpHandler.AuthorizationMiddleware())

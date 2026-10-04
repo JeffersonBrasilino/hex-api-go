@@ -1,11 +1,13 @@
 // Package checkpermission defines the query handler for checking user permissions.
 //
 // Intent: orchestrate permission checking by parsing the access token, querying roles with
-// access, and deciding whether to allow, deny, or allow as a public route.
+// access, and deciding whether to allow or deny.
 //
 // Objective: enforce RBAC access control by checking if the authenticated user's groups have
-// permission to access the requested resource, while treating routes without any permission
-// mappings as public.
+// permission to access the requested resource. Genuinely public routes never reach this
+// handler at all — the authorization middleware that dispatches this query is only ever
+// registered on protected routes/groups — so a route with no permission mapping here is a
+// misconfiguration, not a public route, and is denied.
 package checkpermission
 
 import (
@@ -55,30 +57,33 @@ func NewQueryHandler(
 //   - q: the checkpermission Query with the access token, HTTP method, and resource
 //     path.
 //
-// Returns: true (as an any value) if access is allowed (user has permission or route is
-// public), or an error:
-//   - domain.InvalidSessionError when the route is protected and the access token is
-//     missing, malformed, or expired
-//   - domain.AccessDeniedError when the user lacks the required permissions
+// Returns: true (as an any value) if access is allowed (user has permission to the
+// resource), or an error:
+//   - domain.InvalidSessionError when the access token is missing, malformed, or expired
+//   - domain.AccessDeniedError when the user lacks the required permissions, or when the
+//     route has no permission mapping at all (misconfiguration — fail closed)
 //   - any error surfaced by the underlying contracts (permission repository failure)
 //
 // Business rule (RN-01 revised):
-//   - Empty roles list (no permission mappings) = public route, allow access — evaluated
-//     BEFORE the access token is parsed, so a request with no token at all (e.g. an
-//     unauthenticated call to a genuinely public route such as login) is never rejected
-//     for lacking a token it was never meant to carry.
+//   - Every route reaching this handler is protected — the authorization middleware is
+//     only ever registered on routes/groups that require access control — so the access
+//     token is parsed first, unconditionally.
+//   - Empty roles list (no permission mapping for this route) = deny via
+//     AccessDeniedError. This is a misconfigured protected route, not a public one:
+//     genuinely public routes have no middleware attached and never dispatch this query.
 //   - Non-empty roles list with no intersection with user's groups = deny via
 //     AccessDeniedError.
 //   - Non-empty roles list with intersection with user's groups = allow access.
-//
-// This ordering is deliberate: RF-04's "no static public route list" requirement means the
-// only way to know a route is public is to ask the permission repository first — checking
-// the token before that would force every caller, including unauthenticated ones hitting a
-// public route, to present a token it doesn't need.
 func (h *Handler) Handle(ctx context.Context, q *Query) (any, error) {
-	// Query the roles with access to the requested resource (method + path) first — this is
-	// the only way to know whether the route is public, and must not depend on a token being
-	// present.
+	// Every caller of this handler is hitting a protected route, so a token is always
+	// required.
+	_, userGroups, errParse := h.tokenValidator.ParseAccessToken(q.AccessToken)
+	if errParse != nil {
+		return nil, domain.NewInvalidSessionError(
+			"Invalid or expired access token",
+		)
+	}
+
 	rolesWithAccess, errRoles := h.permissionRepository.RolesWithAccess(
 		ctx, q.Method, q.Path,
 	)
@@ -88,16 +93,11 @@ func (h *Handler) Handle(ctx context.Context, q *Query) (any, error) {
 		return nil, errRoles
 	}
 
-	// Business rule: empty roles list = public route, allow access without requiring a token.
+	// Business rule: empty roles list = no permission mapping configured for this
+	// protected route — fail closed rather than treat it as public.
 	if len(rolesWithAccess) == 0 {
-		return true, nil
-	}
-
-	// The route is protected — a token is now required. Parse it to extract user groups.
-	_, userGroups, errParse := h.tokenValidator.ParseAccessToken(q.AccessToken)
-	if errParse != nil {
-		return nil, domain.NewInvalidSessionError(
-			"Invalid or expired access token",
+		return nil, domain.NewAccessDeniedError(
+			"No permission mapping configured for this resource",
 		)
 	}
 

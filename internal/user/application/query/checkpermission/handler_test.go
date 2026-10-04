@@ -3,8 +3,9 @@
 // Intent: verify the checkpermission query handler's orchestration of token parsing, role
 // querying, and access decisions in isolation from real infrastructure.
 // Objective: cover the RF-01/RF-02/RF-03/RF-04 acceptance scenarios — invalid token,
-// public route, denied access, allowed access, and infrastructure errors — using
-// hand-rolled test doubles for AccessTokenValidator and PermissionRepository.
+// unmapped (misconfigured) route, denied access, allowed access, and infrastructure
+// errors — using hand-rolled test doubles for AccessTokenValidator and
+// PermissionRepository.
 package checkpermission_test
 
 import (
@@ -87,7 +88,7 @@ func TestQueryHandler_Handle(t *testing.T) {
 		}
 	})
 
-	t.Run("route with no permission mappings allows access (public)", func(t *testing.T) {
+	t.Run("route with no permission mappings denies access (misconfigured)", func(t *testing.T) {
 		t.Parallel()
 
 		tokenValidator := &stubAccessTokenValidator{
@@ -95,24 +96,25 @@ func TestQueryHandler_Handle(t *testing.T) {
 			groups: []string{"staff"},
 		}
 		permissionRepo := &stubPermissionRepository{
-			roles: []string{}, // Empty roles = public route
+			roles: []string{}, // Empty roles = no permission mapping configured
 		}
 
 		handler := checkpermission.NewQueryHandler(tokenValidator, permissionRepo)
 		query := &checkpermission.Query{
 			AccessToken: "valid-token",
 			Method:      "GET",
-			Path:        "/public",
+			Path:        "/unmapped",
 		}
 
 		result, err := handler.Handle(context.Background(), query)
 
-		if err != nil {
-			t.Errorf("expected no error, got %v", err)
+		if result != nil {
+			t.Errorf("expected nil result, got %v", result)
 		}
 
-		if result != true {
-			t.Errorf("expected true, got %v", result)
+		var accessDeniedErr *domain.AccessDeniedError
+		if !errors.As(err, &accessDeniedErr) {
+			t.Errorf("expected AccessDeniedError, got %v (%T)", err, err)
 		}
 
 		if permissionRepo.calledWithArg != "GET" {
@@ -120,8 +122,8 @@ func TestQueryHandler_Handle(t *testing.T) {
 				permissionRepo.calledWithArg)
 		}
 
-		if permissionRepo.calledWithPath != "/public" {
-			t.Errorf("expected permission repo called with path '/public', got '%s'",
+		if permissionRepo.calledWithPath != "/unmapped" {
+			t.Errorf("expected permission repo called with path '/unmapped', got '%s'",
 				permissionRepo.calledWithPath)
 		}
 	})
@@ -244,38 +246,7 @@ func TestQueryHandler_Handle(t *testing.T) {
 		}
 	})
 
-	t.Run("public route allows access without a token, never calling the token validator", func(t *testing.T) {
-		t.Parallel()
-
-		tokenValidator := &stubAccessTokenValidator{}
-		permissionRepo := &stubPermissionRepository{
-			roles: []string{}, // Empty roles = public route
-		}
-
-		handler := checkpermission.NewQueryHandler(tokenValidator, permissionRepo)
-		query := &checkpermission.Query{
-			AccessToken: "", // No token at all — e.g. an unauthenticated login request.
-			Method:      "POST",
-			Path:        "/users/login",
-		}
-
-		result, err := handler.Handle(context.Background(), query)
-
-		if err != nil {
-			t.Errorf("expected no error for a public route with no token, got %v", err)
-		}
-
-		if result != true {
-			t.Errorf("expected true, got %v", result)
-		}
-
-		if tokenValidator.calledCount != 0 {
-			t.Errorf("expected the token validator to never be called for a public route, called %d times",
-				tokenValidator.calledCount)
-		}
-	})
-
-	t.Run("protected route with no token returns InvalidSessionError", func(t *testing.T) {
+	t.Run("protected route with no token returns InvalidSessionError before checking permissions", func(t *testing.T) {
 		t.Parallel()
 
 		tokenValidator := &stubAccessTokenValidator{
@@ -301,6 +272,11 @@ func TestQueryHandler_Handle(t *testing.T) {
 		var invalidSessionErr *domain.InvalidSessionError
 		if !errors.As(err, &invalidSessionErr) {
 			t.Errorf("expected InvalidSessionError, got %v (%T)", err, err)
+		}
+
+		if permissionRepo.calledWithCount != 0 {
+			t.Errorf("expected the permission repository to never be called when the token is invalid, called %d times",
+				permissionRepo.calledWithCount)
 		}
 	})
 

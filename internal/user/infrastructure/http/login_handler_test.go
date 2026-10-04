@@ -27,6 +27,7 @@ import (
 	"github.com/jeffersonbrasilino/hex-api-go/internal/user/application/command/revokesession"
 	"github.com/jeffersonbrasilino/hex-api-go/internal/user/domain"
 	httpHandler "github.com/jeffersonbrasilino/hex-api-go/internal/user/infrastructure/http"
+	httpLib "github.com/jeffersonbrasilino/hex-api-go/pkg/http"
 )
 
 // TestMain registers the stub action handlers on the default command bus and starts the message
@@ -90,6 +91,9 @@ func (h *stubRevokeSessionActionHandler) Handle(ctx context.Context, cmd *revoke
 // requests.
 func newLoginRouter() *gin.Engine {
 	router := gin.New()
+	// ErrorHandlerMiddleware renders the errors Error/ErrorWithCode record on the
+	// context — registered globally in main.go, so tests must mirror that setup.
+	router.Use(httpLib.ErrorHandlerMiddleware())
 	group := router.Group("")
 	httpHandler.LoginHandler(group)
 	return router

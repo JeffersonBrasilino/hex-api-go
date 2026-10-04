@@ -14,7 +14,6 @@ import (
 	gomes "github.com/jeffersonbrasilino/gomes"
 	"github.com/jeffersonbrasilino/gomes/otel"
 	"github.com/jeffersonbrasilino/hex-api-go/internal/user/application/command/revokesession"
-	"github.com/jeffersonbrasilino/hex-api-go/pkg/http"
 )
 
 var revokeSessionTrace = otel.InitTrace("revoke-session-handler")
@@ -46,10 +45,10 @@ func RevokeSessionHandler(router *gin.RouterGroup) {
 		})
 
 		if err != nil {
-			http.Error(c, err)
+			c.Error(err)
 			return
 		}
 
-		http.Success(c, httpLib.StatusOK, res)
+		c.JSON(httpLib.StatusOK, res)
 	})
 }

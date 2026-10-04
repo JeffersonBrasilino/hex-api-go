@@ -13,8 +13,10 @@ import "context"
 type PermissionRepository interface {
 	// RolesWithAccess returns a list of roles (groups) that have access to
 	// the given HTTP method and path. Returns an empty slice when the route
-	// has no permission mappings — an empty result signals a public route.
-	// A non-empty slice indicates the route is protected; only those roles
+	// has no permission mappings — callers treat this as a misconfigured
+	// protected route and deny access (genuinely public routes never reach
+	// this call, since the authorization middleware is only registered on
+	// protected routes/groups). A non-empty slice indicates only those roles
 	// may access it. On error, the permission check fails closed (deny all).
 	RolesWithAccess(ctx context.Context, method, path string) ([]string, error)
 }

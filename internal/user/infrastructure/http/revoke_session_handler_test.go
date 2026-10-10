@@ -5,7 +5,7 @@
 // Objective: cover the 404 not-found mapping and the successful revocation response.
 //
 // The shared command bus and the stubRevokeSessionActionHandler registered on it are bootstrapped
-// once by TestMain in login_handler_test.go — see that file's package doc for why.
+// once by TestMain in login_handler_test.go — see that file's package doc and TestMain for why.
 package http_test
 
 import (
@@ -14,12 +14,16 @@ import (
 
 	"github.com/gin-gonic/gin"
 	httpHandler "github.com/jeffersonbrasilino/hex-api-go/internal/user/infrastructure/http"
+	httpLib "github.com/jeffersonbrasilino/hex-api-go/pkg/http"
 )
 
 // newRevokeSessionRouter builds a gin engine with the revoke session route registered, ready to
 // receive test requests.
 func newRevokeSessionRouter() *gin.Engine {
 	router := gin.New()
+	// ErrorHandlerMiddleware renders the errors Error/ErrorWithCode record on the
+	// context — registered globally in main.go, so tests must mirror that setup.
+	router.Use(httpLib.ErrorHandlerMiddleware())
 	group := router.Group("")
 	httpHandler.RevokeSessionHandler(group)
 	return router

@@ -24,6 +24,11 @@ import (
 // errors deterministically without depending on any external Redis instance.
 const unreachableRedisAddr = "127.0.0.1:1"
 
+// refreshTokenTtl mirrors database.RedisAdapter's unexported session TTL (15 days) so this
+// black-box test can assert the persisted key expires within that window without importing an
+// unexported constant.
+const refreshTokenTtl = 15 * 24 * time.Hour
+
 // newTestRedisClient starts an isolated in-memory Redis server via miniredis, scoped to the
 // lifetime of t (miniredis.RunT registers its own t.Cleanup to shut the server down), and returns
 // a client pointed at it. Each call gets its own server instance, so parallel (sub)tests never
@@ -333,8 +338,8 @@ func TestRedisAdapter_Save(t *testing.T) {
 		if ttlErr != nil {
 			t.Fatalf("TTL should not return an error, got: %v", ttlErr)
 		}
-		if ttl <= 0 || ttl > time.Minute {
-			t.Fatalf("expected TTL to be within the requested window, got: %v", ttl)
+		if ttl <= 0 || ttl > refreshTokenTtl {
+			t.Fatalf("expected TTL to be within the refresh token window (%v), got: %v", refreshTokenTtl, ttl)
 		}
 	})
 

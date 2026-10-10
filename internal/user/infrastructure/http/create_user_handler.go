@@ -50,10 +50,10 @@ func CreateUserHandler(router *gin.RouterGroup) {
 		})
 
 		if err != nil {
-			http.Error(c, err)
+			c.Error(err)
 			return
 		}
 
-		http.Success(c, httpLib.StatusOK, res)
+		c.JSON(httpLib.StatusOK, res)
 	})
 }

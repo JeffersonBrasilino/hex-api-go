@@ -16,6 +16,11 @@ type (
 	UserBlockedError struct {
 		message string
 	}
+	// AccessDeniedError indicates the user lacks the required permissions
+	// to access a protected resource. It maps to HTTP 403 Forbidden.
+	AccessDeniedError struct {
+		message string
+	}
 )
 
 // NewInvalidSessionError creates an error for an invalid or expired session.
@@ -41,5 +46,19 @@ func NewUserBlockedError(message string) *UserBlockedError {
 
 // Error implements the error interface.
 func (e *UserBlockedError) Error() string {
+	return e.message
+}
+
+// NewAccessDeniedError creates an error for access denied due to insufficient
+// permissions.
+//
+// Parameters: message — human-readable description.
+// Returns: *AccessDeniedError implementing error.
+func NewAccessDeniedError(message string) *AccessDeniedError {
+	return &AccessDeniedError{message: message}
+}
+
+// Error implements the error interface.
+func (e *AccessDeniedError) Error() string {
 	return e.message
 }

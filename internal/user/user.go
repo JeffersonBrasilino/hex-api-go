@@ -17,6 +17,7 @@ import (
 	"github.com/jeffersonbrasilino/hex-api-go/internal/user/application/command/createuser"
 	"github.com/jeffersonbrasilino/hex-api-go/internal/user/application/command/login"
 	"github.com/jeffersonbrasilino/hex-api-go/internal/user/application/command/revokesession"
+	"github.com/jeffersonbrasilino/hex-api-go/internal/user/application/query/checkpermission"
 	"github.com/jeffersonbrasilino/hex-api-go/internal/user/domain/contract"
 	"github.com/jeffersonbrasilino/hex-api-go/internal/user/infrastructure/database"
 	"github.com/jeffersonbrasilino/hex-api-go/internal/user/infrastructure/http"
@@ -28,16 +29,19 @@ import (
 // Redis client, JWT signing secret) and the instantiated contracts shared across the module's
 // command handlers.
 type userModule struct {
-	httpLib         *gin.Engine
-	db              *gorm.DB
-	redisClient     *redis.Client
-	jwtSecret       string
-	repository      contract.UserRepository
-	dataSource      contract.UserDataSource
-	loginRepository contract.LoginRepository
-	passwordHasher  contract.PasswordHasher
-	tokenGenerator  contract.TokenGenerator
-	sessionStore    *database.RedisAdapter
+	publicRouter         *gin.RouterGroup
+	protectedRouter      *gin.RouterGroup
+	db                   *gorm.DB
+	redisClient          *redis.Client
+	jwtSecret            string
+	repository           contract.UserRepository
+	dataSource           contract.UserDataSource
+	loginRepository      contract.LoginRepository
+	passwordHasher       contract.PasswordHasher
+	tokenGenerator       contract.TokenGenerator
+	sessionStore         *database.RedisAdapter
+	jwtAdapter           *database.JwtAdapter
+	permissionRepository contract.PermissionRepository
 }
 
 // NewUserModule is the constructor called by main.go.
@@ -47,12 +51,13 @@ type userModule struct {
 // secret (backing access/refresh token issuance). Actual construction of the Redis client and
 // resolution of the JWT secret from the environment happen at the call site, outside this
 // module.
-func NewUserModule(httpLib *gin.Engine, db *gorm.DB, redisClient *redis.Client, jwtSecret string) *userModule {
+func NewUserModule(publicRouter *gin.RouterGroup, protectedRouter *gin.RouterGroup, db *gorm.DB, redisClient *redis.Client, jwtSecret string) *userModule {
 	return &userModule{
-		httpLib:     httpLib,
-		db:          db,
-		redisClient: redisClient,
-		jwtSecret:   jwtSecret,
+		publicRouter:    publicRouter,
+		protectedRouter: protectedRouter,
+		db:              db,
+		redisClient:     redisClient,
+		jwtSecret:       jwtSecret,
 	}
 }
 
@@ -62,8 +67,10 @@ func (u *userModule) Register(ctx context.Context) error {
 	u.repository = gormRepository
 	u.loginRepository = gormRepository
 	u.passwordHasher = database.NewBcryptAdapter()
-	u.tokenGenerator = database.NewJwtAdapter()
+	u.jwtAdapter = database.NewJwtAdapter()
+	u.tokenGenerator = u.jwtAdapter
 	u.sessionStore = database.NewRedisAdapter(u.redisClient)
+	u.permissionRepository = database.NewPermissionRepository(u.redisClient, u.db)
 
 	u.registerActions()
 	u.WithHttpProtocol()
@@ -71,16 +78,22 @@ func (u *userModule) Register(ctx context.Context) error {
 }
 
 // WithHttpProtocol defines HTTP routes specific to this module.
+//
+// AuthorizationMiddleware is registered manually on the protected route group only —
+// never globally — so public routes (login) skip permission-check overhead entirely.
 func (u *userModule) WithHttpProtocol() *userModule {
-	router := u.httpLib.Group("/users")
-	http.CreateUserHandler(router)
-	http.LoginHandler(router)
-	http.RevokeSessionHandler(router)
+	publicRouter := u.publicRouter.Group("/users")
+	http.LoginHandler(publicRouter)
+
+	protectedRouter := u.protectedRouter.Group("/users")
+	http.CreateUserHandler(protectedRouter)
+	http.RevokeSessionHandler(protectedRouter)
+
 	slog.Info("User module started with http", "prefix", "/users")
 	return u
 }
 
-// registerActions maps CQRS commands to their respective handlers.
+// registerActions maps CQRS commands/queries to their respective handlers.
 func (u *userModule) registerActions() {
 	gomes.AddActionHandler(createuser.NewComandHandler(u.repository, u.passwordHasher))
 	gomes.AddActionHandler(login.NewCommandHandler(
@@ -91,4 +104,5 @@ func (u *userModule) registerActions() {
 		u.sessionStore,
 	))
 	gomes.AddActionHandler(revokesession.NewCommandHandler(u.sessionStore))
+	gomes.AddActionHandler(checkpermission.NewQueryHandler(u.jwtAdapter, u.permissionRepository))
 }

@@ -44,7 +44,7 @@ type Users struct {
 	PersonId         uint   `gorm:"column:person_id;not null"`
 	Person           Person
 	Status           int `gorm:"column:status;not null; default:1"`
-	// UserGroups       []UsersGroups `gorm:"many2many:user_group_users;joinForeignKey:user_id;joinReferences:user_group_id"`
+	//UserGroups       []UsersGroups `gorm:"many2many:user_group_users;joinForeignKey:user_id;joinReferences:user_group_id"`
 	Devices         []UsersDevice   `gorm:"foreignKey:UserId"`
 	UserGroupsUsers []UserGroupUser `gorm:"foreignKey:UserId"` //for create/update only need change custon fields.
 }
@@ -64,8 +64,10 @@ type UserGroupUser struct {
 	Uuid        string `gorm:"column:uuid;not null"`
 	Main        bool   `gorm:"column:main;not null; default:false"`
 	UserId      uint   `gorm:"column:user_id"`
-	UserGroupId uint   `gorm:"column:user_group_id"`
-	Status      int    `gorm:"column:status;not null; default:1"`
+	User        Users
+	UserGroupId uint `gorm:"column:user_group_id"`
+	UserGroup   UsersGroups
+	Status      int `gorm:"column:status;not null; default:1"`
 }
 
 type UsersDevice struct {
@@ -79,12 +81,21 @@ type UsersDevice struct {
 
 type UserGroupsPermissions struct {
 	gorm.Model
-	Uuid                 string `gorm:"column:uuid;not null"`
-	ApiRoutApplicationId uint   `gorm:"column:api_route_application_id;not null"`
-	Action               string `gorm:"column:action;not null"`
-	UserGroupId          uint   `gorm:"column:user_group_id;not null"`
-	UserGroup            UsersGroups
-	Status               int `gorm:"column:status;not null; default:1"`
+	Uuid        string `gorm:"column:uuid;not null"`
+	ApiRouteId  uint   `gorm:"column:api_route_id;not null"`
+	ApiRoute    ApiRoutes
+	Action      string `gorm:"column:action;not null"`
+	UserGroupId uint   `gorm:"column:user_group_id;not null"`
+	UserGroup   UsersGroups
+	Status      int `gorm:"column:status;not null; default:1"`
+}
+
+type ApiRoutes struct {
+	gorm.Model
+	Uuid                  string                  `gorm:"column:uuid;not null"`
+	Route                 string                  `gorm:"column:route;not null"`
+	Status                int                     `gorm:"column:status;not null; default:1"`
+	UserGroupsPermissions []UserGroupsPermissions `gorm:"foreignKey:ApiRouteId"`
 }
 
 func (Users) TableName() string {
@@ -118,3 +129,10 @@ func (PersonContactsType) TableName() string {
 func (UsersDevice) TableName() string {
 	return "hex-api-go.users_devices"
 }
+func (ApiRoutes) TableName() string {
+	return "hex-api-go.api_routes"
+}
+
+// alteracoes
+// ALTER TABLE "hex-api-go".user_groups_permissions RENAME COLUMN api_route_application_id TO api_route_id;
+// ALTER TABLE "user_groups_permissions" ADD CONSTRAINT "FK_05def5b3fde2080239fd27575bd" FOREIGN KEY ("api_route_id") REFERENCES "api_routes"("id") ON DELETE NO ACTION ON UPDATE NO ACTION

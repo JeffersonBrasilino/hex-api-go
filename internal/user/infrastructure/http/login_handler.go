@@ -63,10 +63,10 @@ func LoginHandler(router *gin.RouterGroup) {
 				http.ErrorWithCode(c, httpLib.StatusTooManyRequests, err)
 				return
 			}
-			http.Error(c, err)
+			c.Error(err)
 			return
 		}
 
-		http.Success(c, httpLib.StatusCreated, res)
+		c.JSON(httpLib.StatusCreated, res)
 	})
 }
